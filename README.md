@@ -5,8 +5,8 @@ jarbas - dev fork
 # STT support
 
 - pocketsphinx default stt
-- es-es language model included
-- en-us language model included
+- pocketsphinx es-es language model included
+- pocketsphinx en-us language model included
 - houndify stt
 - bing stt
 
