@@ -51,7 +51,9 @@ class TokenSTT(STT):
 
     def __init__(self):
         super(TokenSTT, self).__init__()
-        self.token = str(self.credential.get("token"))
+        # do not string cast, if token is none uses default test key
+        # free google instead of no google
+        self.token = self.credential.get("token")
 
 
 class BasicSTT(STT):
@@ -139,6 +141,26 @@ class PocketSphinxSTT(BasicSTT):
         return self.recognizer.recognize(audio)
 
 
+class HoundifySTT(BasicSTT):
+    def __init__(self, lang="en-us", config=None):
+        super(HoundifySTT, self).__init__("houndify")
+
+    def execute(self, audio, language=None):
+        self.lang = language or self.lang
+        return self.recognizer.recognize_houndify(audio, self.username,
+                                                  self.password, self.lang)
+
+
+class BingSTT(TokenSTT):
+    def __init__(self, lang="en-us", config=None):
+        super(BingSTT, self).__init__("bing")
+
+    def execute(self, audio, language=None):
+        self.lang = language or self.lang
+        return self.recognizer.recognize_bing(audio, self.token,
+                                              self.lang)
+
+
 class STTFactory(object):
     CLASSES = {
         "mycroft": MycroftSTT,
@@ -146,7 +168,9 @@ class STTFactory(object):
         "wit": WITSTT,
         "ibm": IBMSTT,
         "kaldi": KaldiSTT,
-        "pocketsphinx": PocketSphinxSTT
+        "pocketsphinx": PocketSphinxSTT,
+        "houndify": HoundifySTT,
+        "bing": BingSTT
     }
 
     @staticmethod

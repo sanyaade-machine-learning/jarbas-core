@@ -1,15 +1,23 @@
-Privacy enhanced mycroft
+jarbas - dev fork
 
-# features
+
+
+# STT support
+
+- pocketsphinx default stt
+- es-es language model included
+- en-us language model included
+- houndify stt
+- bing stt
+
+# privacy enhancements
 
 - blacklist pairing skill
 - blacklist configuration skill
 - disable server updates in config
 - do not try to load remote configuration
 - disable pairing check
-- pocketsphinx default stt
-- es-es language model included
-- en-us language model included
+
 
 
 
