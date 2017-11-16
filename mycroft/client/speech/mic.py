@@ -155,7 +155,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
     # Time between pocketsphinx checks for the wake word
     SEC_BETWEEN_WW_CHECKS = 0.2
 
-    def __init__(self, wake_word_recognizer):
+    def __init__(self, wake_word_recognizer, hot_word_engines=None):
 
         self.config = Configuration.get()
         listener_config = self.config.get('listener')
@@ -177,6 +177,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         self.filenames_to_upload = []
         self.mic_level_file = os.path.join(get_ipc_directory(), "mic_level")
         self._stop_signaled = False
+        self.hot_word_engines = hot_word_engines or {}
 
         # The maximum audio in seconds to keep for transcribing a phrase
         # The wake word must fit in this time
@@ -342,7 +343,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         finally:
             self.upload_lock.release()
 
-    def _wait_until_wake_word(self, source, sec_per_buffer):
+    def _wait_until_wake_word(self, source, sec_per_buffer, emitter):
         """Listen continuously on source until a wake word is spoken
 
         Args:
@@ -428,31 +429,89 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                 audio_data = chopped + silence
                 said_wake_word = \
                     self.wake_word_recognizer.found_wake_word(audio_data)
-                # if a wake word is success full then record audio in temp
-                # file.
-                if self.save_wake_words and said_wake_word:
-                    audio = self._create_audio_data(byte_data, source)
+                if said_wake_word:
+                    payload = {
+                        'hotword': self.wake_word_recognizer.key_phrase,
+                        'start_listening': True,
+                        'sound': resolve_resource_file(
+                            self.config.get('sounds').get('start_listening')),
+                        "engine": self.wake_word_recognizer.module
+                    }
+                    emitter.emit("recognizer_loop:hotword", payload)
+                    # If enabled, play a wave file with a short sound
+                    # to audibly indicate recording has begun.
+                    if self.config.get('confirm_listening'):
+                        file = resolve_resource_file(
+                            self.config.get('sounds').get('start_listening'))
+                        if file:
+                            play_wav(file)
+                    # if a wake word is success full then record audio in temp
+                    # file.
+                    if self.save_wake_words:
+                        audio = self._create_audio_data(byte_data, source)
 
-                    if not isdir(self.save_wake_words_dir):
-                        mkdir(self.save_wake_words_dir)
-                    dr = self.save_wake_words_dir
+                        if not isdir(self.save_wake_words_dir):
+                            mkdir(self.save_wake_words_dir)
+                        dr = self.save_wake_words_dir
 
-                    ww_module = self.wake_word_recognizer.__class__.__name__
+                        ww_module = self.wake_word_recognizer.__class__.__name__
 
-                    ww = self.wake_word_name.replace(' ', '-')
-                    md = str(abs(hash(ww_module)))
-                    stamp = str(int(1000 * get_time()))
-                    sid = SessionManager.get().session_id
-                    uid = IdentityManager.get().uuid
+                        ww = self.wake_word_name.replace(' ', '-')
+                        md = str(abs(hash(ww_module)))
+                        stamp = str(int(1000 * get_time()))
+                        sid = SessionManager.get().session_id
+                        uid = IdentityManager.get().uuid
 
-                    fn = join(dr, '.'.join([ww, md, stamp, sid, uid]) + '.wav')
-                    with open(fn, 'wb') as f:
-                        f.write(audio.get_wav_data())
+                        fn = join(dr, '.'.join([ww, md, stamp, sid, uid]) + '.wav')
+                        with open(fn, 'wb') as f:
+                            f.write(audio.get_wav_data())
 
-                    if self.upload_config['enable'] or self.config['opt_in']:
-                        t = Thread(target=self._upload_file, args=(fn,))
-                        t.daemon = True
-                        t.start()
+                        if self.upload_config['enable'] or self.config['opt_in']:
+                            t = Thread(target=self._upload_file, args=(fn,))
+                            t.daemon = True
+                            t.start()
+
+                elif self.check_for_hotwords(audio_data, emitter):
+                    said_wake_word = True
+
+    def check_for_hotwords(self, audio_data, emitter):
+        # check hot word
+        for hotword in self.hot_word_engines:
+            engine, ding, utterance, listen, type = self.hot_word_engines[
+                hotword]
+            found = engine.found_wake_word(audio_data)
+            if found:
+                self.word = hotword
+                LOG.debug("Hot Word: " + hotword)
+                # If enabled, play a wave file with a short sound to audibly
+                # indicate hotword was detected.
+                if ding:
+                    try:
+                        file = resolve_resource_file(ding)
+                        if file:
+                            play_wav(file)
+                    except Exception as e:
+                        print e
+                # Hot Word succeeded
+                payload = {
+                    'hotword': hotword,
+                    'start_listening': listen,
+                    'sound': ding,
+                    "engine": type
+                }
+                emitter.emit("recognizer_loop:hotword", payload)
+                if utterance:
+                    # send the transcribed word on for processing
+                    payload = {
+                        'utterances': [utterance]
+                    }
+                    emitter.emit("recognizer_loop:utterance", payload)
+                    return False
+                if listen:
+                    # start listening
+                    return True
+                return False
+        return False
 
     @staticmethod
     def _create_audio_data(raw_data, source):
@@ -490,20 +549,12 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         self.adjust_for_ambient_noise(source, 1.0)
 
         LOG.debug("Waiting for wake word...")
-        self._wait_until_wake_word(source, sec_per_buffer)
+        self._wait_until_wake_word(source, sec_per_buffer, emitter)
         if self._stop_signaled:
             return
 
         LOG.debug("Recording...")
         emitter.emit("recognizer_loop:record_begin")
-
-        # If enabled, play a wave file with a short sound to audibly
-        # indicate recording has begun.
-        if self.config.get('confirm_listening'):
-            file = resolve_resource_file(
-                self.config.get('sounds').get('start_listening'))
-            if file:
-                play_wav(file)
 
         frame_data = self._record_phrase(source, sec_per_buffer)
         audio_data = self._create_audio_data(frame_data, source)
