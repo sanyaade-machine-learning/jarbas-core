@@ -65,6 +65,15 @@ class BasicSTT(STT):
         self.password = str(self.credential.get("password"))
 
 
+class KeySTT(STT):
+    __metaclass__ = ABCMeta
+
+    def __init__(self):
+        super(KeySTT, self).__init__()
+        self.id = str(self.credential.get("client_id"))
+        self.key = str(self.credential.get("client_key"))
+
+
 class GoogleSTT(TokenSTT):
     def __init__(self):
         super(GoogleSTT, self).__init__()
@@ -141,24 +150,23 @@ class PocketSphinxSTT(BasicSTT):
         return self.recognizer.recognize(audio)
 
 
-class HoundifySTT(BasicSTT):
-    def __init__(self, lang="en-us", config=None):
-        super(HoundifySTT, self).__init__("houndify")
-
-    def execute(self, audio, language=None):
-        self.lang = language or self.lang
-        return self.recognizer.recognize_houndify(audio, self.username,
-                                                  self.password, self.lang)
-
-
 class BingSTT(TokenSTT):
-    def __init__(self, lang="en-us", config=None):
-        super(BingSTT, self).__init__("bing")
+    def __init__(self):
+        super(BingSTT, self).__init__()
 
     def execute(self, audio, language=None):
         self.lang = language or self.lang
         return self.recognizer.recognize_bing(audio, self.token,
                                               self.lang)
+
+
+class HoundifySTT(KeySTT):
+    def __init__(self):
+        super(HoundifySTT, self).__init__()
+
+    def execute(self, audio, language=None):
+        self.lang = language or self.lang
+        return self.recognizer.recognize_houndify(audio, self.id, self.key)
 
 
 class STTFactory(object):
