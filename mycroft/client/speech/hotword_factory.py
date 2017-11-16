@@ -117,7 +117,7 @@ class PreciseHotword(HotWordEngine):
                                    "class precise")
         precise_config = Configuration.get()['precise']
         self.dist_url = precise_config['dist_url']
-        self.models_url = precise_config['modtypeels_url']
+        self.models_url = precise_config['models_url']
         self.exe_name = 'precise-stream'
 
         ww = Configuration.get()['listener']['wake_word']

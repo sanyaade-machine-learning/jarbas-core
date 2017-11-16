@@ -141,8 +141,6 @@ class AudioConsumer(Thread):
         else:
             self.transcribe(audio)
 
-        self.word = self.wakeword_recognizer.key_phrase
-
     def transcribe(self, audio):
         text = None
         try:
