@@ -228,13 +228,13 @@ class RecognizerLoop(EventEmitter):
                     or word == self.wakeword_recognizer.key_phrase \
                     or not data.get("active", True):
                 continue
-            type = data["module"]
+            engine_type = data["module"]
             ding = data.get("sound")
             utterance = data.get("utterance")
             listen = data.get("listen", False)
             engine = HotWordFactory.create_hotword(word, lang=self.lang)
             self.hot_word_engines[word] = [engine, ding, utterance,
-                                           listen, type]
+                                           listen, engine_type]
 
     def create_wake_word_recognizer(self):
         # Create a local recognizer to hear the wakeup word, e.g. 'Hey Mycroft'
