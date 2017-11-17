@@ -471,8 +471,13 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                             t.daemon = True
                             t.start()
 
-                elif self.check_for_hotwords(audio_data, emitter):
-                    said_wake_word = True
+                else:
+                    said_wake_word, said_hot_word = self.check_for_hotwords(
+                        audio_data, emitter)
+                    if said_hot_word:
+                        # reset bytearray to store audio in, else many
+                        # serial detections
+                        byte_data = silence
 
     def check_for_hotwords(self, audio_data, emitter):
         # check hot word
@@ -491,7 +496,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                         if file:
                             play_wav(file)
                     except Exception as e:
-                        print e
+                        LOG.warning(e)
                 # Hot Word succeeded
                 payload = {
                     'hotword': hotword,
@@ -506,12 +511,12 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                         'utterances': [utterance]
                     }
                     emitter.emit("recognizer_loop:utterance", payload)
-                    return False
+                    return False, True
                 if listen:
                     # start listening
-                    return True
-                return False
-        return False
+                    return True, True
+                return False, True
+        return False, False
 
     @staticmethod
     def _create_audio_data(raw_data, source):
