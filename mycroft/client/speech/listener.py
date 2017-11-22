@@ -226,7 +226,7 @@ class RecognizerLoop(EventEmitter):
             data = hot_words[word]
             if word == self.wakeup_recognizer.key_phrase \
                     or word == self.wakeword_recognizer.key_phrase \
-                    or not data.get("active", True):
+                    or not data.get("active", False):
                 continue
             type = data["module"]
             ding = data.get("sound")
