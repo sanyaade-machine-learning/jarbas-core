@@ -478,7 +478,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                     LOG.debug("metrics disabled")
                     # sid = SessionManager.get().session_id
                     # uid = IdentityManager.get().uuid
-                    #fn = join(dr, '.'.join([ww, md, stamp, sid, aid]) + '.wav')fn = join(dr, '.'.join([ww, md, stamp]) + '.wav')
+                    # fn = join(dr, '.'.join([ww, md, stamp, sid, aid]) + '.wav')fn = join(dr, '.'.join([ww, md, stamp]) + '.wav')
                     fn = join(dr, '.'.join([ww, md, stamp]) + '.wav')
                     with open(fn, 'wb') as f:
                         f.write(audio.get_wav_data())

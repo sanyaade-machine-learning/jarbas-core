@@ -35,11 +35,11 @@ class TestSTT(unittest.TestCase):
                  'houndify': {'credential': {'client_id': 'FOO',
                                              "client_key": "BAR"}},
                  'kaldi': {'uri': 'https://test.com'},
-                 'google_cloud': {
-                        'credential': {
-                            'json': {}
-                            }
-                     }
+            'google_cloud': {
+                'credential': {
+                    'json': {}
+                }
+            }
                 },
             'lang': 'en-US'
         }
