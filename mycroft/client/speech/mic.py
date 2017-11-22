@@ -159,7 +159,10 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
 
         self.config = Configuration.get()
         listener_config = self.config.get('listener')
-        self.upload_config = listener_config.get('wake_word_upload')
+        # disable upload
+        LOG.debug("upload config disabled")
+        self.upload_config = {"enable": False}
+        # self.upload_config = listener_config.get('wake_word_upload')
         self.wake_word_name = wake_word_recognizer.key_phrase
 
         speech_recognition.Recognizer.__init__(self)
@@ -170,8 +173,8 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         # check the config for the flag to save wake words.
 
         self.save_utterances = listener_config.get('record_utterances', False)
-        self.save_wake_words = listener_config.get('record_wake_words') \
-            or self.upload_config['enable'] or self.config['opt_in']
+        self.save_wake_words = listener_config.get('record_wake_words')  # \
+        # or self.upload_config['enable'] or self.config['opt_in']
         self.upload_lock = Lock()
         self.save_wake_words_dir = join(gettempdir(), 'mycroft_wake_words')
         self.filenames_to_upload = []
@@ -314,34 +317,37 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         self._stop_signaled = True
 
     def _upload_file(self, filename):
-        server = self.upload_config['server']
-        keyfile = resolve_resource_file('wakeword_rsa')
-        userfile = expanduser('~/.mycroft/wakeword_rsa')
+        # disable upload
+        # server = self.upload_config['server']
+        # keyfile = resolve_resource_file('wakeword_rsa')
+        # userfile = expanduser('~/.mycroft/wakeword_rsa')
 
-        if not isfile(userfile):
-            shutil.copy2(keyfile, userfile)
-            os.chmod(userfile, 0o600)
-            keyfile = userfile
+        # if not isfile(userfile):
+        #    shutil.copy2(keyfile, userfile)
+        #    os.chmod(userfile, 0o600)
+        #    keyfile = userfile
 
-        address = self.upload_config['user'] + '@' + \
-            server + ':' + self.upload_config['folder']
+        # address = self.upload_config['user'] + '@' + \
+        #    server + ':' + self.upload_config['folder']
 
-        self.upload_lock.acquire()
-        try:
-            self.filenames_to_upload.append(filename)
-            for i, fn in enumerate(self.filenames_to_upload):
-                LOG.debug('Uploading ' + fn + '...')
-                os.chmod(fn, 0o666)
-                cmd = 'scp -o StrictHostKeyChecking=no -P ' + \
-                      str(self.upload_config['port']) + ' -i ' + \
-                      keyfile + ' ' + fn + ' ' + address
-                if os.system(cmd) == 0:
-                    del self.filenames_to_upload[i]
-                    os.remove(fn)
-                else:
-                    LOG.debug('Could not upload ' + fn + ' to ' + server)
-        finally:
-            self.upload_lock.release()
+        # self.upload_lock.acquire()
+        # try:
+        #    self.filenames_to_upload.append(filename)
+        #    for i, fn in enumerate(self.filenames_to_upload):
+        #        LOG.debug('Uploading ' + fn + '...')
+        #        os.chmod(fn, 0o666)
+        #        cmd = 'scp -o StrictHostKeyChecking=no -P ' + \
+        #              str(self.upload_config['port']) + ' -i ' + \
+        #              keyfile + ' ' + fn + ' ' + address
+        #        if os.system(cmd) == 0:
+        #            del self.filenames_to_upload[i]
+        #            os.remove(fn)
+        #        else:
+        #            LOG.debug('Could not upload ' + fn + ' to ' + server)
+        # finally:
+        #    self.upload_lock.release()
+        LOG.debug("upload disabled but tried to execute, neutralized")
+        return
 
     def _wait_until_wake_word(self, source, sec_per_buffer, emitter):
         """Listen continuously on source until a wake word is spoken
@@ -456,20 +462,25 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
 
                         ww_module = self.wake_word_recognizer.__class__.__name__
 
-                        ww = self.wake_word_name.replace(' ', '-')
-                        md = str(abs(hash(ww_module)))
-                        stamp = str(int(1000 * get_time()))
-                        sid = SessionManager.get().session_id
-                        uid = IdentityManager.get().uuid
+                    ww = self.wake_word_name.replace(' ', '-')
+                    md = str(abs(hash(ww_module)))
+                    stamp = str(int(1000 * get_time()))
 
-                        fn = join(dr, '.'.join([ww, md, stamp, sid, uid]) + '.wav')
-                        with open(fn, 'wb') as f:
-                            f.write(audio.get_wav_data())
 
-                        if self.upload_config['enable'] or self.config['opt_in']:
-                            t = Thread(target=self._upload_file, args=(fn,))
-                            t.daemon = True
-                            t.start()
+                    # disable metrics
+                    LOG.debug("metrics disabled")
+                    # sid = SessionManager.get().session_id
+                    # uid = IdentityManager.get().uuid
+                    #fn = join(dr, '.'.join([ww, md, stamp, sid, uid]) + '.wav')fn = join(dr, '.'.join([ww, md, stamp]) + '.wav')
+                    with open(fn, 'wb') as f:
+                        f.write(audio.get_wav_data())
+
+                    # disable upload
+                    LOG.debug("upload disabled")
+                    #if self.upload_config['enable'] or self.config['opt_in']:
+                    #    t = Thread(target=self._upload_file, args=(fn,))
+                    #    t.daemon = True
+                    #    t.start()
 
                 else:
                     said_wake_word, said_hot_word = self.check_for_hotwords(
