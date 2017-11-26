@@ -1,6 +1,13 @@
 jarbas - dev fork
 
 
+# wakewords
+
+- multiple wake words
+- optionally play a sound per wake word
+- optionally start listening
+- optionally considered as utterance
+- pocketsphinx support explicit language config for phonemes compatibility
 
 # STT support
 
@@ -24,6 +31,9 @@ jarbas - dev fork
 - privacy compromising options removed from config (server, opt in, ww upload, mycroft stt)
 - secure websocket by default
 
+# dev tools
+
+- include auto_translatable skill class
 
 Mycroft [![Build Status](https://travis-ci.org/MycroftAI/mycroft-core.svg?branch=master)](https://travis-ci.org/MycroftAI/mycroft-core) [![Coverage Status](https://coveralls.io/repos/github/MycroftAI/mycroft-core/badge.svg?branch=dev)](https://coveralls.io/github/MycroftAI/mycroft-core?branch=dev)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)

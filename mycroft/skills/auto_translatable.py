@@ -33,7 +33,7 @@ class AutotranslatableSkill(MycroftSkill):
         # translate utterance for skills that generate speech at
         # runtime, or by request
         message_context = {}
-        utterance_lang = language_detect(utterance)
+        utterance_lang = self.language_detect(utterance)
         if "-" in utterance_lang:
             utterance_lang = utterance_lang.split("-")[0]
         target_lang = self.lang
@@ -112,14 +112,14 @@ class AutotranslatableFallback(FallbackSkill):
                 # auto_Translate input
                 ut = message.data.get("utterance")
                 if ut:
-                    ut_lang = language_detect(ut)
+                    ut_lang = self.language_detect(ut)
                     if "-" in ut_lang:
                         ut_lang = ut_lang.split("-")[0]
                     if "-" in self.input_lang:
                         self.input_lang = self.input_lang.split("-")[0]
                     if self.input_lang != ut_lang:
-                        message.data["utterance"] = translate(ut,
-                                                              self.input_lang)
+                        message.data["utterance"] = self.translate(ut,
+                                                                   self.input_lang)
                 handler(message)
 
             self.instance_fallback_handlers.append(new_handler)
