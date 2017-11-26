@@ -28,7 +28,7 @@ def report_metric(name, data):
         name (str): Name of metric
         data (dict): JSON dictionary to report. Must be valid JSON
     """
-    #if Configuration().get()['opt_in']:
+    # if Configuration().get()['opt_in']:
     #    DeviceApi().report_metric(name, data)
     pass
 

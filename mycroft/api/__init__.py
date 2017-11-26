@@ -189,11 +189,11 @@ class DeviceApi(Api):
         return None
 
     def report_metric(self, name, data):
-        #return self.request({
+        # return self.request({
         #    "method": "POST",
         #    "path": "/" + self.identity.uuid + "/metric/" + name,
         #    "json": data
-        #})
+        # })
         return None
 
     def get(self):
