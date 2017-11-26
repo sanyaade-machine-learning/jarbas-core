@@ -17,6 +17,12 @@ jarbas - dev fork
 - houndify stt
 - bing stt
 
+# TTS support
+
+- bing tts
+- polly tts
+- watson tts
+
 # privacy enhancements
 
 - blacklist pairing skill
