@@ -21,7 +21,6 @@ from tempfile import gettempdir
 from mycroft.tts import TTS, TTSValidator
 from mycroft.configuration import Configuration
 from mycroft.util.log import LOG
-from mycroft.util import play_mp3
 
 
 class PollyTTS(TTS):
@@ -40,14 +39,9 @@ class PollyTTS(TTS):
                           region_name=self.region)
         self.polly = session.client('polly')
 
-    def execute(self, sentence, output="/tmp/polly.mp3"):
-        self.begin_audio()
-        output = self.retrieve_audio(sentence)
-        if output is None:
-            LOG.error("Could not get audio from Polly")
-        else:
-            play_mp3(output)
-        self.end_audio()
+    def get_tts(self, sentence, wav_file):
+        wav_file = self.retrieve_audio(sentence)
+        return (wav_file, None)  # No phonemes
 
     def describe_voices(self, language_code):
         # example 'it-IT' useful to retrieve voices
