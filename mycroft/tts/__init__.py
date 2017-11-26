@@ -294,10 +294,14 @@ class TTSValidator(object):
         self.tts = tts
 
     def validate(self):
+        self.validate_dependencies()
         self.validate_instance()
         self.validate_filename()
         self.validate_lang()
         self.validate_connection()
+
+    def validate_dependencies(self):
+        pass
 
     def validate_instance(self):
         clazz = self.get_tts_class()
@@ -334,6 +338,8 @@ class TTSFactory(object):
     from mycroft.tts.mimic_tts import Mimic
     from mycroft.tts.spdsay_tts import SpdSay
     from mycroft.tts.ibm_tts import WatsonTTS
+    from mycroft.tts.polly_tts import PollyTTS
+
     CLASSES = {
         "mimic": Mimic,
         "google": GoogleTTS,
@@ -341,6 +347,7 @@ class TTSFactory(object):
         "fatts": FATTS,
         "espeak": ESpeak,
         "spdsay": SpdSay,
+        "polly": PollyTTS,
         "watson": WatsonTTS
     }
 
