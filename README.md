@@ -41,6 +41,7 @@ unlisted once merged
 
 # dev tools
 
+- [messagebus api](https://github.com/MycroftAI/mycroft-core/pull/1013)
 - include [auto_translatable skill class](https://github.com/JarbasAl/auto_translatable_skills)
 - util to [get phonemes](https://github.com/MycroftAI/mycroft-core/pull/1174)
 
