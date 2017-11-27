@@ -35,7 +35,6 @@ RECOGNIZER_DIR = join(abspath(dirname(__file__)), "recognizer")
 class HotWordEngine(object):
     def __init__(self, key_phrase="hey mycroft", config=None, lang="en-us"):
         self.lang = str(lang).lower()
-
         self.key_phrase = str(key_phrase).lower()
         # rough estimate 1 phoneme per 2 chars
         self.num_phonemes = len(key_phrase) / 2 + 1
@@ -45,6 +44,7 @@ class HotWordEngine(object):
         self.config = config
         self.listener_config = Configuration.get().get("listener", {})
         self.module = self.config.get("module")
+        self.lang = self.config.get("lang", self.lang)
 
     def found_wake_word(self, frame_data):
         return False
@@ -64,7 +64,6 @@ class PocketsphinxHotWord(HotWordEngine):
                 str(self.module) + " module does not match with "
                               "Hotword class pocketsphinx")
         # Hotword module params
-        self.lang = self.config.get("lang", self.lang)
         self.phonemes = self.config.get("phonemes", "HH EY . M AY K R AO F T")
         self.num_phonemes = len(self.phonemes.split())
         self.threshold = self.config.get("threshold", 1e-90)
