@@ -24,6 +24,7 @@ unlisted once merged
 - [bing tts](https://github.com/MycroftAI/mycroft-core/pull/1260)
 - [polly tts](https://github.com/MycroftAI/mycroft-core/pull/1262)
 - [watson tts](https://github.com/MycroftAI/mycroft-core/pull/1261)
+- beep speak tts (r2d2 sounds)
 
 # privacy enhancements
 
