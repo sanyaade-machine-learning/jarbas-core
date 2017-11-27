@@ -9,7 +9,7 @@ unlisted once merged
 - optionally play a sound per wake word
 - optionally start listening
 - optionally considered as utterance
-- pocketsphinx support explicit language config for phonemes compatibility
+- allow explicit [language selection](https://github.com/MycroftAI/mycroft-core/pull/1264)
 
 # STT support
 
