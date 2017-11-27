@@ -59,8 +59,10 @@ class BusResponder():
         for message_type in trigger_messages:
             self.listen(message_type)
 
-    def listen(self, message_type):
-        self.emitter.on(message_type, self._respond)
+    def listen(self, message_type, callback=None):
+        if callback is None:
+            callback = self._respond
+        self.emitter.on(message_type, callback)
 
     def update_response(self, data=None, context=None):
         if data is not None:
