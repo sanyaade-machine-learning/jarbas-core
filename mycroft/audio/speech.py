@@ -28,6 +28,17 @@ tts_hash = None
 lock = Lock()
 
 _last_stop_signal = 0
+speak_flag = True
+
+
+def set_speak_flag(event):
+    global speak_flag
+    speak_flag = True
+
+
+def unset_speak_flag(event):
+    global speak_flag
+    speak_flag = False
 
 
 def _start_listener(message):
@@ -87,7 +98,9 @@ def mute_and_speak(utterance):
             utterance: The sentence to be spoken
     """
     global tts_hash
-
+    LOG.info("Speak: " + utterance)
+    if not speak_flag:
+        return
     lock.acquire()
     # update TTS object if configuration has changed
     if tts_hash != hash(str(config.get('tts', ''))):
@@ -100,7 +113,6 @@ def mute_and_speak(utterance):
         tts.init(ws)
         tts_hash = hash(str(config.get('tts', '')))
 
-    LOG.info("Speak: " + utterance)
     try:
         tts.execute(utterance)
     finally:
@@ -135,7 +147,8 @@ def init(websocket):
     ws.on('mycroft.audio.speech.stop', handle_stop)
     ws.on('speak', handle_speak)
     ws.on('mycroft.mic.listen', _start_listener)
-
+    ws.on('speak.enable', set_speak_flag)
+    ws.on('speak.disable', unset_speak_flag)
     tts = TTSFactory.create()
     tts.init(ws)
     tts_hash = config.get('tts')
