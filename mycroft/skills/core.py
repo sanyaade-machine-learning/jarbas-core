@@ -840,7 +840,6 @@ class FallbackSkill(MycroftSkill):
             # try fallbacks in ordered list
             for folder in cls.order:
                 for f in cls.folders.keys():
-                    LOG.info(folder + " " + f)
                     if folder == f:
                         if f in missing_folders:
                             missing_folders.remove(f)
