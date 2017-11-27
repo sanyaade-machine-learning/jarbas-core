@@ -5,7 +5,7 @@ unlisted once merged
 
 # wakewords
 
-- multiple wake words
+- [multiple wake words](https://github.com/MycroftAI/mycroft-core/pull/1233)
 - optionally play a sound per wake word
 - optionally start listening
 - optionally considered as utterance
@@ -13,17 +13,17 @@ unlisted once merged
 
 # STT support
 
-- pocketsphinx default stt
+- [pocketsphinx](https://github.com/MycroftAI/mycroft-core/pull/1184) default stt
 - pocketsphinx es-es language model included
 - pocketsphinx en-us language model included
-- houndify stt
-- bing stt
+- [houndify stt](https://github.com/MycroftAI/mycroft-core/pull/1229)
+- [bing stt](https://github.com/MycroftAI/mycroft-core/pull/1229)
 
 # TTS support
 
-- bing tts
-- polly tts
-- watson tts
+- [bing tts](https://github.com/MycroftAI/mycroft-core/pull/1260)
+- [polly tts](https://github.com/MycroftAI/mycroft-core/pull/1262)
+- [watson tts](https://github.com/MycroftAI/mycroft-core/pull/1261)
 
 # privacy enhancements
 
@@ -37,16 +37,17 @@ unlisted once merged
 - disable identity manager
 - disable mycroft ai remote skill settings
 - privacy compromising options removed from config (server, opt in, ww upload, mycroft stt)
-- secure websocket by default
+- [secure websocket](https://github.com/MycroftAI/mycroft-core/pull/1148) by default
 
 # dev tools
 
-- include auto_translatable skill class
+- include [auto_translatable skill class](https://github.com/JarbasAl/auto_translatable_skills)
 
 # internals
 
-- fallback order override option in config
-- enable/disable/status TTS signal
+- [centralized api](https://github.com/MycroftAI/mycroft-core/pull/1061/files) section in config
+- [fallback order override](https://github.com/MycroftAI/mycroft-core/pull/987) option in config
+- [enable/disable/status TTS](https://github.com/MycroftAI/mycroft-core/pull/556) signal
 
 Mycroft [![Build Status](https://travis-ci.org/MycroftAI/mycroft-core.svg?branch=master)](https://travis-ci.org/MycroftAI/mycroft-core) [![Coverage Status](https://coveralls.io/repos/github/MycroftAI/mycroft-core/badge.svg?branch=dev)](https://coveralls.io/github/MycroftAI/mycroft-core?branch=dev)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)

@@ -239,6 +239,8 @@ class MycroftSkill(object):
         self.reload_skill = True
         self.events = []
         self.skill_id = 0
+        self.APIS_config = self.config_core.get("APIS", {})
+        self.API = self.APIS_config.get(self.name)
 
     @property
     def location(self):
