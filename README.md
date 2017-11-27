@@ -1,5 +1,7 @@
 jarbas - dev fork
 
+these changes are being made into PRs for mycroft-core and will be
+unlisted once merged
 
 # wakewords
 
