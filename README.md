@@ -48,6 +48,7 @@ unlisted once merged
 - [centralized api](https://github.com/MycroftAI/mycroft-core/pull/1061/files) section in config
 - [fallback order override](https://github.com/MycroftAI/mycroft-core/pull/987) option in config
 - [enable/disable/status TTS](https://github.com/MycroftAI/mycroft-core/pull/556) signal
+- [enable/disable intent signal](https://github.com/MycroftAI/mycroft-core/pull/860)
 
 Mycroft [![Build Status](https://travis-ci.org/MycroftAI/mycroft-core.svg?branch=master)](https://travis-ci.org/MycroftAI/mycroft-core) [![Coverage Status](https://coveralls.io/repos/github/MycroftAI/mycroft-core/badge.svg?branch=dev)](https://coveralls.io/github/MycroftAI/mycroft-core?branch=dev)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
