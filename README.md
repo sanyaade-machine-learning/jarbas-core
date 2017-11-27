@@ -42,6 +42,7 @@ unlisted once merged
 # dev tools
 
 - include [auto_translatable skill class](https://github.com/JarbasAl/auto_translatable_skills)
+- util to [get phonemes](https://github.com/MycroftAI/mycroft-core/pull/1174)
 
 # internals
 

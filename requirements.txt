@@ -34,3 +34,6 @@ padatious==0.3.7
 #auto translatable skills
 mtranslate
 langdetect
+
+#tools
+pronouncing==0.1.5
