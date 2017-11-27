@@ -20,7 +20,7 @@ from mycroft.configuration import Configuration
 from mycroft.tts import TTSFactory
 from mycroft.util import create_signal, check_for_signal
 from mycroft.util.log import LOG
-
+from mycroft.messagebus.message import Message
 ws = None  # TODO:18.02 - Rename to "messagebus"
 config = None
 tts = None
@@ -34,11 +34,19 @@ speak_flag = True
 def set_speak_flag(event):
     global speak_flag
     speak_flag = True
+    speak_status(event)
 
 
 def unset_speak_flag(event):
     global speak_flag
     speak_flag = False
+    speak_status(event)
+
+
+def speak_status(event):
+    global speak_flag, ws
+    data = {"enabled": speak_flag}
+    ws.emit(Message("speak.status", data))
 
 
 def _start_listener(message):
@@ -145,10 +153,11 @@ def init(websocket):
     config = Configuration.get()
     ws.on('mycroft.stop', handle_stop)
     ws.on('mycroft.audio.speech.stop', handle_stop)
-    ws.on('speak', handle_speak)
     ws.on('mycroft.mic.listen', _start_listener)
+    ws.on('speak', handle_speak)
     ws.on('speak.enable', set_speak_flag)
     ws.on('speak.disable', unset_speak_flag)
+    ws.on('speak.status.request', speak_status)
     tts = TTSFactory.create()
     tts.init(ws)
     tts_hash = config.get('tts')
