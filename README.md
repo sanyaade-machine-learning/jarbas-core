@@ -47,6 +47,8 @@ unlisted once merged
 
 # internals
 
+- [speak message metadata](https://github.com/MycroftAI/mycroft-core/pull/1069), mute, more_speech and context options
+- message context and [source/destinatary tracking](https://github.com/MycroftAI/mycroft-core/pull/796/)
 - [centralized api](https://github.com/MycroftAI/mycroft-core/pull/1061/files) section in config
 - [fallback order override](https://github.com/MycroftAI/mycroft-core/pull/987) option in config
 - [enable/disable/status TTS](https://github.com/MycroftAI/mycroft-core/pull/556) signal

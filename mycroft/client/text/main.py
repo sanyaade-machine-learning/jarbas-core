@@ -23,25 +23,25 @@ sys.stdout = StringIO()  # capture any output
 sys.stderr = StringIO()  # capture any output
 
 # All of the nopep8 comments below are to avoid E402 errors
-import os                                                   # nopep8
-import os.path                                              # nopep8
-import time                                                 # nopep8
-import curses                                               # nopep8
-import curses.ascii                                         # nopep8
-import textwrap                                             # nopep8
-import json                                                 # nopep8
+import os  # nopep8
+import os.path  # nopep8
+import time  # nopep8
+import curses  # nopep8
+import curses.ascii  # nopep8
+import textwrap  # nopep8
+import json  # nopep8
 import mycroft.version  # nopep8
-from threading import Thread, Lock                          # nopep8
-from mycroft.messagebus.client.ws import WebsocketClient    # nopep8
-from mycroft.messagebus.message import Message              # nopep8
-from mycroft.util import get_ipc_directory                  # nopep8
+from threading import Thread, Lock  # nopep8
+from mycroft.messagebus.client.ws import WebsocketClient  # nopep8
+from mycroft.messagebus.message import Message  # nopep8
+from mycroft.util import get_ipc_directory  # nopep8
 from mycroft.util.log import LOG  # nopep8
 
 ws = None
 mutex = Lock()
 
 utterances = []
-chat = []   # chat history, oldest at the lowest index
+chat = []  # chat history, oldest at the lowest index
 line = ""
 bSimple = '--simple' in sys.argv
 scr = None
@@ -59,14 +59,13 @@ find_str = None
 cy_chat_area = 7  # default chat history height (in lines)
 size_log_area = 0  # max number of visible log lines, calculated during draw
 
-
 # Values used to display the audio meter
 show_meter = True
 meter_peak = 20
 meter_cur = -1
 meter_thresh = -1
 
-screen_mode = 0   # 0 = main, 1 = help, others in future?
+screen_mode = 0  # 0 = main, 1 = help, others in future?
 FULL_REDRAW_FREQUENCY = 10  # seconds between full redraws
 last_full_redraw = time.time() - FULL_REDRAW_FREQUENCY  # last full-redraw time
 screen_lock = Lock()
@@ -248,7 +247,7 @@ def add_log_message(message):
     global mergedLog
     global log_line_offset
 
-    message = "@" + message       # the first byte is a code
+    message = "@" + message  # the first byte is a code
     filteredLog.append(message)
     mergedLog.append(message)
 
@@ -307,6 +306,7 @@ def handle_message(msg):
     # TODO: Think this thru a little bit -- remove this logging within core?
     # add_log_message(msg)
     pass
+
 
 ##############################################################################
 # Screen handling
@@ -392,7 +392,7 @@ def _do_meter(height):
         int((float(meter_thresh) / scale) * height), 0, height - 1)
     clr = curses.color_pair(4)  # dark yellow
 
-    str_level = "{0:3} ".format(int(meter_cur))   # e.g. '  4'
+    str_level = "{0:3} ".format(int(meter_cur))  # e.g. '  4'
     str_thresh = "{0:4.2f}".format(meter_thresh)  # e.g. '3.24'
     meter_width = len(str_level) + len(str_thresh) + 4
     for i in range(0, height):
@@ -421,10 +421,11 @@ def _do_meter(height):
         # draw an asterisk if the audio energy is at this level
         if i <= h_cur:
             if meter_cur > meter_thresh:
-                clr_bar = curses.color_pair(3)   # dark green for loud
+                clr_bar = curses.color_pair(3)  # dark green for loud
             else:
-                clr_bar = curses.color_pair(5)   # dark blue for 'silent'
-            scr.addstr(curses.LINES - 1 - i, curses.COLS - len(str_thresh) - 4,
+                clr_bar = curses.color_pair(5)  # dark blue for 'silent'
+            scr.addstr(curses.LINES - 1 - i,
+                       curses.COLS - len(str_thresh) - 4,
                        "*", clr_bar)
 
 
@@ -503,7 +504,7 @@ def _do_drawing(scr):
         if len(log) > 25 and log[5] == '-' and log[8] == '-':
             log = log[27:]  # skip logid & date/time at the front of log line
         else:
-            log = log[1:]   # just skip the logid
+            log = log[1:]  # just skip the logid
 
         # Categorize log line
         if " - DEBUG - " in log:
@@ -525,9 +526,9 @@ def _do_drawing(scr):
                 start = 0
             end = start + (curses.COLS - 4)
             if start == 0:
-                log = log[start:end] + "~~~~"   # start....
+                log = log[start:end] + "~~~~"  # start....
             elif end >= len_line - 1:
-                log = "~~~~" + log[start:end]   # ....end
+                log = "~~~~" + log[start:end]  # ....end
             else:
                 log = "~~" + log[start:end] + "~~"  # ..middle..
         if len_line > longest_visible_line:
@@ -623,30 +624,30 @@ def show_help():
 
     screen_mode = 1  # showing help (prevents overwrite by log updates)
     scr.erase()
-    scr.addstr(0, 0,  center(25) + "Mycroft Command Line Help",
+    scr.addstr(0, 0, center(25) + "Mycroft Command Line Help",
                CLR_CMDLINE)
-    scr.addstr(1, 0,  "=" * (curses.COLS - 1),
+    scr.addstr(1, 0, "=" * (curses.COLS - 1),
                CLR_CMDLINE)
-    scr.addstr(2, 0,  "Up / Down         scroll thru query history")
-    scr.addstr(3, 0,  "PgUp / PgDn       scroll thru log history")
-    scr.addstr(4, 0,  "Left / Right      scroll long log lines left/right")
-    scr.addstr(5, 0,  "Home              scroll to start of long log lines")
-    scr.addstr(6, 0,  "End               scroll to end of long log lines")
+    scr.addstr(2, 0, "Up / Down         scroll thru query history")
+    scr.addstr(3, 0, "PgUp / PgDn       scroll thru log history")
+    scr.addstr(4, 0, "Left / Right      scroll long log lines left/right")
+    scr.addstr(5, 0, "Home              scroll to start of long log lines")
+    scr.addstr(6, 0, "End               scroll to end of long log lines")
 
-    scr.addstr(10, 0,  "Commands (type ':' to enter command mode)",
+    scr.addstr(10, 0, "Commands (type ':' to enter command mode)",
                CLR_CMDLINE)
-    scr.addstr(11, 0,  "=" * (curses.COLS - 1),
+    scr.addstr(11, 0, "=" * (curses.COLS - 1),
                CLR_CMDLINE)
-    scr.addstr(12, 0,  ":help                   this screen")
-    scr.addstr(13, 0,  ":quit or :exit          exit the program")
-    scr.addstr(14, 0,  ":meter (show|hide)      display of microphone level")
-    scr.addstr(15, 0,  ":filter [remove] 'str'  adds or removes a log filter")
-    scr.addstr(16, 0,  ":filter (clear|reset)   reset filters")
-    scr.addstr(17, 0,  ":filter (show|list)     display current filters")
-    scr.addstr(18, 0,  ":history (# lines)      set number of history lines")
-    scr.addstr(19, 0,  ":find 'str'             show logs containing 'str'")
+    scr.addstr(12, 0, ":help                   this screen")
+    scr.addstr(13, 0, ":quit or :exit          exit the program")
+    scr.addstr(14, 0, ":meter (show|hide)      display of microphone level")
+    scr.addstr(15, 0, ":filter [remove] 'str'  adds or removes a log filter")
+    scr.addstr(16, 0, ":filter (clear|reset)   reset filters")
+    scr.addstr(17, 0, ":filter (show|list)     display current filters")
+    scr.addstr(18, 0, ":history (# lines)      set number of history lines")
+    scr.addstr(19, 0, ":find 'str'             show logs containing 'str'")
 
-    scr.addstr(curses.LINES - 1, 0,  center(23) + "Press any key to return",
+    scr.addstr(curses.LINES - 1, 0, center(23) + "Press any key to return",
                CLR_HEADING)
 
     scr.refresh()
@@ -800,7 +801,9 @@ def gui_main(stdscr):
                     chat.append(line)
                     ws.emit(Message("recognizer_loop:utterance",
                                     {'utterances': [line.strip()],
-                                     'lang': 'en-us'}))
+                                     'lang': 'en-us'},
+                                    {"source": "cli",
+                                     'destinatary': 'skills'}))
                 hist_idx = -1
                 line = ""
             elif c == curses.KEY_UP:
@@ -860,10 +863,10 @@ def gui_main(stdscr):
                 # Accept typed character in the utterance
                 line += chr(c)
 
-            # DEBUG: Uncomment the following code to see what key codes
-            #        are generated when an unknown key is pressed.
-            # else:
-            #    line += str(c)
+                # DEBUG: Uncomment the following code to see what key codes
+                #        are generated when an unknown key is pressed.
+                # else:
+                #    line += str(c)
 
     except KeyboardInterrupt, e:
         # User hit Ctrl+C to quit
@@ -892,7 +895,8 @@ def simple_cli():
             line = sys.stdin.readline()
             ws.emit(
                 Message("recognizer_loop:utterance",
-                        {'utterances': [line.strip()]}))
+                        {'utterances': [line.strip()]},
+                        {"source": "cli", 'destinatary': 'skills'}))
     except KeyboardInterrupt, e:
         # User hit Ctrl+C to quit
         print("")

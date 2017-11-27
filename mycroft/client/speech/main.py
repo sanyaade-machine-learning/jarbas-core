@@ -53,7 +53,8 @@ def handle_wakeword(event):
 
 def handle_utterance(event):
     LOG.info("Utterance: " + str(event['utterances']))
-    ws.emit(Message('recognizer_loop:utterance', event))
+    ws.emit(Message('recognizer_loop:utterance', event,
+                    {"source": "speech", 'destinatary': 'skills'}))
 
 
 def handle_speak(event):

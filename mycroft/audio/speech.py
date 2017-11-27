@@ -72,6 +72,7 @@ def handle_speak(event):
         # When expect_response is requested, the listener will be restarted
         # at the end of the next bit of spoken audio.
         ws.once('recognizer_loop:audio_output_end', _start_listener)
+    mute = event.data.get('mute', False)
 
     # This is a bit of a hack for Picroft.  The analog audio on a Pi blocks
     # for 30 seconds fairly often, so we don't want to break on periods
@@ -95,10 +96,10 @@ def handle_speak(event):
             if _last_stop_signal > start or check_for_signal('buttonPress'):
                 break
     else:
-        mute_and_speak(utterance)
+        mute_and_speak(utterance, mute)
 
 
-def mute_and_speak(utterance):
+def mute_and_speak(utterance, mute=False):
     """
         Mute mic and start speaking the utterance using selected tts backend.
 
@@ -122,7 +123,8 @@ def mute_and_speak(utterance):
         tts_hash = hash(str(config.get('tts', '')))
 
     try:
-        tts.execute(utterance)
+        if not mute:
+            tts.execute(utterance)
     finally:
         lock.release()
 
