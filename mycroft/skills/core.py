@@ -903,11 +903,12 @@ class FallbackSkill(MycroftSkill):
             LOG.info("Fallback order " + str(cls.order))
             missing_folders = cls.folders.keys()
             LOG.info("Fallbacks " + str(missing_folders))
-
             # try fallbacks in ordered list
             for folder in cls.order:
+                print folder
                 for f in cls.folders.keys():
                     if folder == f:
+                        print f
                         if f in missing_folders:
                             missing_folders.remove(f)
                         LOG.info("Trying ordered fallback: " + folder)
@@ -1037,7 +1038,8 @@ class FallbackSkill(MycroftSkill):
                 handler_to_del: reference to handler
         """
         success = False
-        for priority, handler, context_update_handler in cls.fallback_handlers.items():
+        for priority, (handler, context_update_handler) in \
+                cls.fallback_handlers.items():
             if handler == handler_to_del:
                 del cls.fallback_handlers[priority]
                 success = True
