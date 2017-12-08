@@ -61,6 +61,7 @@ unlisted once merged
 
 * [My website](jarbasai.github.io)
 * [Patreon](https://www.patreon.com/jarbasAI)
+* [Paypal](https://paypal.me/jarbasAI)
 * [My old github](https://github.com/JarbasAI)
 * [Twitter](twitter.com/JarbasAi)
 
@@ -74,3 +75,4 @@ unlisted once merged
 * [Mycroft Chat](https://chat.mycroft.ai)
 * [Mycroft Forum](https://community.mycroft.ai)
 * [Mycroft Blog](https://mycroft.ai/blog)
+
