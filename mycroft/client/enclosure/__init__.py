@@ -216,7 +216,7 @@ class EnclosureWriter(Thread):
         self.alive = False
 
 
-class Enclosure(object):
+class Mark1Enclosure(object):
     """
     Serves as a communication interface between Arduino and Mycroft Core.
 
@@ -293,11 +293,11 @@ class Enclosure(object):
             # One last check to see if connection was established
             return
 
-        if time.time() - Enclosure._last_internet_notification < 30:
+        if time.time() - Mark1Enclosure._last_internet_notification < 30:
             # don't bother the user with multiple notifications with 30 secs
             return
 
-        Enclosure._last_internet_notification = time.time()
+        Mark1Enclosure._last_internet_notification = time.time()
 
         # TODO: This should go into EnclosureMark1 subclass of Enclosure.
         if has_been_paired():
@@ -440,7 +440,7 @@ class Enclosure(object):
         if needs_reboot:
             LOG.info("Hack reboot...")
             self.reader.process("unit.reboot")
-            ws.emit(Message("enclosure.eyes.spin"))
-            ws.emit(Message("enclosure.mouth.reset"))
+            self.ws.emit(Message("enclosure.eyes.spin"))
+            self.ws.emit(Message("enclosure.mouth.reset"))
         # END HACK
         # TODO: Remove this hack ASAP

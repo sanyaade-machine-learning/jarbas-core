@@ -14,11 +14,11 @@
 #
 import sys
 
-from mycroft.client.enclosure import Enclosure
+from mycroft.client.enclosure import Mark1Enclosure
 
 
 def main():
-    enclosure = Enclosure()
+    enclosure = Mark1Enclosure()
     try:
         enclosure.run()
     except Exception as e:

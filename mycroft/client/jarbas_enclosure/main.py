@@ -3,7 +3,6 @@ import cv2, imutils
 import random
 import time
 from os.path import dirname, join, exists
-from mycroft.audio import is_speaking
 
 __author__ = "jarbas"
 
@@ -11,14 +10,10 @@ __author__ = "jarbas"
 class JarbasEnclosure(Enclosure):
     def __init__(self, ws=None, name="Jarbas"):
         Enclosure.__init__(self, ws, name)
-
-        self.ws.on("mycroft.awoken", self.handle_awake)
-        self.ws.on("recognizer_loop:sleep", self.handle_sleep)
-        self.ws.on("speak", self.handle_speak)
-
         self.fullscreen = False
         self.width = 700
         self.height = 800
+        self.default_spf = 200 #miliseconds per frame
         self.frames_dir = join(dirname(__file__), "frames")
         # load default frames
         self.blank_frame = self.load(join(self.frames_dir, "blank.png"))
@@ -49,17 +44,14 @@ class JarbasEnclosure(Enclosure):
         self.frames = []
 
     # animations
-    def mouth_moving(self, seconds=3.0):
-        timestep = 0.3
+    def mouth_shift(self):
+        timestep = self.default_spf/3
         animation = [self.face, self.mouth1, self.mouth2,
                      self.mouth3, self.mouth4]
-        start = time.time()
-        while time.time() - start < seconds:
-            self.frames.append((timestep, random.choice(animation)))
-            time.sleep(timestep)
+        self.frames.append((timestep, random.choice(animation)))
 
     def wake_up(self):
-        timestep = 0.3
+        timestep = self.default_spf
         animation = [self.dead, self.closed_eyes, self.middle_blink,
                      self.face]
         self.current_frame = self.draw_custom(self.face)
@@ -67,7 +59,7 @@ class JarbasEnclosure(Enclosure):
             self.frames.append((timestep, frame))
 
     def go_to_sleep(self):
-        timestep = 0.3
+        timestep = self.default_spf
         animation = [self.face, self.middle_blink, self.closed_eyes,
                      self.dead]
         self.current_frame = self.draw_custom(self.dead)
@@ -75,67 +67,67 @@ class JarbasEnclosure(Enclosure):
             self.frames.append((timestep, frame))
 
     def look_left_down(self):
-        timestep = 0.3
+        timestep = self.default_spf
         self.current_frame = self.draw_custom(self.down_left)
         self.frames.append((timestep, self.down_left))
 
     def look_right_down(self):
-        timestep = 0.3
+        timestep = self.default_spf
         self.current_frame = self.draw_custom(self.down_right)
         self.frames.append((timestep, self.down_right))
 
     def look_left_up(self):
-        timestep = 0.3
+        timestep = self.default_spf
         self.current_frame = self.draw_custom(self.up_left)
         self.frames.append((timestep, self.up_left))
 
     def look_right_up(self):
-        timestep = 0.3
+        timestep = self.default_spf
         self.current_frame = self.draw_custom(self.up_right)
         self.frames.append((timestep, self.up_right))
 
     def look_up(self):
-        timestep = 0.3
+        timestep = self.default_spf
         self.current_frame = self.draw_custom(self.up)
         self.frames.append((timestep, self.up))
 
     def look_down(self):
-        timestep = 0.3
+        timestep = self.default_spf
         self.current_frame = self.draw_custom(self.down)
         self.frames.append((timestep, self.down))
 
     def look_left(self):
-        timestep = 0.3
+        timestep = self.default_spf
         self.current_frame = self.draw_custom(self.left)
         self.frames.append((timestep, self.left))
 
     def look_right(self):
-        timestep = 0.3
+        timestep = self.default_spf
         self.current_frame = self.draw_custom(self.right)
         self.frames.append((timestep, self.right))
 
     def blink(self):
-        timestep = 0.3
+        timestep = self.default_spf
         animation = [self.face, self.middle_blink, self.closed_eyes,
                      self.middle_blink, self.face]
         for frame in animation:
             self.frames.append((timestep, frame))
 
     def cross_eyes(self):
-        timestep = 0.3
+        timestep = self.default_spf
         animation = [self.face, self.eyes_crossed, self.face]
         for frame in animation:
             self.frames.append((timestep, frame))
 
     def roll_eyes(self):
-        timestep = 0.3
+        timestep = self.default_spf
         animation = [self.up_right, self.right, self.down_right, self.down,
                      self.down_left, self.left, self.up_left, self.up]
         for frame in animation:
             self.frames.append((timestep, frame))
 
     def alarm(self):
-        timestep = 0.8
+        timestep = self.default_spf * 2
         animation = [self.face, self.alarm]
         for frame in animation:
             self.frames.append((timestep, frame))
@@ -188,15 +180,35 @@ class JarbasEnclosure(Enclosure):
         pic = cv2.imread(path, -1)
         return imutils.resize(pic, self.width, self.height)
 
-    def show(self, pic, time=1):
+    def show(self, pic, time=1.0):
+        if time < 1:
+            time = 1
         pic = imutils.resize(pic, self.width, self.height)
         cv2.imshow("jarbas", pic)
-        cv2.waitKey(time)
+        cv2.waitKey(int(time))
 
     # listeners
+    def record_begin(self, message):
+        ''' listening started '''
+        pass
+
+    def record_end(self, message):
+        ''' listening ended '''
+        pass
+
+    def talk_start(self, message):
+        ''' speaking started '''
+        self.speaking = True
+        while self.speaking:
+            self.mouth_shift()
+            time.sleep(self.default_spf)
+
+    def talk_stop(self, message):
+        ''' speaking ended '''
+        self.speaking = False
+
     def handle_speak(self, message):
-        while is_speaking():
-            self.mouth_moving(0.5)
+        pass
 
     def handle_sleep(self, message):
         ''' go to sleep animation '''
@@ -345,7 +357,7 @@ class JarbasEnclosure(Enclosure):
 
     def mouth_talk(self, message):
         """Show a generic 'talking' animation for non-synched speech"""
-        self.mouth_moving()
+        self.mouth_shift()
 
     def mouth_think(self, message):
         """Show a 'thinking' image or animation"""

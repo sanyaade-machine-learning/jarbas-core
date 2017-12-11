@@ -3,7 +3,7 @@ from threading import Thread
 from mycroft.util.log import LOG
 
 
-class Enclosure():
+class Enclosure(object):
     """
     This base class is intended to be used to interface with the hardware
     that is running Mycroft.  It exposes all possible commands which
@@ -54,6 +54,42 @@ class Enclosure():
                    self.activate_mouth_events)
         self.ws.on("enclosure.mouth.events.deactivate",
                    self.deactivate_mouth_events)
+        self.ws.on("mycroft.awoken", self.handle_awake)
+        self.ws.on("recognizer_loop:sleep", self.handle_sleep)
+        self.ws.on("speak", self.handle_speak)
+        self.ws.on('recognizer_loop:record_begin', self.record_begin)
+        self.ws.on('recognizer_loop:record_end', self.record_end)
+        self.ws.on('recognizer_loop:audio_output_start', self.talk_start)
+        self.ws.on('recognizer_loop:audio_output_end', self.talk_stop)
+
+    def record_begin(self, message):
+        ''' listening started '''
+        pass
+
+    def record_end(self, message):
+        ''' listening ended '''
+        pass
+
+    def talk_start(self, message):
+        ''' speaking started '''
+        pass
+
+    def talk_stop(self, message):
+        ''' speaking ended '''
+        pass
+
+    def handle_awake(self, message):
+        ''' handle wakeup animation '''
+        pass
+
+    def handle_sleep(self, message):
+        ''' handle naptime animation '''
+        pass
+
+    def handle_speak(self, message):
+        ''' handle speak messages, intended for enclosures that disregard
+        visemes '''
+        pass
 
     def connect(self):
         # Once the websocket has connected, just watch it for speak events
