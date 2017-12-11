@@ -142,7 +142,7 @@ class JarbasEnclosure(Enclosure):
         base[y:y + h, x:x + w] = pic[y:y + h, x:x + w]
         return base
 
-    def draw_loop(self):
+    def run(self):
         while True:
             if len(self.frames):
                 # finish showing queued frames
@@ -434,7 +434,3 @@ class JarbasEnclosure(Enclosure):
     def deactivate_mouth_events(self, message):
         """Disable movement of the mouth with speech"""
         pass
-
-if __name__ == "__main__":
-    e = JarbasEnclosure()
-    e.draw_loop()

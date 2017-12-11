@@ -1,6 +1,7 @@
 from mycroft.messagebus.client.ws import WebsocketClient
 from threading import Thread
 from mycroft.util.log import LOG
+import time
 
 
 class Enclosure(object):
@@ -61,6 +62,11 @@ class Enclosure(object):
         self.ws.on('recognizer_loop:record_end', self.record_end)
         self.ws.on('recognizer_loop:audio_output_start', self.talk_start)
         self.ws.on('recognizer_loop:audio_output_end', self.talk_stop)
+
+    def run(self):
+        ''' start enclosure '''
+        while True:
+            time.sleep(1)
 
     def record_begin(self, message):
         ''' listening started '''
