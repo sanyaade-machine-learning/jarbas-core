@@ -463,11 +463,11 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
 
                         ww_module = self.wake_word_recognizer.__class__.__name__
 
-                    ww = self.wake_word_name.replace(' ', '-')
-                    md = md5(ww_module).hexdigest()
-                    stamp = str(int(1000 * get_time()))
-                    sid = SessionManager.get().session_id
-                    aid = self.account_id
+                        ww = self.wake_word_name.replace(' ', '-')
+                        md = md5(ww_module).hexdigest()
+                        stamp = str(int(1000 * get_time()))
+                        sid = SessionManager.get().session_id
+                        aid = self.account_id
 
                         fn = join(dr, '.'.join([ww, md, stamp, sid, aid]) + '.wav')
                         with open(fn, 'wb') as f:
