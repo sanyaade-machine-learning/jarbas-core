@@ -19,12 +19,9 @@ from threading import Thread, Timer
 import serial
 import mycroft.dialog
 from mycroft.api import has_been_paired
-from mycroft.client.enclosure.arduino import EnclosureArduino
+
 from mycroft.client.enclosure.display_manager import \
     initiate_display_manager_ws
-from mycroft.client.enclosure.eyes import EnclosureEyes
-from mycroft.client.enclosure.mouth import EnclosureMouth
-from mycroft.client.enclosure.weather import EnclosureWeather
 from mycroft.configuration import Configuration, LocalConf, USER_CONFIG
 from mycroft.messagebus.message import Message
 from mycroft.util import play_wav, create_signal, connected, \
@@ -592,6 +589,10 @@ class Mark1Enclosure(Enclosure):
         self.ws.on("enclosure.notify.no_internet", self.on_no_internet)
 
     def on_arduino_responded(self, event=None):
+        from mycroft.client.enclosure.arduino import EnclosureArduino
+        from mycroft.client.enclosure.eyes import EnclosureEyes
+        from mycroft.client.enclosure.mouth import EnclosureMouth
+        from mycroft.client.enclosure.weather import EnclosureWeather
         self.eyes = EnclosureEyes(self.ws, self.writer)
         self.mouth = EnclosureMouth(self.ws, self.writer)
         self.system = EnclosureArduino(self.ws, self.writer)
