@@ -84,7 +84,6 @@ def handle_complete_intent_failure(event):
 
 def handle_sleep():
     loop.sleep()
-    ws.emit(Message('recognizer_loop:sleep'))
 
 
 def handle_wake_up(event):
