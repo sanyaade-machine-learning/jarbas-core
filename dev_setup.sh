@@ -84,6 +84,18 @@ found_exe() {
     hash "$1" 2>/dev/null
 }
 
+# Determine the platform
+mycroft_platform="null"
+if [[ -r /etc/mycroft/mycroft.conf ]] ; then
+   mycroft_platform=$( jq -r '.enclosure.platform' /etc/mycroft/mycroft.conf )
+else
+   if [[ "$(hostname)" == "picroft" ]] ; then
+      mycroft_platform="picroft"
+   elif [[ "$(hostname)" =~ "mark_1" ]] ; then
+      mycroft_platform="mycroft_mark_1"
+   fi
+fi
+
 install_deps() {
     echo "Installing packages..."
     if found_exe sudo; then
@@ -210,19 +222,6 @@ fi
 "${TOP}/scripts/install-pygtk.sh" " ${CORES}"
 
 # install opencv
-
-# Determine the platform
-mycroft_platform="null"
-if [[ -r /etc/mycroft/mycroft.conf ]] ; then
-   mycroft_platform=$( jq -r '.enclosure.platform' /etc/mycroft/mycroft.conf )
-else
-   if [[ "$(hostname)" == "picroft" ]] ; then
-      mycroft_platform="picroft"
-   elif [[ "$(hostname)" =~ "mark_1" ]] ; then
-      mycroft_platform="mycroft_mark_1"
-   fi
-fi
-
 if [[ "$mycroft_platform" == "picroft" || "$mycroft_platform" == "mycroft_mark_1" ]] ; then
     "${TOP}/scripts/install_opencv_pi.sh"
 else

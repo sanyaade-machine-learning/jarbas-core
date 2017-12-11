@@ -32,7 +32,7 @@ class JarbasEnclosure(Enclosure):
         self.up_left = self.load(join(self.frames_dir, "up_left.png"))
         self.up_right = self.load(join(self.frames_dir, "up_right.png"))
         self.eyes_crossed = self.load(join(self.frames_dir,
-                                           "eyes_crossed.png"))
+                                           "crossed_eyes.png"))
         self.fullscreen = False
         self.width = 500
         self.height = 500
@@ -125,12 +125,19 @@ class JarbasEnclosure(Enclosure):
         for frame in animation:
             self.frames.append((timestep, frame))
 
+    def alarm(self):
+        timestep = 0.8
+        animation = [self.face, self.alarm]
+        for frame in animation:
+            self.frames.append((timestep, frame))
+
     # drawing
+    # TODO draw custom face from sprite array
     def draw_custom(self, pic):
         base = self.blank_frame.copy()
         x, y, w, h = self.draw_area
         pic = imutils.resize(pic, w, h)
-        # TODO draw
+        # TODO blit pictures
         self.current_frame = base
 
     def draw_loop(self):
