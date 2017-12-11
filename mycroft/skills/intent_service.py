@@ -42,7 +42,7 @@ class ContextManager(object):
         self.frame_stack = [(f, t) for (f, t) in self.frame_stack
                             if context_id in f.entities[0].get('data', [])]
 
-    def inject_context(self, entity, metadata={}):
+    def inject_context(self, entity, metadata=None):
         """
         Args:
             entity(object):
@@ -53,6 +53,7 @@ class ContextManager(object):
             metadata(object): dict, arbitrary metadata about the entity being
             added
         """
+        metadata = metadata or {}
         try:
             if len(self.frame_stack) > 0:
                 top_frame = self.frame_stack[0]
@@ -143,8 +144,20 @@ class IntentService(object):
         # Converse method
         self.emitter.on('skill.converse.response',
                         self.handle_converse_response)
+        self.emitter.on('mycroft.speech.recognition.unknown',
+                        self.reset_converse)
+
+        def add_active_skill_handler(message):
+            self.add_active_skill(message.data['skill_id'])
+        self.emitter.on('active_skill_request', add_active_skill_handler)
         self.active_skills = []  # [skill_id , timestamp]
         self.converse_timeout = 5  # minutes to prune active_skills
+
+    def reset_converse(self, message):
+        """Let skills know there was a problem with speech recognition"""
+        lang = message.data.get('lang', "en-us")
+        for skill in self.active_skills:
+            self.do_converse(None, skill[0], lang)
 
     def do_converse(self, utterances, skill_id, lang):
         self.emitter.emit(Message("skill.converse.request", {
@@ -201,9 +214,7 @@ class IntentService(object):
 
     def handle_utterance(self, message):
         # Get language of the utterance
-        lang = message.data.get('lang', None)
-        if not lang:
-            lang = "en-us"
+        lang = message.data.get('lang', "en-us")
 
         utterances = message.data.get('utterances', '')
 
