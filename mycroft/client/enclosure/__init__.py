@@ -135,7 +135,7 @@ class Enclosure(object):
     def on_no_internet(self, message):
         pass
 
-    def on_ws_open(self, message):
+    def on_ws_open(self):
         pass
 
     def speak(self, text):
