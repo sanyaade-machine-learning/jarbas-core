@@ -3,6 +3,7 @@ import cv2, imutils
 import random
 import time
 from os.path import dirname, join, exists
+from mycroft.audio import is_speaking
 
 __author__ = "jarbas"
 
@@ -12,6 +13,7 @@ class JarbasEnclosure(Enclosure):
         Enclosure.__init__(self, ws, name)
         self.ws.on("mycroft.awoken", self.handle_awake)
         self.ws.on("recognizer_loop:sleep", self.handle_sleep)
+        self.ws.on("speak", self.handle_speak)
         self.frames_dir = join(dirname(__file__), "frames")
         # load default frames
         self.blank_frame = self.load(join(self.frames_dir, "blank.png"))
@@ -39,23 +41,25 @@ class JarbasEnclosure(Enclosure):
         self.width = 500
         self.height = 500
 
-        self.current_frame = self.face.copy()
         self.detect_coordinates(self.current_frame)
+        self.current_frame = self.draw_custom(self.face.copy())
         self.frames = []
 
     # animations
-    def mouth_moving(self):
+    def mouth_moving(self, seconds=3.0):
         timestep = 0.3
         animation = [self.face, self.mouth1, self.mouth2,
                      self.mouth3, self.mouth4]
-        for i in range(0, 6):
+        start = time.time()
+        while time.time() - start < seconds:
             self.frames.append((timestep, random.choice(animation)))
+            time.sleep(timestep)
 
     def wake_up(self):
         timestep = 0.3
         animation = [self.dead, self.closed_eyes, self.middle_blink,
                      self.face]
-        self.current_frame = self.face
+        self.current_frame = self.draw_custom(self.face)
         for frame in animation:
             self.frames.append((timestep, frame))
 
@@ -63,49 +67,49 @@ class JarbasEnclosure(Enclosure):
         timestep = 0.3
         animation = [self.face, self.middle_blink, self.closed_eyes,
                      self.dead]
-        self.current_frame = self.dead
+        self.current_frame = self.draw_custom(self.dead)
         for frame in animation:
             self.frames.append((timestep, frame))
 
     def look_left_down(self):
         timestep = 0.3
-        self.current_frame = self.down_left
-        self.frames.append((timestep, self.current_frame))
+        self.current_frame = self.draw_custom(self.down_left)
+        self.frames.append((timestep, self.down_left))
 
     def look_right_down(self):
         timestep = 0.3
-        self.current_frame = self.down_right
-        self.frames.append((timestep, self.current_frame))
+        self.current_frame = self.draw_custom(self.down_right)
+        self.frames.append((timestep, self.down_right))
 
     def look_left_up(self):
         timestep = 0.3
-        self.current_frame = self.up_left
-        self.frames.append((timestep, self.current_frame))
+        self.current_frame = self.draw_custom(self.up_left)
+        self.frames.append((timestep, self.up_left))
 
     def look_right_up(self):
         timestep = 0.3
-        self.current_frame = self.up_right
-        self.frames.append((timestep, self.current_frame))
+        self.current_frame = self.draw_custom(self.up_right)
+        self.frames.append((timestep, self.up_right))
 
     def look_up(self):
         timestep = 0.3
-        self.current_frame = self.up
-        self.frames.append((timestep, self.current_frame))
+        self.current_frame = self.draw_custom(self.up)
+        self.frames.append((timestep, self.up))
 
     def look_down(self):
         timestep = 0.3
-        self.current_frame = self.down
-        self.frames.append((timestep, self.current_frame))
+        self.current_frame = self.draw_custom(self.down)
+        self.frames.append((timestep, self.down))
 
     def look_left(self):
         timestep = 0.3
-        self.current_frame = self.left
-        self.frames.append((timestep, self.current_frame))
+        self.current_frame = self.draw_custom(self.left)
+        self.frames.append((timestep, self.left))
 
     def look_right(self):
         timestep = 0.3
-        self.current_frame = self.right
-        self.frames.append((timestep, self.current_frame))
+        self.current_frame = self.draw_custom(self.right)
+        self.frames.append((timestep, self.right))
 
     def blink(self):
         timestep = 0.3
@@ -136,17 +140,22 @@ class JarbasEnclosure(Enclosure):
     # drawing
     # TODO draw custom face from sprite array
     def draw_custom(self, pic):
+        # get base pic
         base = self.blank_frame.copy()
+        # get draw area
         x, y, w, h = self.draw_area
-        pic = imutils.resize(pic, w, h)
-        # TODO blit pictures
-        self.current_frame = base
+        # resize target pic
+        pic = cv2.resize(pic, (w, h))
+        # blit pictures
+        base[y:y + h, x:x + w] = pic
+        return base
 
     def draw_loop(self):
         while True:
             if len(self.frames):
                 # finish showing queued frames
                 time, pic = self.frames[0]
+                pic = self.draw_custom(pic)
                 self.show(pic, time)
                 self.frames.pop(0)
             else:
@@ -179,6 +188,10 @@ class JarbasEnclosure(Enclosure):
         cv2.waitKey(time)
 
     # listeners
+    def handle_speak(self, message):
+        while is_speaking():
+            self.mouth_moving(0.5)
+
     def handle_sleep(self, message):
         ''' go to sleep animation '''
         self.go_to_sleep()
@@ -217,11 +230,11 @@ class JarbasEnclosure(Enclosure):
 
     def eyes_on(self, message):
         """Illuminate or show the eyes."""
-        self.current_frame = self.face
+        self.current_frame = self.draw_custom(self.face)
 
     def eyes_off(self, message):
         """Turn off or hide the eyes."""
-        self.current_frame = self.closed_eyes
+        self.current_frame = self.draw_custom(self.closed_eyes)
 
     def eyes_blink(self, message):
         """Make the eyes blink
@@ -237,7 +250,7 @@ class JarbasEnclosure(Enclosure):
 
     def eyes_narrow(self, message):
         """Make the eyes look narrow, like a squint"""
-        self.current_frame = self.middle_blink
+        self.current_frame = self.draw_custom(self.middle_blink)
 
     def eyes_look(self, message):
         """Make the eyes look to the given side
@@ -282,11 +295,11 @@ class JarbasEnclosure(Enclosure):
         # TODO use opencv2 to edit frames
         r = message.data.get("r")
         if r > 255/2:
-            self.current_frame = self.alarm
+            self.current_frame = self.draw_custom(self.alarm)
         g = message.data.get("g")
         b = message.data.get("b")
         if b > 255/2:
-            self.current_frame = self.face
+            self.current_frame = self.draw_custom(self.face)
 
     def eyes_brightness(self, message):
         """Set the brightness of the eyes in the display.
@@ -298,7 +311,7 @@ class JarbasEnclosure(Enclosure):
 
     def eyes_reset(self, message):
         """Restore the eyes to their default (ready) state."""
-        self.current_frame = self.face
+        self.current_frame = self.draw_custom(self.face)
 
     def eyes_timed_spin(self, message):
         """Make the eyes 'roll' for the given time.
@@ -322,7 +335,7 @@ class JarbasEnclosure(Enclosure):
 
     def mouth_reset(self, message):
         """Restore the mouth display to normal (blank)"""
-        self.current_frame = self.face
+        self.current_frame = self.draw_custom(self.face)
 
     def mouth_talk(self, message):
         """Show a generic 'talking' animation for non-synched speech"""
