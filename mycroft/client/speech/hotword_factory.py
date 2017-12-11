@@ -43,8 +43,8 @@ class HotWordEngine(object):
             config = config.get(self.key_phrase, {})
         self.config = config
         self.listener_config = Configuration.get().get("listener", {})
+        self.lang = str(self.config.get("lang", lang)).lower()
         self.module = self.config.get("module", "")
-        self.lang = str(self.config.get("lang", self.lang)).lower()
 
     def found_wake_word(self, frame_data):
         return False
