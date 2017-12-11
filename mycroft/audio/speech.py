@@ -67,6 +67,8 @@ def handle_speak(event):
     # Mild abuse of the signal system to allow other processes to detect
     # when TTS is happening.  See mycroft.util.is_speaking()
     with lock:
+        global ws
+        ws.emit(Message("mycroft.audio.speech.start", event.data))
         utterance = event.data['utterance']
         if event.data.get('expect_response', False):
             # When expect_response is requested, the listener will be restarted

@@ -90,8 +90,8 @@ class Enclosure(object):
         self.ws.on("speak", self.handle_speak)
         self.ws.on('recognizer_loop:record_begin', self.record_begin)
         self.ws.on('recognizer_loop:record_end', self.record_end)
-        self.ws.on('recognizer_loop:audio_output_start', self.talk_start)
-        self.ws.on('recognizer_loop:audio_output_end', self.talk_stop)
+        self.ws.on('mycroft.audio.speech.start', self.talk_start)
+        self.ws.on("mycroft.audio.speech.stop", self.talk_stop)
         self.ws.on("enclosure.notify.no_internet", self.on_no_internet)
 
     def shutdown(self):
