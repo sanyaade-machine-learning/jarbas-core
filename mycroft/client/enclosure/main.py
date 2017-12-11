@@ -27,7 +27,7 @@ def main():
             JarbasEnclosure
         enclosure = JarbasEnclosure()
     else:
-        from mycroft.client.enclosure.enclosure import Enclosure
+        from mycroft.client.enclosure import Enclosure
         enclosure = Enclosure()
     try:
         enclosure.run()

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mycroft.client.enclosure.enclosure import Enclosure
+from mycroft.client.enclosure import Enclosure
 
 '''
 API for the functions that affect the Mark 1 device.

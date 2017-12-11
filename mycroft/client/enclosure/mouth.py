@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 import time
-from mycroft.client.enclosure.enclosure import Enclosure
+from mycroft.client.enclosure import Enclosure
 
 '''
 API for the functions that affect the Mark 1 mouth.
