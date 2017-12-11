@@ -23,7 +23,7 @@ def main():
         from mycroft.client.enclosure import Mark1Enclosure
         enclosure = Mark1Enclosure()
     elif platform == "jarbas":
-        from mycroft.client.enclosure.jarbas_enclosure.main import \
+        from mycroft.client.enclosure.jarbas_enclosure import \
             JarbasEnclosure
         enclosure = JarbasEnclosure()
     else:
@@ -34,6 +34,7 @@ def main():
     except Exception as e:
         print(e)
     finally:
+        enclosure.shutdown()
         sys.exit()
 
 

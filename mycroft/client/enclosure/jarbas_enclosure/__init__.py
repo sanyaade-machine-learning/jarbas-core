@@ -9,7 +9,7 @@ __author__ = "jarbas"
 
 class JarbasEnclosure(Enclosure):
     def __init__(self, ws=None, name="Jarbas"):
-        Enclosure.__init__(self, ws, name)
+        super(JarbasEnclosure, self).__init__(ws, name)
         self.fullscreen = False
         self.width = 700
         self.height = 800

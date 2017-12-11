@@ -59,6 +59,7 @@ class Enclosure(object):
             self.ws = ws
         self.log = LOG
         self.name = name
+        self.ws.on("open", self.on_ws_open)
         self.ws.on("enclosure.reset", self.reset)
         self.ws.on("enclosure.system.reset", self.system_reset)
         self.ws.on("enclosure.system.mute", self.system_mute)
@@ -94,6 +95,51 @@ class Enclosure(object):
         self.ws.on('recognizer_loop:record_end', self.record_end)
         self.ws.on('recognizer_loop:audio_output_start', self.talk_start)
         self.ws.on('recognizer_loop:audio_output_end', self.talk_stop)
+        self.ws.on("enclosure.notify.no_internet", self.on_no_internet)
+
+    def shutdown(self):
+        self.ws.remove("enclosure.reset", self.reset)
+        self.ws.remove("enclosure.system.reset", self.system_reset)
+        self.ws.remove("enclosure.system.mute", self.system_mute)
+        self.ws.remove("enclosure.system.unmute", self.system_unmute)
+        self.ws.remove("enclosure.system.blink", self.system_blink)
+        self.ws.remove("enclosure.system.eyes.on", self.eyes_on)
+        self.ws.remove("enclosure.system.eyes.off", self.eyes_off)
+        self.ws.remove("enclosure.system.eyes.blink", self.eyes_blink)
+        self.ws.remove("enclosure.system.eyes.narrow", self.eyes_narrow)
+        self.ws.remove("enclosure.system.eyes.look", self.eyes_look)
+        self.ws.remove("enclosure.system.eyes.color", self.eyes_color)
+        self.ws.remove("enclosure.system.eyes.brightness", self.eyes_brightness)
+        self.ws.remove("enclosure.system.eyes.reset", self.eyes_reset)
+        self.ws.remove("enclosure.system.eyes.timedspin", self.eyes_timed_spin)
+        self.ws.remove("enclosure.system.eyes.volume", self.eyes_volume)
+        self.ws.remove("enclosure.system.mouth.reset", self.mouth_reset)
+        self.ws.remove("enclosure.system.mouth.talk", self.mouth_talk)
+        self.ws.remove("enclosure.system.mouth.think", self.mouth_think)
+        self.ws.remove("enclosure.system.mouth.listen", self.mouth_listen)
+        self.ws.remove("enclosure.system.mouth.smile", self.mouth_smile)
+        self.ws.remove("enclosure.system.mouth.viseme", self.mouth_viseme)
+        self.ws.remove("enclosure.system.mouth.text", self.mouth_text)
+        self.ws.remove("enclosure.system.mouth.display", self.mouth_display)
+        self.ws.remove("enclosure.system.weather.display", self.weather_display)
+        self.ws.remove("enclosure.mouth.events.activate",
+                   self.activate_mouth_events)
+        self.ws.remove("enclosure.mouth.events.deactivate",
+                   self.deactivate_mouth_events)
+        self.ws.remove("mycroft.awoken", self.handle_awake)
+        self.ws.remove("recognizer_loop:sleep", self.handle_sleep)
+        self.ws.remove("speak", self.handle_speak)
+        self.ws.remove('recognizer_loop:record_begin', self.record_begin)
+        self.ws.remove('recognizer_loop:record_end', self.record_end)
+        self.ws.remove('recognizer_loop:audio_output_start', self.talk_start)
+        self.ws.remove('recognizer_loop:audio_output_end', self.talk_stop)
+        self.ws.remove("enclosure.notify.no_internet", self.on_no_internet)
+
+    def on_no_internet(self, message):
+        pass
+
+    def on_ws_open(self, message):
+        pass
 
     def speak(self, text):
         self.ws.emit(Message("speak", {'utterance': text}))
@@ -492,7 +538,7 @@ class EnclosureWriter(Thread):
         self.alive = False
 
 
-class Mark1Enclosure(object):
+class Mark1Enclosure(Enclosure):
     """
     Serves as a communication interface between Arduino and Mycroft Core.
 
@@ -510,7 +556,7 @@ class Mark1Enclosure(object):
 
     def __init__(self):
         self.ws = WebsocketClient()
-        self.ws.on("open", self.on_ws_open)
+        super(Mark1Enclosure, self).__init__(self.ws, "Mark1")
 
         Configuration.init(self.ws)
 
