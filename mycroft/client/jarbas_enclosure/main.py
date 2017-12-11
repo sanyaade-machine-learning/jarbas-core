@@ -10,6 +10,8 @@ __author__ = "jarbas"
 class JarbasEnclosure(Enclosure):
     def __init__(self, ws=None, name="Jarbas"):
         Enclosure.__init__(self, ws, name)
+        self.ws.on("mycroft.awoken", self.handle_awake)
+        self.ws.on("recognizer_loop:sleep", self.handle_sleep)
         self.frames_dir = join(dirname(__file__), "frames")
         # load default frames
         self.blank_frame = self.load(join(self.frames_dir, "blank.png"))
@@ -177,6 +179,14 @@ class JarbasEnclosure(Enclosure):
         cv2.waitKey(time)
 
     # listeners
+    def handle_sleep(self, message):
+        ''' go to sleep animation '''
+        self.go_to_sleep()
+
+    def handle_awake(self, message):
+        ''' wake up animation '''
+        self.wake_up()
+
     def reset(self, message):
         """The enclosure should restore itself to a started state.
         Typically this would be represented by the eyes being 'open'
