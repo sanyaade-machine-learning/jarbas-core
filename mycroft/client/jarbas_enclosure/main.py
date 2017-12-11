@@ -11,9 +11,14 @@ __author__ = "jarbas"
 class JarbasEnclosure(Enclosure):
     def __init__(self, ws=None, name="Jarbas"):
         Enclosure.__init__(self, ws, name)
+
         self.ws.on("mycroft.awoken", self.handle_awake)
         self.ws.on("recognizer_loop:sleep", self.handle_sleep)
         self.ws.on("speak", self.handle_speak)
+
+        self.fullscreen = False
+        self.width = 700
+        self.height = 800
         self.frames_dir = join(dirname(__file__), "frames")
         # load default frames
         self.blank_frame = self.load(join(self.frames_dir, "blank.png"))
@@ -37,10 +42,8 @@ class JarbasEnclosure(Enclosure):
         self.up_right = self.load(join(self.frames_dir, "up_right.png"))
         self.eyes_crossed = self.load(join(self.frames_dir,
                                            "crossed_eyes.png"))
-        self.fullscreen = False
-        self.width = 500
-        self.height = 500
 
+        self.current_frame = self.blank_frame.copy()
         self.detect_coordinates(self.current_frame)
         self.current_frame = self.draw_custom(self.face.copy())
         self.frames = []
@@ -138,16 +141,13 @@ class JarbasEnclosure(Enclosure):
             self.frames.append((timestep, frame))
 
     # drawing
-    # TODO draw custom face from sprite array
     def draw_custom(self, pic):
         # get base pic
         base = self.blank_frame.copy()
         # get draw area
         x, y, w, h = self.draw_area
-        # resize target pic
-        pic = cv2.resize(pic, (w, h))
         # blit pictures
-        base[y:y + h, x:x + w] = pic
+        base[y:y + h, x:x + w] = pic[y:y + h, x:x + w]
         return base
 
     def draw_loop(self):
@@ -166,23 +166,29 @@ class JarbasEnclosure(Enclosure):
         gray = cv2.cvtColor(pic, cv2.COLOR_BGR2GRAY)
         thresh = cv2.threshold(gray, 5, 255,
                                cv2.THRESH_BINARY)[1]
-        cnts = cv2.findContours(thresh, cv2.RETR_TREE,
+        cnts = cv2.findContours(thresh, 1,
                                 cv2.CHAIN_APPROX_SIMPLE)
-        cnts = cnts[0] if imutils.is_cv2() else cnts[1]
-        for i, c in enumerate(cnts):
-            area = cv2.contourArea(c)
-            if area < 5000:
-                self.draw_area = cv2.boundingRect(c)
+        contours = cnts[0] if imutils.is_cv2() else cnts[1]
+        areas = {}
+
+        for cnt in contours:
+            peri = cv2.arcLength(cnt, True)
+            approx = cv2.approxPolyDP(cnt, 0.04 * peri, True)
+            if len(approx) == 4:
+                a=cv2.contourArea(cnt)
+                (x, y, w, h) = cv2.boundingRect(approx)
+                areas[a] = (x+x*10/100, y+y*10/100, w-x*20/100, h-y*20/100)
+            self.draw_area = areas[sorted(areas)[-1]]
         # TODO mouth area
         # TODO eyes area
 
     def load(self, path):
         if not exists(path):
             return None
-        pic = cv2.imread(path)
+        pic = cv2.imread(path, -1)
         return imutils.resize(pic, self.width, self.height)
 
-    def show(self, pic, time=0):
+    def show(self, pic, time=1):
         pic = imutils.resize(pic, self.width, self.height)
         cv2.imshow("jarbas", pic)
         cv2.waitKey(time)
@@ -416,3 +422,7 @@ class JarbasEnclosure(Enclosure):
     def deactivate_mouth_events(self, message):
         """Disable movement of the mouth with speech"""
         pass
+
+if __name__ == "__main__":
+    e = JarbasEnclosure()
+    e.draw_loop()
