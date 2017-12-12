@@ -24,9 +24,17 @@ from mycroft.util.log import LOG
 CORE_VERSION_MAJOR = 0
 CORE_VERSION_MINOR = 9
 CORE_VERSION_BUILD = 8
+
+FORK_VERSION_MAJOR = 0
+FORK_VERSION_MINOR = 0.1
+FORK_VERSION_BUILD = "Dev"
 # END_VERSION_BLOCK
 
-CORE_VERSION_STR = (str(CORE_VERSION_MAJOR) + "." +
+CORE_VERSION_STR = ("Jarbas Core" + "." +
+                    str(FORK_VERSION_MAJOR) + "." +
+                    str(FORK_VERSION_MINOR) + "." +
+                    str(FORK_VERSION_BUILD) + "." +
+                    str(CORE_VERSION_MAJOR) + "." +
                     str(CORE_VERSION_MINOR) + "." +
                     str(CORE_VERSION_BUILD))
 
