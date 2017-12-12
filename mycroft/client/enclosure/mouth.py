@@ -13,9 +13,16 @@
 # limitations under the License.
 #
 import time
+from mycroft.client.enclosure import Enclosure
+
+'''
+API for the functions that affect the Mark 1 mouth.
+NOTE: current state management is poorly implemented,
+will be changed in the future.
+'''
 
 
-class EnclosureMouth:
+class EnclosureMouth(Enclosure):
     """
     Listens to enclosure commands for Mycroft's Mouth.
 
@@ -23,7 +30,7 @@ class EnclosureMouth:
     """
 
     def __init__(self, ws, writer):
-        self.ws = ws
+        super(EnclosureMouth, self).__init__(ws, "mouth")
         self.writer = writer
         self.is_timer_on = False
         self.__init_events()

@@ -11,9 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from mycroft.client.enclosure import Enclosure
 
 
-class EnclosureWeather:
+'''
+API for the functions that affect the Mark 1  weather display.
+NOTE: current state management is poorly implemented,
+will be changed in the future.
+'''
+
+
+class EnclosureWeather(Enclosure):
     """
     Listens for Enclosure API commands to display indicators of the weather.
 
@@ -21,12 +29,8 @@ class EnclosureWeather:
     """
 
     def __init__(self, ws, writer):
-        self.ws = ws
+        super(EnclosureWeather, self).__init__(ws, "weather")
         self.writer = writer
-        self.__init_events()
-
-    def __init_events(self):
-        self.ws.on('enclosure.weather.display', self.display)
 
     def display(self, event=None):
         if event and event.data:

@@ -12,8 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from mycroft.client.enclosure import Enclosure
 
-class EnclosureEyes:
+'''
+API for the functions that affect the Mark 1 eyes.
+NOTE: current state management is poorly implemented,
+will be changed in the future.
+'''
+
+
+class EnclosureEyes(Enclosure):
     """
     Listens to enclosure commands for Mycroft's Eyes.
 
@@ -21,22 +29,8 @@ class EnclosureEyes:
     """
 
     def __init__(self, ws, writer):
-        self.ws = ws
+        super(EnclosureEyes, self).__init__(ws, "eyes")
         self.writer = writer
-        self.__init_events()
-
-    def __init_events(self):
-        self.ws.on('enclosure.eyes.on', self.on)
-        self.ws.on('enclosure.eyes.off', self.off)
-        self.ws.on('enclosure.eyes.blink', self.blink)
-        self.ws.on('enclosure.eyes.narrow', self.narrow)
-        self.ws.on('enclosure.eyes.look', self.look)
-        self.ws.on('enclosure.eyes.color', self.color)
-        self.ws.on('enclosure.eyes.level', self.brightness)
-        self.ws.on('enclosure.eyes.volume', self.volume)
-        self.ws.on('enclosure.eyes.spin', self.spin)
-        self.ws.on('enclosure.eyes.timedspin', self.timed_spin)
-        self.ws.on('enclosure.eyes.reset', self.reset)
 
     def on(self, event=None):
         self.writer.write("eyes.on")
