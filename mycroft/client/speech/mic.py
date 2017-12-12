@@ -461,7 +461,8 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                             mkdir(self.save_wake_words_dir)
                         dr = self.save_wake_words_dir
 
-                        ww_module = self.wake_word_recognizer.__class__.__name__
+                        ww_module = self.wake_word_recognizer.\
+                            __class__.__name__
 
                         ww = self.wake_word_name.replace(' ', '-')
                         md = md5(ww_module).hexdigest()

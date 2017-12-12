@@ -59,9 +59,9 @@ class PocketsphinxHotWord(HotWordEngine):
         from pocketsphinx import Decoder
         # Hotword module config
         if self.module != "pocketsphinx":
-            LOG.warning(
-                str(self.module) + " module does not match with "
-                              "Hotword class pocketsphinx")
+            LOG.warning(str(
+                self.module) +
+                    " module does not match with Hotword class pocketsphinx")
         # Hotword module params
         self.phonemes = self.config.get("phonemes", "HH EY . M AY K R AO F T")
         self.num_phonemes = len(self.phonemes.split())
