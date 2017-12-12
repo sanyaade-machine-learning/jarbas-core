@@ -4,6 +4,7 @@ from flask import request, Response
 import time
 import os
 import json
+from mycroft.microservices import gen_api
 
 
 def root_dir():
@@ -18,11 +19,13 @@ def nice_json(arg):
 
 app = Flask(__name__)
 port = 5678
-# TODO do not hardcode
-admin_key = "JARBAS_5rRqRZ-fNjpZORX6HGTjOQB6ssuqY1-6XpORmeqwGB8"
+
 
 with open("{}/database/users.json".format(root_dir()), "r") as f:
     users = json.load(f)
+
+with open("{}/database/admins.json".format(root_dir()), "r") as f:
+    admins = json.load(f)
 
 
 def add_response_headers(headers=None):
@@ -66,11 +69,11 @@ def check_auth(api_key):
 
 def check_admin_auth(api_key):
     """This function is called to check if a api key is valid."""
-    if api_key != admin_key:
+    if api_key not in admins:
         return False
-    users[api_key]["last_active"] = time.time()
-    with open("{}/database/users.json".format(root_dir()), "w") as f:
-        f.write(json.dumps(users))
+    admins[api_key]["last_active"] = time.time()
+    with open("{}/database/admins.json".format(root_dir()), "w") as f:
+        f.write(json.dumps(admins))
     return True
 
 
@@ -117,7 +120,7 @@ def hello():
     })
 
 
-@app.route("/<api>/<id>/<name>", methods=['PUT'])
+@app.route("/api_add/<api>/<id>/<name>", methods=['PUT'])
 @noindex
 @btc
 @requires_admin
@@ -128,6 +131,17 @@ def add_user(api, id, name):
         f.write(json.dumps(users))
     return nice_json({
         result
+    })
+
+
+@app.route("/api_gen", methods=['PUT'])
+@noindex
+@btc
+@requires_admin
+def gen_api():
+    api = gen_api(save=False)
+    return nice_json({
+        {"api": api}
     })
 
 
