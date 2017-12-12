@@ -18,6 +18,8 @@ def nice_json(arg):
 
 app = Flask(__name__)
 port = 5678
+# TODO do not hardcode
+admin_key = "JARBAS_5rRqRZ-fNjpZORX6HGTjOQB6ssuqY1-6XpORmeqwGB8"
 
 with open("{}/database/users.json".format(root_dir()), "r") as f:
     users = json.load(f)
@@ -62,6 +64,16 @@ def check_auth(api_key):
     return True
 
 
+def check_admin_auth(api_key):
+    """This function is called to check if a api key is valid."""
+    if api_key != admin_key:
+        return False
+    users[api_key]["last_active"] = time.time()
+    with open("{}/database/users.json".format(root_dir()), "w") as f:
+        f.write(json.dumps(users))
+    return True
+
+
 def authenticate():
     """Sends a 401 response that enables basic auth"""
     return Response(
@@ -81,6 +93,17 @@ def requires_auth(f):
     return decorated
 
 
+def requires_admin(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.headers.get('Authorization', '')
+        if not auth or not check_admin_auth(auth):
+            return authenticate()
+        return f(*args, **kwargs)
+
+    return decorated
+
+
 @app.route("/", methods=['GET'])
 @noindex
 @btc
@@ -91,6 +114,20 @@ def hello():
         "welcome to jarbas microservices": {
             "under": "construction"
         }
+    })
+
+
+@app.route("/<api>/<id>/<name>", methods=['PUT'])
+@noindex
+@btc
+@requires_admin
+def add_user(api, id, name):
+    result = {"id": id, "last_active": 0, "name": name}
+    users[api] = result
+    with open("{}/database/users.json".format(root_dir()), "w") as f:
+        f.write(json.dumps(users))
+    return nice_json({
+        result
     })
 
 

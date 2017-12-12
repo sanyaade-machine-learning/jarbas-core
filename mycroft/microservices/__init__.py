@@ -26,3 +26,6 @@ def gen_api(user="demo_user"):
         data = json.dumps(users)
         f.write(data)
     return k
+
+if __name__ == "__main__":
+    gen_api("admin")
