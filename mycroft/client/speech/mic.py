@@ -492,7 +492,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         # check hot word
         for hotword in self.hot_word_engines:
             engine, ding, utterance, listen, engine_type = \
-            self.hot_word_engines[hotword]
+                    self.hot_word_engines[hotword]
             found = engine.found_wake_word(audio_data)
             if found:
                 self.word = hotword
