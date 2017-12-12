@@ -469,11 +469,13 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                         sid = SessionManager.get().session_id
                         aid = self.account_id
 
-                        fn = join(dr, '.'.join([ww, md, stamp, sid, aid]) + '.wav')
+                        fn = join(dr, '.'.join(
+                            [ww, md, stamp, sid, aid]) + '.wav')
                         with open(fn, 'wb') as f:
                             f.write(audio.get_wav_data())
 
-                        if self.upload_config['enable'] or self.config['opt_in']:
+                        if self.upload_config['enable'] \
+                                or self.config['opt_in']:
                             t = Thread(target=self._upload_file, args=(fn,))
                             t.daemon = True
                             t.start()
@@ -490,8 +492,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         # check hot word
         for hotword in self.hot_word_engines:
             engine, ding, utterance, listen, engine_type = \
-            self.hot_word_engines[
-                hotword]
+            self.hot_word_engines[hotword]
             found = engine.found_wake_word(audio_data)
             if found:
                 self.word = hotword

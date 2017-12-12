@@ -113,7 +113,7 @@ class PreciseHotword(HotWordEngine):
         self.update_freq = 24  # in hours
         if self.module != "precise":
             LOG.warning(self.module + " module does not match with Hotword "
-                                   "class precise")
+                        "class precise")
         precise_config = Configuration.get()['precise']
         self.dist_url = precise_config['dist_url']
         self.models_url = precise_config['models_url']
@@ -218,8 +218,7 @@ class SnowboyHotWord(HotWordEngine):
         # Hotword module config
         if self.module != "snowboy":
             LOG.warning(self.module + " module does not match with Hotword "
-                                   "class "
-                                 "snowboy")
+                        "class snowboy")
         # Hotword params
         models = self.config.get("models", {})
         paths = []
