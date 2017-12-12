@@ -496,7 +496,6 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                     self.hot_word_engines[hotword]
             found = engine.found_wake_word(audio_data)
             if found:
-                self.word = hotword
                 LOG.debug("Hot Word: " + hotword)
                 # If enabled, play a wave file with a short sound to audibly
                 # indicate hotword was detected.
