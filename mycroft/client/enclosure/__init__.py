@@ -128,8 +128,8 @@ class Enclosure(object):
         self.ws.remove("speak", self.handle_speak)
         self.ws.remove('recognizer_loop:record_begin', self.record_begin)
         self.ws.remove('recognizer_loop:record_end', self.record_end)
-        self.ws.remove('mycroft.audio.speech.start', self.talk_start)
-        self.ws.remove('mycroft.audio.speech.stop', self.talk_stop)
+        self.ws.remove('recognizer_loop:audio_output_start', self.talk_start)
+        self.ws.remove('recognizer_loop:audio_output_end', self.talk_stop)
         self.ws.remove("enclosure.notify.no_internet", self.on_no_internet)
 
     def on_no_internet(self, message):

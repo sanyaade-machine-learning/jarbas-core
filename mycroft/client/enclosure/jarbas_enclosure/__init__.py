@@ -3,14 +3,19 @@ import cv2, imutils
 import random
 import time
 from os.path import dirname, join, exists
-
+from mycroft.audio import is_speaking
 __author__ = "jarbas"
 
 
 class JarbasEnclosure(Enclosure):
     def __init__(self, ws=None, name="Jarbas"):
         super(JarbasEnclosure, self).__init__(ws, name)
+        self.name = name
         self.fullscreen = False
+        if self.fullscreen:
+            cv2.namedWindow(self.name, cv2.WND_PROP_FULLSCREEN)
+            cv2.setWindowProperty(self.name, cv2.WND_PROP_FULLSCREEN,
+                                  cv2.WINDOW_FULLSCREEN)
         self.width = 700
         self.height = 800
         self.default_spf = 200 #miliseconds per frame
@@ -42,6 +47,20 @@ class JarbasEnclosure(Enclosure):
         self.detect_coordinates(self.current_frame)
         self.current_frame = self.draw_custom(self.face.copy())
         self.frames = []
+
+    def _regain_focus(self):
+        ''' hack for always on top
+        https://stackoverflow.com/questions/8417531/opencv-how-to-force-the-image-window-to-appear-on-top-of-other-windows '''
+        cv2.namedWindow("focus hack", cv2.WND_PROP_FULLSCREEN)
+        cv2.setWindowProperty("focus hack", cv2.WND_PROP_FULLSCREEN,
+                              cv2.WINDOW_NORMAL)
+        cv2.imshow("focus hack", cv2.resize(self.blank_frame, (1,1)))
+        cv2.setWindowProperty("focus hack", cv2.WND_PROP_FULLSCREEN,
+                              cv2.WINDOW_FULLSCREEN)
+        #cv2.waitKey(1)
+        cv2.setWindowProperty("focus hack", cv2.WND_PROP_FULLSCREEN,
+                              cv2.WINDOW_NORMAL)
+        cv2.destroyWindow("focus hack")
 
     # animations
     def mouth_shift(self):
@@ -181,10 +200,11 @@ class JarbasEnclosure(Enclosure):
         return imutils.resize(pic, self.width, self.height)
 
     def show(self, pic, time=1.0):
+        self._regain_focus()
         if time < 1:
             time = 1
         pic = imutils.resize(pic, self.width, self.height)
-        cv2.imshow("jarbas", pic)
+        cv2.imshow(self.name, pic)
         cv2.waitKey(int(time))
 
     # listeners
@@ -198,14 +218,12 @@ class JarbasEnclosure(Enclosure):
 
     def talk_start(self, message):
         ''' speaking started '''
-        self.speaking = True
-        while self.speaking:
+        while is_speaking():
             self.mouth_shift()
-            time.sleep(self.default_spf)
 
     def talk_stop(self, message):
         ''' speaking ended '''
-        self.speaking = False
+        pass
 
     def handle_speak(self, message):
         pass
