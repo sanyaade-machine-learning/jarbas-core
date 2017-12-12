@@ -37,8 +37,9 @@ def tts(voice, sentence):
     result = {"error": "not implemented"}
     return nice_json(result)
 
+
 if __name__ == "__main__":
     global app
-    port = 7712
-    app.run(host="0.0.0.0", port=port)
-    start(port)
+    port = 6712
+    start(app, port)
+712

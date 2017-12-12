@@ -1,6 +1,7 @@
 from functools import wraps
 from flask import Flask, make_response
 from flask import request, Response
+import ssl
 import time
 import os
 import json
@@ -145,10 +146,14 @@ def gen_api():
     })
 
 
-def start(port=6666):
-    global app
-    app.run(port=port, debug=True)
+def start(app, port=6666):
+    cert = "{}/certs/JarbasServer.crt".format(root_dir())
+    key = "{}/certs/JarbasServer.key".format(root_dir())
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    context.load_cert_chain(cert, key)
+    app.run(host="0.0.0.0", port=port, debug=True, ssl_context=context)
 
 
 if __name__ == "__main__":
-    start(port)
+    global app
+    start(app, port)
