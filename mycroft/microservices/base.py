@@ -134,7 +134,7 @@ def add_user(api, id, name):
     })
 
 
-@app.route("/api_gen", methods=['PUT'])
+@app.route("/api_gen", methods=['GET'])
 @noindex
 @btc
 @requires_admin
