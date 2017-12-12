@@ -1,15 +1,20 @@
-# import your stuff #
-
-#####################
-
 from mycroft.microservices.base import *
+
+
+@app.route("/intent/<utterance>", methods=['GET'])
+@noindex
+@btc
+@requires_auth
+def intent(utterance):
+    result = {"error": "not implemented"}
+    return nice_json(result)
 
 
 @app.route("/ask/<utterance>", methods=['GET'])
 @noindex
 @btc
 @requires_auth
-def disambiguation(utterance):
+def ask(utterance):
     result = {"error": "not implemented"}
     return nice_json(result)
 
