@@ -15,9 +15,6 @@
 from __future__ import print_function
 import argparse
 
-from speech_recognition import Recognizer
-
-from mycroft.client.speech.mic import MutableMicrophone
 from mycroft.util import play_wav
 
 """
@@ -29,12 +26,7 @@ compatibility with mycroft recognizer loop code.
 
 
 def record(filename, duration):
-    mic = MutableMicrophone()
-    recognizer = Recognizer()
-    with mic as source:
-        audio = recognizer.record(source, duration=duration)
-        with open(filename, 'wb') as f:
-            f.write(audio.get_wav_data())
+    pass
 
 
 def main():
