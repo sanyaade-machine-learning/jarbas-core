@@ -82,6 +82,14 @@ def handle_complete_intent_failure(event):
     ws.emit(Message('speak', data))
 
 
+def handle_hotword(event):
+    ww = config["listener"].get("wake_word", "hey mycroft")
+    suw = config["listener"].get("stand_up_word", "wake up")
+    if event["hotword"] != ww and event["hotword"] != suw:
+        LOG.info("Hotword Detected: " + event['hotword'])
+        ws.emit(Message('recognizer_loop:hotword', event))
+
+
 def handle_sleep():
     loop.sleep()
 
@@ -149,6 +157,7 @@ def main():
     loop.on('recognizer_loop:record_begin', handle_record_begin)
     loop.on('recognizer_loop:awoken', handle_awoken)
     loop.on('recognizer_loop:wakeword', handle_wakeword)
+    loop.on('recognizer_loop:hotword', handle_hotword)
     loop.on('recognizer_loop:record_end', handle_record_end)
     loop.on('recognizer_loop:no_internet', handle_no_internet)
     ws.on('open', handle_open)

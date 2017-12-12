@@ -34,7 +34,6 @@ RECOGNIZER_DIR = join(abspath(dirname(__file__)), "recognizer")
 
 class HotWordEngine(object):
     def __init__(self, key_phrase="hey mycroft", config=None, lang="en-us"):
-        self.lang = str(lang).lower()
         self.key_phrase = str(key_phrase).lower()
         # rough estimate 1 phoneme per 2 chars
         self.num_phonemes = len(key_phrase) / 2 + 1
@@ -43,8 +42,8 @@ class HotWordEngine(object):
             config = config.get(self.key_phrase, {})
         self.config = config
         self.listener_config = Configuration.get().get("listener", {})
+        self.module = self.config.get("module")
         self.lang = str(self.config.get("lang", lang)).lower()
-        self.module = self.config.get("module", "")
 
     def found_wake_word(self, frame_data):
         return False
@@ -60,9 +59,9 @@ class PocketsphinxHotWord(HotWordEngine):
         from pocketsphinx import Decoder
         # Hotword module config
         if self.module != "pocketsphinx":
-            LOG.warning(
-                str(self.module) + " module does not match with "
-                              "Hotword class pocketsphinx")
+            LOG.warning(str(
+                self.module) +
+                    " module does not match with Hotword class pocketsphinx")
         # Hotword module params
         self.phonemes = self.config.get("phonemes", "HH EY . M AY K R AO F T")
         self.num_phonemes = len(self.phonemes.split())
@@ -114,7 +113,7 @@ class PreciseHotword(HotWordEngine):
         self.update_freq = 24  # in hours
         if self.module != "precise":
             LOG.warning(self.module + " module does not match with Hotword "
-                                   "class precise")
+                        "class precise")
         precise_config = Configuration.get()['precise']
         self.dist_url = precise_config['dist_url']
         self.models_url = precise_config['models_url']
@@ -219,8 +218,7 @@ class SnowboyHotWord(HotWordEngine):
         # Hotword module config
         if self.module != "snowboy":
             LOG.warning(self.module + " module does not match with Hotword "
-                                   "class "
-                                 "snowboy")
+                        "class snowboy")
         # Hotword params
         models = self.config.get("models", {})
         paths = []

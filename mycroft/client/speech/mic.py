@@ -467,28 +467,29 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                             mkdir(self.save_wake_words_dir)
                         dr = self.save_wake_words_dir
 
-                        ww_module = self.wake_word_recognizer.__class__.__name__
+                        ww_module = self.wake_word_recognizer.\
+                            __class__.__name__
 
-                    ww = self.wake_word_name.replace(' ', '-')
-                    md = md5(ww_module).hexdigest()
-                    stamp = str(int(1000 * get_time()))
+                        ww = self.wake_word_name.replace(' ', '-')
+                        md = md5(ww_module).hexdigest()
+                        stamp = str(int(1000 * get_time()))
 
 
-                    # disable metrics
-                    LOG.debug("metrics disabled")
-                    # sid = SessionManager.get().session_id
-                    # uid = IdentityManager.get().uuid
-                    # fn = join(dr, '.'.join([ww, md, stamp, sid, aid]) + '.wav')fn = join(dr, '.'.join([ww, md, stamp]) + '.wav')
-                    fn = join(dr, '.'.join([ww, md, stamp]) + '.wav')
-                    with open(fn, 'wb') as f:
-                        f.write(audio.get_wav_data())
+                        # disable metrics
+                        LOG.debug("metrics disabled")
+                        # sid = SessionManager.get().session_id
+                        # uid = IdentityManager.get().uuid
+                        # fn = join(dr, '.'.join([ww, md, stamp, sid, aid]) + '.wav')fn = join(dr, '.'.join([ww, md, stamp]) + '.wav')
+                        fn = join(dr, '.'.join([ww, md, stamp]) + '.wav')
+                        with open(fn, 'wb') as f:
+                            f.write(audio.get_wav_data())
 
-                    # disable upload
-                    LOG.debug("upload disabled")
-                    #if self.upload_config['enable'] or self.config['opt_in']:
-                    #    t = Thread(target=self._upload_file, args=(fn,))
-                    #    t.daemon = True
-                    #    t.start()
+                        # disable upload
+                        LOG.debug("upload disabled")
+                        #if self.upload_config['enable'] or self.config['opt_in']:
+                        #    t = Thread(target=self._upload_file, args=(fn,))
+                        #    t.daemon = True
+                        #    t.start()
 
                 else:
                     said_wake_word, said_hot_word = self.check_for_hotwords(
@@ -501,11 +502,10 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
     def check_for_hotwords(self, audio_data, emitter):
         # check hot word
         for hotword in self.hot_word_engines:
-            engine, ding, utterance, listen, type = self.hot_word_engines[
-                hotword]
+            engine, ding, utterance, listen, engine_type = \
+                    self.hot_word_engines[hotword]
             found = engine.found_wake_word(audio_data)
             if found:
-                self.word = hotword
                 LOG.debug("Hot Word: " + hotword)
                 # If enabled, play a wave file with a short sound to audibly
                 # indicate hotword was detected.
@@ -521,7 +521,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                     'hotword': hotword,
                     'start_listening': listen,
                     'sound': ding,
-                    "engine": type
+                    "engine": engine_type
                 }
                 emitter.emit("recognizer_loop:hotword", payload)
                 if utterance:
