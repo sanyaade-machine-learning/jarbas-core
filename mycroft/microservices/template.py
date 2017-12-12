@@ -25,6 +25,9 @@ def ask(utterance):
 @requires_auth
 def stt():
     file_data = request.data
+    path = "{}/stt.wav".format(root_dir())
+    with open(path, "wb") as f:
+        f.write(file_data)
     result = {"error": "not implemented"}
     return nice_json(result)
 
@@ -42,4 +45,3 @@ if __name__ == "__main__":
     global app
     port = 6712
     start(app, port)
-712
