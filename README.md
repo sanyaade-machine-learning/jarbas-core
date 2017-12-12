@@ -7,6 +7,7 @@ bare bones backend based on jarbas-dev. meant for server usage
 * removed speech client + hotwords
 * removed enclosure
 * removed audio
+* removed mimic install
 
 some skills would no longer work/undesired and are blacklisted
 
@@ -14,3 +15,4 @@ some skills would no longer work/undesired and are blacklisted
 * alarm
 * volume
 * desktop launcher
+
