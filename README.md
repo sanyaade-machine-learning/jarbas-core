@@ -8,8 +8,9 @@ bare bones backend based on jarbas-dev. meant for server usage
 * removed enclosure
 * removed audio
 
-some skills would no longer work and are blacklisted
+some skills would no longer work/undesired and are blacklisted
 
 * naptime
 * alarm
 * volume
+* desktop launcher

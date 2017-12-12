@@ -135,30 +135,6 @@ else
     VIRTUALENV_ROOT="$WORKON_HOME/mycroft"
 fi
 
-# Check whether to build mimic (it takes a really long time!)
-build_mimic='y'
-if [[ ${opt_skipmimic} == true ]] ; then
-  build_mimic='n'
-else
-  # first, look for a build of mimic in the folder
-  has_mimic=""
-  if [[ -f ${TOP}/mimic/bin/mimic ]] ; then
-      has_mimic=$( ${TOP}/mimic/bin/mimic -lv | grep Voice )
-  fi
-
-  # in not, check the system path
-  if [ "$has_mimic" = "" ] ; then
-    if [ -x "$(command -v mimic)" ]; then
-      has_mimic="$( mimic -lv | grep Voice )"
-    fi
-  fi
-
-  if ! [ "$has_mimic" == "" ] ; then
-    echo "Mimic is installed. Press 'y' to rebuild mimic, any other key to skip."
-    read -n1 build_mimic
-  fi
-fi
-
 # create virtualenv, consistent with virtualenv-wrapper conventions
 if [ ! -d "${VIRTUALENV_ROOT}" ]; then
    mkdir -p $(dirname "${VIRTUALENV_ROOT}")
@@ -208,18 +184,9 @@ echo "Building with $CORES cores."
 #build and install pocketsphinx
 #cd ${TOP}
 #${TOP}/scripts/install-pocketsphinx.sh -q
-#build and install mimic
+
 cd "${TOP}"
 
-if [[ "$build_mimic" == 'y' ]] || [[ "$build_mimic" == 'Y' ]]; then
-  echo "WARNING: The following can take a long time to run!"
-  "${TOP}/scripts/install-mimic.sh" " ${CORES}"
-else
-  echo "Skipping mimic build."
-fi
-
-# install pygtk for desktop_launcher skill
-"${TOP}/scripts/install-pygtk.sh" " ${CORES}"
 
 # install opencv
 if [[ "$mycroft_platform" == "picroft" || "$mycroft_platform" == "mycroft_mark_1" ]] ; then
