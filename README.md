@@ -7,7 +7,7 @@ bare bones backend based on [jarbas-dev](https://github.com/JarbasAl/jarbas-core
 * removed speech client + hotwords
 * removed enclosure
 * removed audio
-* removed mimic install
+* removed mimic install and no longer used requirements
 * dummy enclosure api
 
 some skills would no longer work/undesired and are blacklisted
