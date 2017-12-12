@@ -1,6 +1,7 @@
 from functools import wraps
 from flask import Flask, make_response
 from flask import request, Response
+from flask_sslify import SSLify
 import ssl
 import time
 import os
@@ -19,6 +20,7 @@ def nice_json(arg):
     return response
 
 app = Flask(__name__)
+sslify = SSLify(app)
 port = 5678
 
 
