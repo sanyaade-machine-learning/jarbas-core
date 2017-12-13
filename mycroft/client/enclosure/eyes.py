@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from mycroft.client.enclosure import Enclosure
 
-class EnclosureEyes:
+
+class EnclosureEyes(Enclosure):
     """
     Listens to enclosure commands for Mycroft's Eyes.
 
@@ -21,44 +23,30 @@ class EnclosureEyes:
     """
 
     def __init__(self, ws, writer):
-        self.ws = ws
+        super(EnclosureEyes, self).__init__(ws, "eyes")
         self.writer = writer
-        self.__init_events()
 
-    def __init_events(self):
-        self.ws.on('enclosure.eyes.on', self.on)
-        self.ws.on('enclosure.eyes.off', self.off)
-        self.ws.on('enclosure.eyes.blink', self.blink)
-        self.ws.on('enclosure.eyes.narrow', self.narrow)
-        self.ws.on('enclosure.eyes.look', self.look)
-        self.ws.on('enclosure.eyes.color', self.color)
-        self.ws.on('enclosure.eyes.level', self.brightness)
-        self.ws.on('enclosure.eyes.volume', self.volume)
-        self.ws.on('enclosure.eyes.spin', self.spin)
-        self.ws.on('enclosure.eyes.timedspin', self.timed_spin)
-        self.ws.on('enclosure.eyes.reset', self.reset)
-
-    def on(self, event=None):
+    def eyes_on(self, event=None):
         self.writer.write("eyes.on")
 
-    def off(self, event=None):
+    def eyes_off(self, event=None):
         self.writer.write("eyes.off")
 
-    def blink(self, event=None):
+    def eyes_blink(self, event=None):
         side = "b"
         if event and event.data:
             side = event.data.get("side", side)
         self.writer.write("eyes.blink=" + side)
 
-    def narrow(self, event=None):
+    def eyes_narrow(self, event=None):
         self.writer.write("eyes.narrow")
 
-    def look(self, event=None):
+    def eyes_look(self, event=None):
         if event and event.data:
             side = event.data.get("side", "")
             self.writer.write("eyes.look=" + side)
 
-    def color(self, event=None):
+    def eyes_color(self, event=None):
         r, g, b = 255, 255, 255
         if event and event.data:
             r = int(event.data.get("r", r))
@@ -67,25 +55,25 @@ class EnclosureEyes:
         color = (r * 65536) + (g * 256) + b
         self.writer.write("eyes.color=" + str(color))
 
-    def brightness(self, event=None):
+    def eyes_brightness(self, event=None):
         level = 30
         if event and event.data:
             level = event.data.get("level", level)
         self.writer.write("eyes.level=" + str(level))
 
-    def volume(self, event=None):
+    def eyes_volume(self, event=None):
         volume = 4
         if event and event.data:
             volume = event.data.get("volume", volume)
         self.writer.write("eyes.volume=" + str(volume))
 
-    def reset(self, event=None):
+    def eyes_reset(self, event=None):
         self.writer.write("eyes.reset")
 
-    def spin(self, event=None):
+    def eyes_spin(self, event=None):
         self.writer.write("eyes.spin")
 
-    def timed_spin(self, event=None):
+    def eyes_timed_spin(self, event=None):
         length = 5000
         if event and event.data:
             length = event.data.get("length", length)
