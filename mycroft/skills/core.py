@@ -27,7 +27,7 @@ from os.path import join, abspath, dirname, splitext, basename, exists
 from threading import Event
 
 from mycroft.api import DeviceApi
-from mycroft.client.enclosure.api import EnclosureAPI
+from mycroft.enclosure.api import EnclosureAPI
 from mycroft.configuration import Configuration
 from mycroft.dialog import DialogLoader
 from mycroft.filesystem import FileSystemAccess
