@@ -113,7 +113,6 @@ def requires_admin(f):
 @app.route("/", methods=['GET'])
 @noindex
 @btc
-@requires_auth
 def hello():
     return nice_json({
         "uri": "/",
@@ -153,7 +152,7 @@ def start(app, port=6666):
     key = "{}/certs/JarbasServer.key".format(root_dir())
     context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
     context.load_cert_chain(cert, key)
-    app.run(host="0.0.0.0", port=port, debug=True, ssl_context=context)
+    app.run(host="0.0.0.0", port=port, debug=False, ssl_context=context)
 
 
 if __name__ == "__main__":
