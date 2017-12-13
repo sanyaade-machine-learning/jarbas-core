@@ -445,4 +445,3 @@ class Mark1Enclosure(Enclosure):
             self.ws.emit(Message("enclosure.mouth.reset"))
         # END HACK
         # TODO: Remove this hack ASAP
-
