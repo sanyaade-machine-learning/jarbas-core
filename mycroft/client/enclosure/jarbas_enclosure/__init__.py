@@ -1,4 +1,4 @@
-from mycroft.client.enclosure import Enclosure
+from mycroft.enclosure import Enclosure
 import cv2, imutils
 import random
 import time

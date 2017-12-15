@@ -18,7 +18,7 @@ from mycroft.configuration.config import Configuration
 
 def main():
     config = Configuration.get().get("enclosure", {})
-    platform = config.get("platform", "linux").lower()
+    platform = config.get("enclosure", "dummy").lower()
     if platform == "mark_1" or platform == "picroft":
         from mycroft.client.enclosure import Mark1Enclosure
         enclosure = Mark1Enclosure()
