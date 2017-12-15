@@ -12,37 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mycroft.client.enclosure import Enclosure
 
-'''
-API for the functions that affect the Mark 1 device.
-NOTE: current state management is poorly implemented,
-will be changed in the future.
-'''
-
-
-class EnclosureArduino(Enclosure):
+class EnclosureArduino(object):
     """
     Listens to enclosure commands for Mycroft's Arduino.
 
     Performs the associated command on Arduino by writing on the Serial port.
     """
 
-    def __init__(self, ws, writer):
-        super(EnclosureArduino, self).__init__(ws, "arduino")
+    def __init__(self, writer):
         self.writer = writer
 
-    def reset(self, event=None):
+    def reset(self):
         self.writer.write("system.reset")
 
-    def mute(self, event=None):
+    def mute(self):
         self.writer.write("system.mute")
 
-    def unmute(self, event=None):
+    def unmute(self):
         self.writer.write("system.unmute")
 
-    def blink(self, event=None):
-        times = 1
-        if event and event.data:
-            times = event.data.get("times", times)
+    def blink(self, times=1):
         self.writer.write("system.blink=" + str(times))

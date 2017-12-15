@@ -11,31 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from mycroft.client.enclosure import Enclosure
 
 
-'''
-API for the functions that affect the Mark 1  weather display.
-NOTE: current state management is poorly implemented,
-will be changed in the future.
-'''
-
-
-class EnclosureWeather(Enclosure):
+class EnclosureWeather(object):
     """
     Listens for Enclosure API commands to display indicators of the weather.
 
     Performs the associated command on Arduino by writing on the Serial port.
     """
 
-    def __init__(self, ws, writer):
-        super(EnclosureWeather, self).__init__(ws, "weather")
+    def __init__(self, writer):
         self.writer = writer
 
-    def display(self, event=None):
-        if event and event.data:
+    def display(self, img_code=None, temp=None):
+        if img_code:
             # Convert img_code to icon
-            img_code = event.data.get("img_code", None)
             icon = None
             if img_code == 0:
                 # sunny
@@ -62,7 +52,6 @@ class EnclosureWeather(Enclosure):
                 # wind/mist
                 icon = "IIABIBIBIJIJJGJAGA"
 
-            temp = event.data.get("temp", None)
             if icon is not None and temp is not None:
                 icon = "x=2," + icon
                 msg = "weather.display=" + str(temp) + "," + str(icon)

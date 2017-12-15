@@ -12,75 +12,46 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mycroft.client.enclosure import Enclosure
 
-'''
-API for the functions that affect the Mark 1 eyes.
-NOTE: current state management is poorly implemented,
-will be changed in the future.
-'''
-
-
-class EnclosureEyes(Enclosure):
+class EnclosureEyes(object):
     """
     Listens to enclosure commands for Mycroft's Eyes.
 
     Performs the associated command on Arduino by writing on the Serial port.
     """
 
-    def __init__(self, ws, writer):
-        super(EnclosureEyes, self).__init__(ws, "eyes")
+    def __init__(self, writer):
         self.writer = writer
 
-    def on(self, event=None):
+    def on(self):
         self.writer.write("eyes.on")
 
-    def off(self, event=None):
+    def off(self):
         self.writer.write("eyes.off")
 
-    def blink(self, event=None):
-        side = "b"
-        if event and event.data:
-            side = event.data.get("side", side)
+    def blink(self, side="b"):
         self.writer.write("eyes.blink=" + side)
 
-    def narrow(self, event=None):
+    def narrow(self):
         self.writer.write("eyes.narrow")
 
-    def look(self, event=None):
-        if event and event.data:
-            side = event.data.get("side", "")
-            self.writer.write("eyes.look=" + side)
+    def look(self, side=""):
+        self.writer.write("eyes.look=" + side)
 
-    def color(self, event=None):
-        r, g, b = 255, 255, 255
-        if event and event.data:
-            r = int(event.data.get("r", r))
-            g = int(event.data.get("g", g))
-            b = int(event.data.get("b", b))
-        color = (r * 65536) + (g * 256) + b
+    def color(self, color=(255 * 65536) + (255 * 256) + 255):
         self.writer.write("eyes.color=" + str(color))
 
-    def brightness(self, event=None):
-        level = 30
-        if event and event.data:
-            level = event.data.get("level", level)
+    def brightness(self, level=30):
         self.writer.write("eyes.level=" + str(level))
 
-    def volume(self, event=None):
-        volume = 4
-        if event and event.data:
-            volume = event.data.get("volume", volume)
+    def volume(self, volume=4):
         self.writer.write("eyes.volume=" + str(volume))
 
-    def reset(self, event=None):
+    def reset(self):
         self.writer.write("eyes.reset")
 
-    def spin(self, event=None):
+    def spin(self):
         self.writer.write("eyes.spin")
 
-    def timed_spin(self, event=None):
-        length = 5000
-        if event and event.data:
-            length = event.data.get("length", length)
+    def timed_spin(self, length=5000):
         self.writer.write("eyes.spin=" + str(length))
