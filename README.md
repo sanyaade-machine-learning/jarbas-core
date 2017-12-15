@@ -47,7 +47,8 @@ unlisted once merged
 - util to [get phonemes](https://github.com/MycroftAI/mycroft-core/pull/1174)
 
 # internals
-
+- no virtual env by default
+- [abstract enclosure](https://github.com/MycroftAI/mycroft-core/pull/1306)
 - [speak message metadata](https://github.com/MycroftAI/mycroft-core/pull/1069), mute, more_speech and context options
 - message context and [source/destinatary tracking](https://github.com/MycroftAI/mycroft-core/pull/796/)
 - [centralized api](https://github.com/MycroftAI/mycroft-core/pull/1061/files) section in config
