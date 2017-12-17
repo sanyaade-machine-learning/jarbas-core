@@ -137,7 +137,7 @@ class PlaybackThread(Thread):
                     self._processing_queue = True
                     self.tts.begin_audio()
                 if data is None:
-                    pass
+                    self.p = None
                 elif os.path.exists(data):
                     if snd_type == 'wav':
                         self.p = play_wav(data)
@@ -152,9 +152,10 @@ class PlaybackThread(Thread):
                 if visimes:
                     if self.show_visimes(visimes):
                         self.clear_queue()
-                else:
+                elif self.p is not None:
                     self.p.communicate()
-                self.p.wait()
+                if self.p is not None:
+                    self.p.wait()
 
                 if self.queue.empty():
                     self.tts.end_audio()
@@ -183,6 +184,7 @@ class PlaybackThread(Thread):
             if self._clear_visimes:
                 self._clear_visimes = False
                 return True
+            print code, start+duration
             if self.enclosure:
                 # Include time stamp to assist with animation timing
                 self.enclosure.mouth_viseme(code, start + duration)
@@ -284,7 +286,7 @@ class TTS(object):
             phonemes = self.load_phonemes(key)
         else:
             # guess phonemes
-            phonemes_guess = get_phonemes(sentence, self.lang)
+            phonemes_guess = get_phonemes(sentence, self.lang).split(" ")
             if phonemes_guess:
                 for idx, phoneme in enumerate(phonemes_guess):
                     # duration in seconds
@@ -333,7 +335,7 @@ class TTS(object):
         """
         visimes = []
         if phonemes:
-            pairs = phonemes.split(" ")
+            pairs = phonemes.lower().split(" ")
             for pair in pairs:
                 pho_dur = pair.split(":")  # phoneme:duration
                 if len(pho_dur) == 2:

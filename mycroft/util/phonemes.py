@@ -73,19 +73,20 @@ def get_phonemes_en(sentence):
         total_phonemes = []
         names = sentence.split(" ")
         for sentence in names:
-            phon = get_phonemes(sentence)
+            phon = get_phonemes_en(sentence)
             if phon is None:
                 return None
-            total_phonemes.extend(phon)
+            total_phonemes.extend(phon.split(" "))
             total_phonemes.append(".")
         if total_phonemes[-1] == ".":
             total_phonemes = total_phonemes[:-1]
         phonemes = " ".join(total_phonemes)
     elif len(pronouncing.phones_for_word(sentence)):
-        phonemes = " ".join(pronouncing.phones_for_word(sentence)[0])
+        phonemes = "".join(pronouncing.phones_for_word(sentence)[0])
     else:
         guess = guess_phonemes(sentence)
         if guess is not None:
-            phonemes = " ".join(guess)
+            phonemes = "".join(guess)
 
     return phonemes
+

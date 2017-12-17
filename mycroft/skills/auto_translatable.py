@@ -27,7 +27,9 @@ class AutotranslatableSkill(MycroftSkill):
                                                                         'ignore')
         return translated
 
-    def speak(self, utterance, expect_response=False):
+    def speak(self, utterance, expect_response=False,
+              mute=False, more_speech=False, metadata=None,
+              message_context=None):
         """
            Speak a sentence. Detect Language and auto_translate if needed
 
