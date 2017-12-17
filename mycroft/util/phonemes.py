@@ -3,13 +3,13 @@ import pronouncing
 
 def guess_phonemes(word, lang="en-us"):
     if "en" in lang.lower():
-        return guess_phonemes_en(word)
+        return guess_phonemes_en(word.lower())
     return []
 
 
 def get_phonemes(sentence, lang="en-us"):
     if "en" in lang.lower():
-        return get_phonemes_en(sentence)
+        return get_phonemes_en(sentence.lower())
     return None
 
 
@@ -82,7 +82,9 @@ def get_phonemes_en(sentence):
             total_phonemes = total_phonemes[:-1]
         phonemes = " ".join(total_phonemes)
     elif len(pronouncing.phones_for_word(sentence)):
-        phonemes = "".join(pronouncing.phones_for_word(sentence)[0])
+        phonemes = "".join(pronouncing.phones_for_word(sentence)[
+                               0]).replace("1","").replace("0","").replace(
+            "2","")
     else:
         guess = guess_phonemes(sentence)
         if guess is not None:

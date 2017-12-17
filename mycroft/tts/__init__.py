@@ -184,7 +184,6 @@ class PlaybackThread(Thread):
             if self._clear_visimes:
                 self._clear_visimes = False
                 return True
-            print code, start+duration
             if self.enclosure:
                 # Include time stamp to assist with animation timing
                 self.enclosure.mouth_viseme(code, start + duration)
@@ -286,8 +285,9 @@ class TTS(object):
             phonemes = self.load_phonemes(key)
         else:
             # guess phonemes
-            phonemes_guess = get_phonemes(sentence, self.lang).split(" ")
+            phonemes_guess = get_phonemes(sentence, self.lang)
             if phonemes_guess:
+                phonemes_guess = phonemes_guess.split(" ")
                 for idx, phoneme in enumerate(phonemes_guess):
                     # duration in seconds
                     if phoneme == ".":  # pause between words
