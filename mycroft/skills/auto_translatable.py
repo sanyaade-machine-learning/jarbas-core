@@ -2,6 +2,7 @@ from mycroft.skills.core import MycroftSkill, FallbackSkill, Message
 from mtranslate import translate
 import unicodedata
 from langdetect import detect as language_detect
+from mycroft.util import connected
 
 
 class AutotranslatableSkill(MycroftSkill):
@@ -14,10 +15,16 @@ class AutotranslatableSkill(MycroftSkill):
         return language_detect(utterance)
 
     def translate(self, text, lang=None):
-        lang = lang or self.lang
-        sentence = translate(text, lang)
-        translated = unicodedata.normalize('NFKD', sentence).encode('ascii',
-                                                                    'ignore')
+
+        if not connected():
+            self.log.error("could not translate because there is no "
+                           "internet connection")
+            translated = text
+        else:
+            lang = lang or self.lang
+            sentence = translate(text, lang)
+            translated = unicodedata.normalize('NFKD', sentence).encode('ascii',
+                                                                        'ignore')
         return translated
 
     def speak(self, utterance, expect_response=False):
