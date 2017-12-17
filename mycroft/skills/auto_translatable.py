@@ -33,17 +33,27 @@ class AutotranslatableSkill(MycroftSkill):
         # translate utterance for skills that generate speech at
         # runtime, or by request
         message_context = {}
-        utterance_lang = self.language_detect(utterance)
-        if "-" in utterance_lang:
-            utterance_lang = utterance_lang.split("-")[0]
+
+        try:
+            utterance_lang = self.language_detect(utterance)
+            if "-" in utterance_lang:
+                utterance_lang = utterance_lang.split("-")[0]
+        except Exception as e:
+            utterance_lang = "unknown"
+            self.log.error("Could not detect utterance language: " +
+                           str(e))
         target_lang = self.lang
         if "-" in target_lang:
             target_lang = target_lang.split("-")[0]
-        if utterance_lang != target_lang:
-            utterance = self.translate(utterance, target_lang)
-            message_context["auto_translated"] = True
-            message_context["source_lang"] = utterance_lang
-            message_context["target_lang"] = target_lang
+
+        try:
+            if utterance_lang != target_lang:
+                utterance = self.translate(utterance, target_lang)
+                message_context["auto_translated"] = True
+                message_context["source_lang"] = utterance_lang
+                message_context["target_lang"] = target_lang
+        except Exception as e:
+            self.log.error("Could not perform auto translation: " + str(e))
 
         # registers the skill as being active
         self.enclosure.register(self.name)

@@ -1,5 +1,6 @@
 from mycroft.enclosure import Enclosure
-import cv2, imutils
+import cv2
+import imutils
 import random
 import time
 from os.path import dirname, join, exists
@@ -57,7 +58,7 @@ class JarbasEnclosure(Enclosure):
         cv2.imshow("focus hack", cv2.resize(self.blank_frame, (1,1)))
         cv2.setWindowProperty("focus hack", cv2.WND_PROP_FULLSCREEN,
                               cv2.WINDOW_FULLSCREEN)
-        #cv2.waitKey(1)
+        cv2.waitKey(1)
         cv2.setWindowProperty("focus hack", cv2.WND_PROP_FULLSCREEN,
                               cv2.WINDOW_NORMAL)
         cv2.destroyWindow("focus hack")

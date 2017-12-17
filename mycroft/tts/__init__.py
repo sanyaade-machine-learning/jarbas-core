@@ -136,16 +136,19 @@ class PlaybackThread(Thread):
                 if not self._processing_queue:
                     self._processing_queue = True
                     self.tts.begin_audio()
-                if os.path.exists(data):
+                if data is None:
+                    pass
+                elif os.path.exists(data):
                     if snd_type == 'wav':
                         self.p = play_wav(data)
                     elif snd_type == 'mp3':
                         self.p = play_mp3(data)
                     else:
-                        LOG.warning("file type not supported: " + snd_type)
+                        LOG.warning("file type playback not supported: " +
+                                    snd_type)
                 else:
-                    #LOG.warning("TTS Failure, sound file does not exist")
-                    pass
+                    LOG.warning("TTS Failure, sound file does not exist")
+
                 if visimes:
                     if self.show_visimes(visimes):
                         self.clear_queue()
@@ -329,12 +332,13 @@ class TTS(object):
                 phonemes(str): String with phoneme data
         """
         visimes = []
-        pairs = phonemes.split(" ")
-        for pair in pairs:
-            pho_dur = pair.split(":")  # phoneme:duration
-            if len(pho_dur) == 2:
-                visimes.append((VISIMES.get(pho_dur[0], '4'),
-                                float(pho_dur[1])))
+        if phonemes:
+            pairs = phonemes.split(" ")
+            for pair in pairs:
+                pho_dur = pair.split(":")  # phoneme:duration
+                if len(pho_dur) == 2:
+                    visimes.append((VISIMES.get(pho_dur[0], '4'),
+                                    float(pho_dur[1])))
         return visimes
 
     def clear_cache(self):
