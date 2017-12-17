@@ -18,6 +18,7 @@ import sys
 import time
 from functools import wraps
 from inspect import getargspec
+import unicodedata
 
 import abc
 import re
@@ -823,6 +824,10 @@ class MycroftSkill(object):
             message_context = {}
         if metadata is None:
             metadata = {}
+        # protect against encoding errors
+        utterance = unicodedata.normalize('NFKD', utterance).encode(
+            'ascii',
+            'ignore')
         # registers the skill as being active
         self.enclosure.register(self.name)
         data = {'utterance': utterance,

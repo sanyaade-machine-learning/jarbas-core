@@ -34,6 +34,9 @@ class AutotranslatableSkill(MycroftSkill):
         # runtime, or by request
         message_context = {}
 
+        # protect against encoding errors
+        utterance = unicodedata.normalize('NFKD', utterance).encode('ascii',
+                                                       'ignore')
         try:
             utterance_lang = self.language_detect(utterance)
             if "-" in utterance_lang:
