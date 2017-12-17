@@ -25,6 +25,9 @@ class ESpeak(TTS):
         self.begin_audio()
         subprocess.call(
             ['espeak', '-v', self.lang + '+' + self.voice, sentence])
+        # hacky phonemes to viseme
+        self.queue.put((self.type, None, self.visime(
+            self.guess_phonemes(sentence))))
         self.end_audio()
 
 

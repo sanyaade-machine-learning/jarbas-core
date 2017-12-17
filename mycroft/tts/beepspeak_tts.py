@@ -9,7 +9,7 @@ __author__ = 'jarbas'
 
 
 class BeepSpeak(TTS):
-    def __init__(self, lang="en-us", voice="r2d2", timestep=0.3):
+    def __init__(self, lang="en-us", voice="r2d2", timestep=0.2):
         super(BeepSpeak, self).__init__(lang, voice, BeepSpeakValidator(self))
         config = Configuration.get().get("tts").get("beep_speak", {})
         self.time_step = float(config.get("time_step", timestep))
@@ -31,7 +31,6 @@ class BeepSpeak(TTS):
                 print 'Error the character ' + char + ' cannot be ' \
                                                       'translated to ' \
                                                       'beep_speak'
-                string.replace(char.upper(), "").replace(char, "")
 
     def execute(self, msg):
 
@@ -44,6 +43,7 @@ class BeepSpeak(TTS):
                 morse_sound_path = self.sound_files_path + "/" + \
                                    char.upper() + '_beep.wav'
                 self.process = play_wav(morse_sound_path)
+                # TODO visemes?
                 time.sleep(self.time_step)  # ~sound duration
 
 

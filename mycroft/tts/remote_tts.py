@@ -43,6 +43,9 @@ class RemoteTTS(TTS):
                 try:
                     self.begin_audio()
                     self.__play(req)
+                    # hacky phonemes to viseme
+                    self.queue.put((self.type, None, self.visime(
+                        self.guess_phonemes(sentence))))
                 except Exception, e:
                     LOG.error(e.message)
                 finally:

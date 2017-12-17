@@ -29,6 +29,8 @@ from mycroft.configuration import Configuration
 from mycroft.messagebus.message import Message
 from mycroft.util import play_wav, play_mp3, check_for_signal, create_signal
 from mycroft.util.log import LOG
+from mycroft.util.phonemes import get_phonemes
+from mycroft.tts.mimic_tts import VISIMES
 
 
 class PlaybackThread(Thread):
@@ -70,12 +72,16 @@ class PlaybackThread(Thread):
                 if not self._processing_queue:
                     self._processing_queue = True
                     self.tts.begin_audio()
-
-                if snd_type == 'wav':
-                    self.p = play_wav(data)
-                elif snd_type == 'mp3':
-                    self.p = play_mp3(data)
-
+                if os.path.exists(data):
+                    if snd_type == 'wav':
+                        self.p = play_wav(data)
+                    elif snd_type == 'mp3':
+                        self.p = play_mp3(data)
+                    else:
+                        LOG.warning("file type not supported: " + snd_type)
+                else:
+                    #LOG.warning("TTS Failure, sound file does not exist")
+                    pass
                 if visimes:
                     if self.show_visimes(visimes):
                         self.clear_queue()
@@ -143,6 +149,7 @@ class TTS(object):
 
     def __init__(self, lang, voice, validator):
         super(TTS, self).__init__()
+        self.type = "wav"
         self.lang = lang or 'en-us'
         self.voice = voice
         self.filename = '/tmp/tts.wav'
@@ -153,11 +160,15 @@ class TTS(object):
         self.playback = PlaybackThread(self.queue)
         self.playback.start()
         self.clear_cache()
+        self.phoneme_duration = int(
+            Configuration.get().get("listener", {}).get("phoneme_duration",
+                                                        120)) / 1000
 
     def begin_audio(self):
         """Helper function for child classes to call in execute()"""
         # Create signals informing start of speech
         self.ws.emit(Message("recognizer_loop:audio_output_start"))
+        create_signal("isSpeaking")
 
     def end_audio(self):
         """
@@ -195,6 +206,32 @@ class TTS(object):
         """
         pass
 
+    def guess_phonemes(self, sentence, save=False):
+        key = str(hashlib.md5(sentence.encode('utf-8', 'ignore')).hexdigest())
+        phonemes = None
+
+        pho_file = os.path.join(mycroft.util.get_cache_directory("tts"),
+                                key + ".pho")
+        if os.path.exists(pho_file):
+            # does it exist maybe from a previous mimic run?
+            phonemes = self.load_phonemes(key)
+        else:
+            # guess phonemes
+            phonemes_guess = get_phonemes(sentence, self.lang)
+            if phonemes_guess:
+                for idx, phoneme in enumerate(phonemes_guess):
+                    # duration in seconds
+                    if phoneme == ".":  # pause between words
+                        duration = self.phoneme_duration * 2
+                        phoneme = " "
+                    else:
+                        duration = self.phoneme_duration
+                    phonemes_guess[idx] = phoneme+":"+str(duration)
+                phonemes = " ".join(phonemes_guess)
+                if save:
+                    self.save_phonemes(key, phonemes)
+        return phonemes
+
     def execute(self, sentence):
         """
             Convert sentence to speech.
@@ -205,7 +242,6 @@ class TTS(object):
             Args:
                 sentence:   Sentence to be spoken
         """
-        create_signal("isSpeaking")
         key = str(hashlib.md5(sentence.encode('utf-8', 'ignore')).hexdigest())
         wav_file = os.path.join(mycroft.util.get_cache_directory("tts"),
                                 key + '.' + self.type)
@@ -215,8 +251,8 @@ class TTS(object):
             phonemes = self.load_phonemes(key)
         else:
             wav_file, phonemes = self.get_tts(sentence, wav_file)
-            if phonemes:
-                self.save_phonemes(key, phonemes)
+            if not phonemes:
+                phonemes = self.guess_phonemes(sentence, save=True)
 
         self.queue.put((self.type, wav_file, self.visime(phonemes)))
 
@@ -228,7 +264,14 @@ class TTS(object):
             Args:
                 phonemes(str): String with phoneme data
         """
-        return None
+        visimes = []
+        pairs = phonemes.split(" ")
+        for pair in pairs:
+            pho_dur = pair.split(":")  # phoneme:duration
+            if len(pho_dur) == 2:
+                visimes.append((VISIMES.get(pho_dur[0], '4'),
+                                float(pho_dur[1])))
+        return visimes
 
     def clear_cache(self):
         """ Remove all cached files. """

@@ -7,9 +7,9 @@ def guess_phonemes(word, lang="en-us"):
     return []
 
 
-def get_phonemes(name, lang="en-us"):
+def get_phonemes(sentence, lang="en-us"):
     if "en" in lang.lower():
-        return get_phonemes_en(name)
+        return get_phonemes_en(sentence)
     return None
 
 
@@ -41,7 +41,7 @@ def guess_phonemes_en(word):
                            'oo': ['UW'], 'ua': ['W', 'AO'], 'ng': ['NG'],
                            'bb': ['B'],
                            'tch': ['CH'], 'rr': ['R'], 'dd': ['D'],
-                           'cc': ['K', 'S'], 'wr': ['R'], 'oe': ['OW'],
+                           'cc': ['K', 'S'], 'oe': ['OW'],
                            'igh': ['AY'], 'eigh': ['EY']}
     phones = []
 
@@ -67,13 +67,13 @@ def guess_phonemes_en(word):
     return phones
 
 
-def get_phonemes_en(name):
+def get_phonemes_en(sentence):
     phonemes = None
-    if " " in name:
+    if " " in sentence:
         total_phonemes = []
-        names = name.split(" ")
-        for name in names:
-            phon = get_phonemes(name)
+        names = sentence.split(" ")
+        for sentence in names:
+            phon = get_phonemes(sentence)
             if phon is None:
                 return None
             total_phonemes.extend(phon)
@@ -81,10 +81,10 @@ def get_phonemes_en(name):
         if total_phonemes[-1] == ".":
             total_phonemes = total_phonemes[:-1]
         phonemes = " ".join(total_phonemes)
-    elif len(pronouncing.phones_for_word(name)):
-        phonemes = " ".join(pronouncing.phones_for_word(name)[0])
+    elif len(pronouncing.phones_for_word(sentence)):
+        phonemes = " ".join(pronouncing.phones_for_word(sentence)[0])
     else:
-        guess = guess_phonemes(name)
+        guess = guess_phonemes(sentence)
         if guess is not None:
             phonemes = " ".join(guess)
 

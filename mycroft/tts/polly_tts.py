@@ -40,14 +40,11 @@ class PollyTTS(TTS):
                           region_name=self.region)
         self.polly = session.client('polly')
 
-    def execute(self, sentence, output="/tmp/polly.mp3"):
-        self.begin_audio()
+    def get_tts(self, sentence, wav_file):
         output = self.retrieve_audio(sentence)
         if output is None:
             LOG.error("Could not get audio from Polly")
-        else:
-            play_mp3(output)
-        self.end_audio()
+        return output, None
 
     def describe_voices(self, language_code):
         # example 'it-IT' useful to retrieve voices

@@ -23,6 +23,9 @@ class SpdSay(TTS):
 
     def execute(self, sentence):
         self.begin_audio()
+        # hacky phonemes to viseme
+        self.queue.put((self.type, None, self.visime(
+            self.guess_phonemes(sentence))))
         subprocess.call(
             ['spd-say', '-l', self.lang, '-t', self.voice, sentence])
         self.end_audio()
