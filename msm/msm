@@ -264,10 +264,11 @@ function install() {
   fi
 
   # TODO: Allow skipping virtualwrapper with an option?
-  if [[ "$vwrap" = "false" ]] ; then
-    echo "ERROR:  Missing virtualwrapper, cowardly refusing to install skills"
-    return 5
-  fi
+  #if [[ "$vwrap" = "false" ]] ; then
+  #  echo "ERROR:  Missing virtualwrapper, cowardly refusing to install
+  #skills"
+  #  return 5
+  #fi
 
   cd "${mycroft_skill_folder}"
 

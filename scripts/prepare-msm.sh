@@ -14,8 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+function get_config_value() {
+  key="$1"
+  default="$2"
+  value="null"
+  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf ; do
+    if [[ -r ~/.mycroft/mycroft.conf ]] ; then
+        value=$( jq -r "$key" "$file" )
+        if [[ "${value}" != "null" ]] ;  then
+            echo "$value"
+            return
+        fi
+    fi
+  done
+  echo "$default"
+}
+
 mycroft_root_dir='/opt/mycroft'
-skills_dir="${mycroft_root_dir}"/skills
+skills_dir="$(get_config_value '.skills.directory' '/opt/mycroft/skills')"
+
 # exit on any error
 set -Ee
 
