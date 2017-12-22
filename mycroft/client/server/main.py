@@ -50,6 +50,23 @@ class User(db.Model):
     def __repr__(self):
         return '<User %r>' % (self.nickname)
 
+    def __eq__(self, other):
+        '''
+        Checks the equality of two `User` objects using `get_id`.
+        '''
+        if isinstance(other, User):
+            return self.get_id() == other.get_id()
+        return NotImplemented
+
+    def __ne__(self, other):
+        '''
+        Checks the inequality of two `User` objects using `get_id`.
+        '''
+        equal = self.__eq__(other)
+        if equal is NotImplemented:
+            return NotImplemented
+        return not equal
+
 
 def authenticate():
     """Sends a 401 response that enables basic auth"""
