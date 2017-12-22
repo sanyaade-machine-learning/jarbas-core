@@ -27,7 +27,7 @@ socketio = SocketIO(app)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nickname = db.Column(db.String(64), index=True, unique=True)
-    email = db.Column(db.String(120), index=True, unique=True)
+    api = db.Column(db.String(120), index=True, unique=True)
 
     @property
     def is_authenticated(self):
@@ -61,7 +61,7 @@ def authenticate():
 
 def check_auth(api_key):
     """This function is called to check if a api key is valid."""
-    user = User.query.filter_by(id=api_key).first()
+    user = User.query.filter_by(api=api_key).first()
     if user is None:
         return False
     # TODO update db with timestamp
@@ -91,7 +91,7 @@ def login():
         return authenticate()
     # Login and validate the user.
     # user should be an instance of your `User` class
-    user = User.query.filter_by(id=auth).first()
+    user = User.query.filter_by(api=auth).first()
     login_user(user)
     return nice_json({
         "uri": "/login",
