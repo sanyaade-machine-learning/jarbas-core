@@ -33,3 +33,4 @@ langdetect
 pronouncing==0.1.5
 flask
 Flask-SSLify
+flask-socketio
