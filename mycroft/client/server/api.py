@@ -52,6 +52,21 @@ class MycroftAPI(object):
             print e
             raise ConnectionError("Could not connect")
 
+    def get_intent(self, utterance, lang="en-us"):
+        try:
+            response = requests.get(
+                MycroftAPI.URL+"/intent/"+lang+"/"+utterance,
+                headers=self.headers, verify=False
+            )
+            try:
+                return response.json()["echo"]
+            except:
+                print response.text
+                raise ValueError("Invalid api key")
+        except ConnectionError as e:
+            print e
+            raise ConnectionError("Could not connect")
+
     def ask_mycroft(self, utterance):
         try:
             response = requests.get(
@@ -85,3 +100,4 @@ print ap.hello_world()
 #print ap.new_user("new_key", "0", "test")
 #print ap.get_api()
 print ap.ask_mycroft("do you work?")
+print ap.get_intent("hello world")
