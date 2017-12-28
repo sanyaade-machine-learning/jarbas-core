@@ -104,6 +104,7 @@ def requires_admin(f):
     def decorated(*args, **kwargs):
         auth = request.headers.get('Authorization', '')
         if not auth or not check_admin_auth(auth):
+            print "not admin"
             return authenticate()
         return f(*args, **kwargs)
 
@@ -122,7 +123,7 @@ def hello():
     })
 
 
-@app.route("/api_add/<api>/<id>/<name>", methods=['PUT'])
+@app.route("/new_user/<api>/<id>/<name>", methods=['PUT'])
 @noindex
 @btc
 @requires_admin
@@ -131,20 +132,20 @@ def add_user(api, id, name):
     users[api] = result
     with open("{}/database/users.json".format(root_dir()), "w") as f:
         f.write(json.dumps(users))
-    return nice_json({
+    return nice_json(
         result
-    })
+    )
 
 
-@app.route("/api_gen", methods=['GET'])
+@app.route("/get_api", methods=['GET'])
 @noindex
 @btc
 @requires_admin
-def gen_api():
+def new_api():
     api = gen_api(save=False)
-    return nice_json({
+    return nice_json(
         {"api": api}
-    })
+    )
 
 
 def start(app, port=6666):

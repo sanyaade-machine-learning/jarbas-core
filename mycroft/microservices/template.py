@@ -15,7 +15,7 @@ def intent(utterance):
 @btc
 @requires_auth
 def ask(utterance):
-    result = {"error": "not implemented"}
+    result = {"error": "not implemented", "echo":utterance}
     return nice_json(result)
 
 
