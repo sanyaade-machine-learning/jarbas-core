@@ -73,7 +73,6 @@ def main():
             LOG.info("key created at: " + key)
             LOG.info("crt created at: " + cert)
             # TODO update and save config with new keys
-            config["cert_file"] = cert
             config["key_file"] = key
         if key and cert:
             LOG.info("using ssl key at " + key)

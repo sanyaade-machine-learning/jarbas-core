@@ -32,6 +32,7 @@ langdetect
 #tools
 pronouncing==0.1.5
 flask
+pyopenssl
 flask-sslify
 flask-socketio
 flask-sqlalchemy
