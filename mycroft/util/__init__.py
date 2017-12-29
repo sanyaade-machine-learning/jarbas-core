@@ -334,12 +334,14 @@ def get_language_resource_path(resource_name, lang="en-us"):
     res_path = os.path.join(os.path.dirname(__file__), '..', 'res', resource_name)
     base_path = os.path.abspath(os.path.normpath(res_path))
 
-    candidates = [f for f in os.listdir(base_path) if f.startswith(main)]
-
-    paths = [os.path.join(base_path, c) for c in candidates]
-    # TODO how to choose best local dialect?
-    if len(paths):
-        return paths[0]
+    # base_path/en-uk, base_path/en-au...
+    if os.path.isdir(base_path):
+        candidates = [f for f in os.listdir(base_path) if f.startswith(main)]
+        candidates = [os.path.join(base_path, c) for c in candidates]
+        paths = [p for p in candidates if os.path.isdir(p)]
+        # TODO how to choose best local dialect?
+        if len(paths):
+            return paths[0]
 
     return os.path.join(resource_name, lang)
 
@@ -359,9 +361,11 @@ def get_language_dir(base_path, lang="en-us"):
     else:
         main = lang
     # base_path/en-uk, base_path/en-au...
-    candidates = [f for f in os.listdir(base_path) if f.startswith(main)]
-    paths = [os.path.join(base_path, c) for c in candidates]
-    # TODO how to choose best local dialect?
-    if len(paths):
-        return paths[0]
+    if os.path.isdir(base_path):
+        candidates = [f for f in os.listdir(base_path) if f.startswith(main)]
+        candidates = [os.path.join(base_path, c) for c in candidates]
+        paths = [p for p in candidates if os.path.isdir(p)]
+        # TODO how to choose best local dialect?
+        if len(paths):
+            return paths[0]
     return os.path.join(base_path, lang)
