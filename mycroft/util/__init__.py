@@ -189,7 +189,8 @@ def connected(host="8.8.8.8", port=53, timeout=3):
     """
     try:
         socket.setdefaulttimeout(timeout)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(
+            (host, port))
         return True
     except IOError:
         try:
@@ -229,7 +230,8 @@ def curate_cache(directory, min_free_percent=5.0, min_free_disk=50):
         bytes_needed = int(bytes_needed + 1.0)
 
         # get all entries in the directory w/ stats
-        entries = (os.path.join(directory, fn) for fn in os.listdir(directory))
+        entries = (os.path.join(directory, fn) for fn in
+                   os.listdir(directory))
         entries = ((os.stat(path), path) for path in entries)
 
         # leave only regular files, insert modification date
@@ -331,7 +333,8 @@ def get_language_resource_path(resource_name, lang="en-us"):
         main = lang
 
     # base_path/en-uk, base_path/en-au...
-    res_path = os.path.join(os.path.dirname(__file__), '..', 'res', resource_name)
+    res_path = os.path.join(os.path.dirname(__file__), '..', 'res',
+                            resource_name)
     base_path = os.path.abspath(os.path.normpath(res_path))
 
     # base_path/en-uk, base_path/en-au...
