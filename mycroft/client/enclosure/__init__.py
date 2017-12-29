@@ -14,9 +14,6 @@
 #
 import subprocess
 from Queue import Queue
-from alsaaudio import Mixer
-from threading import Thread, Timer
-import serial
 import mycroft.dialog
 from mycroft.api import has_been_paired
 
@@ -419,15 +416,11 @@ class EnclosureReader(Thread):
             self.ws.emit(Message('recognizer_loop:wake_up'))
 
         if "mic.test" in data:
-            mixer = Mixer()
-            prev_vol = mixer.getvolume()[0]
-            mixer.setvolume(35)
             self.ws.emit(Message("speak", {
                 'utterance': "I am testing one two three"}))
 
             time.sleep(0.5)  # Prevents recording the loud button press
             record("/tmp/test.wav", 3.0)
-            mixer.setvolume(prev_vol)
             play_wav("/tmp/test.wav").communicate()
 
             # Test audio muting on arduino
