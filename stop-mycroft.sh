@@ -33,6 +33,7 @@ function help() {
   echo "  audio     stop the audio playback service"
   echo "  skills    stop the skill service"
   echo "  voice     stop voice capture service"
+  echo "  micro     stop micro services"
   echo
   echo "Examples:"
   echo "  ${script}"
@@ -86,6 +87,7 @@ case ${OPT} in
     end-process skills
     end-process audio
     end-process speech
+    end-process micro
     ;;
   "bus")
     end-process service
@@ -98,6 +100,9 @@ case ${OPT} in
     ;;
   "voice")
     end-process speech
+    ;;
+  "micro")
+    end-process micro
     ;;
 
 
