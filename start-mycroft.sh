@@ -22,6 +22,11 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 scripts_dir="$DIR/scripts"
 mkdir -p $scripts_dir/logs
 
+if [ -z "$WORKON_HOME" ]; then
+    VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/mycroft"}
+else
+    VIRTUALENV_ROOT="$WORKON_HOME/mycroft"
+fi
 
 function help() {
   echo "${script}:  Mycroft command/service launcher"
@@ -85,6 +90,7 @@ function launch-process() {
     if ($first_time) ; then
         echo "Initializing..."
         ${DIR}/scripts/prepare-msm.sh
+        source ${VIRTUALENV_ROOT}/bin/activate
         first_time=false
     fi
 
@@ -99,6 +105,7 @@ function launch-background() {
     if ($first_time) ; then
         echo "Initializing..."
         ${DIR}/scripts/prepare-msm.sh
+        source ${VIRTUALENV_ROOT}/bin/activate
         first_time=false
     fi
 
