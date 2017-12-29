@@ -22,10 +22,29 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 scripts_dir="$DIR/scripts"
 mkdir -p $scripts_dir/logs
 
-if [ -z "$WORKON_HOME" ]; then
-    VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/mycroft"}
-else
-    VIRTUALENV_ROOT="$WORKON_HOME/mycroft"
+function get_config_value() {
+  key="$1"
+  default="$2"
+  value="null"
+  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf ; do
+    if [[ -r ~/.mycroft/mycroft.conf ]] ; then
+        value=$( jq -r "$key" "$file" )
+        if [[ "${value}" != "null" ]] ;  then
+            echo "$value"
+            return
+        fi
+    fi
+  done
+  echo "$default"
+}
+
+use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
+if [[ ${use_virtualenvwrapper} == "true" ]] ; then
+    if [ -z "$WORKON_HOME" ]; then
+        VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/mycroft"}
+    else
+        VIRTUALENV_ROOT="$WORKON_HOME/mycroft"
+    fi
 fi
 
 function help() {
@@ -90,7 +109,9 @@ function launch-process() {
     if ($first_time) ; then
         echo "Initializing..."
         ${DIR}/scripts/prepare-msm.sh
-        source ${VIRTUALENV_ROOT}/bin/activate
+        if [[ ${use_virtualenvwrapper} == "true" ]] ; then
+            source ${VIRTUALENV_ROOT}/bin/activate
+        fi
         first_time=false
     fi
 
@@ -105,7 +126,9 @@ function launch-background() {
     if ($first_time) ; then
         echo "Initializing..."
         ${DIR}/scripts/prepare-msm.sh
-        source ${VIRTUALENV_ROOT}/bin/activate
+        if [[ ${use_virtualenvwrapper} == "true" ]] ; then
+            source ${VIRTUALENV_ROOT}/bin/activate
+        fi
         first_time=false
     fi
 
