@@ -49,7 +49,8 @@ PRIORITY_SKILLS = skills_config.get("priority_skills", [])
 SKILLS_DIR = skills_config.get("directory") or '/opt/mycroft/skills'
 
 installer_config = Configuration.get().get("SkillInstallerSkill")
-MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH, 'msm', 'msm'))
+MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH, 'mycroft',
+                                            'msm', 'msm'))
 
 MINUTES = 60  # number of seconds in a minute (syntatic sugar)
 
