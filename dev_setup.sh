@@ -103,6 +103,7 @@ fi
 mycroft_skill_folder="$(get_config_value '.skills.directory' '/opt/mycroft/skills')"
 if [[ ! -d "${mycroft_skill_folder}" ]] ; then
   echo "ERROR: Unable to find/access ${mycroft_skill_folder}!"
+  sudo mkdir ${mycroft_skill_folder}
   exit 101
 fi
 
