@@ -376,26 +376,28 @@ function run_pip() {
     name=$*
     if [[ -f "requirements.txt" ]]; then
       echo "  Installing requirements..."
-      if [[ "${picroft_mk1}" == "false" ]] || [[ ${use_virtualenvwrapper} == "true" ]] ; then
-        if [[ "${VIRTUAL_ENV}" =~ .mycroft$ ]] ; then
-          if ! pip install -r requirements.txt ; then
-            echo "ERROR: Unable to install requirements for skill '${name}'"
-            send_install_fail "${name}" 121
-            return 121
-          fi
-        else
-          if workon mycroft ; then
-            if ! pip install -r requirements.txt ; then
-              echo "ERROR: Unable to install requirements for skill '${name}'"
-              deactivate mycroft
-              send_install_fail "${name}" 121
-              return 121
+      if [[ ${use_virtualenvwrapper} == "true" ]] ; then
+        if [[ "${picroft_mk1}" == "false" ]] : then
+            if [[ "${VIRTUAL_ENV}" =~ .mycroft$ ]] ; then
+              if ! pip install -r requirements.txt ; then
+                echo "ERROR: Unable to install requirements for skill '${name}'"
+                send_install_fail "${name}" 121
+                return 121
+              fi
+            else
+              if workon mycroft ; then
+                if ! pip install -r requirements.txt ; then
+                  echo "ERROR: Unable to install requirements for skill '${name}'"
+                  deactivate mycroft
+                  send_install_fail "${name}" 121
+                  return 121
+                fi
+              else
+                echo "ERROR: Unable to activate 'mycroft' virtualenv, requirements not installed."
+                send_install_fail "${name}" 120
+                return 120
+              fi
             fi
-          else
-            echo "ERROR: Unable to activate 'mycroft' virtualenv, requirements not installed."
-            send_install_fail "${name}" 120
-            return 120
-          fi
         fi
       else
         if ! sudo pip install -r requirements.txt ; then
