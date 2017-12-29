@@ -44,7 +44,7 @@ while [ -h "$SOURCE" ]; do
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
  
-chmod +x ${DIR}/../msm/msm
+chmod +x ${DIR}/../mycroft/msm/msm
 
 # Determine which user is running this script
 setup_user=$USER
