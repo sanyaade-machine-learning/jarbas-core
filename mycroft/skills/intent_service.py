@@ -217,7 +217,6 @@ class IntentService(object):
             context = {}
         # by default set destinatary of reply to source of this message
         context["destinatary"] = context.get("source", "all")
-        context["mute"] = context.get("mute", False)
         context["source"] = "skills"
         return context
 
@@ -256,6 +255,10 @@ class IntentService(object):
                     include_tags=True,
                     context_manager=self.context_manager))
                 # TODO - Should Adapt handle this?
+                # merge all data fields
+                for key in message.data.keys():
+                    if key not in best_intent.keys() and key != "utterances":
+                        best_intent[key] = message.data[key]
                 best_intent['utterance'] = utterance
             except StopIteration:
                 # don't show error in log

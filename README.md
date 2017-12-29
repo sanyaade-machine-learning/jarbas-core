@@ -28,7 +28,7 @@ requires an API key
 - adapt intent determination
 - stt
 - tts
-- ask mycroft (queues and answer by order)
+- ask mycroft (queues and answers by order)
 
 status: nearly finished
 

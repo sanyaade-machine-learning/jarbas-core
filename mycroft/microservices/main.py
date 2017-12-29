@@ -13,6 +13,7 @@ queue = Queue()
 waiting = False
 reply = ""
 user_id = ""
+answer_utt = ""
 answer = None
 intents = None
 timeout = 10
@@ -63,8 +64,6 @@ def ask(utterance):
 
 
 def get_answer(message=None, reply="speak", context=None):
-    # TODO use handler complete messages instead of a single reply, skills
-    # may emit more than 1 speak message
     global ws, queue, answer, waiting
     answer = None
     queue.put((message, reply))
@@ -112,25 +111,37 @@ def asker():
 
 
 def listener(message):
-    global answer, waiting, user_id, ws
+    global answer, user_id, ws, answer_utt
     message.context = message.context or {}
     if message.context.get("user_id", "") == user_id:
         message.context["source"] = "https_server"
-        answer = message.serialize()
-        waiting = False
-        ws.remove_all_listeners(message.type)
+        if "utterance" in message.data.keys():
+            answer_utt += message.data["utterance"] + " "
+        # use last message, update utterance only
+        answer = message
 
+
+def end_wait(message):
+    global answer, answer_utt, waiting
+    if not waiting:
+        return
+    if "utterance" in answer.data.keys():
+        answer.data["utterance"] = answer_utt
+    answer_utt = ""
+    answer = answer.serialize()
+    waiting = False
 
 if __name__ == "__main__":
     global app, ws
     # connect to internal mycroft
     ws = WebsocketClient()
+    ws.on("mycroft.skill.handler.complete", end_wait)
     event_thread = Thread(target=connect)
     event_thread.setDaemon(True)
     event_thread.start()
     asker_thread = Thread(target=asker)
     asker_thread.setDaemon(True)
     asker_thread.start()
-    intents = IntentService(ws)
+    #intents = IntentService(ws)
     port = 6712
     start(app, port)

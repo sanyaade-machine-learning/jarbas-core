@@ -792,12 +792,6 @@ class MycroftSkill(object):
             if "target" not in message_context.keys():
                 message_context["target"] = self.message_context.get("target",
                                                                      "all")
-            if "mute" not in message_context.keys():
-                message_context["mute"] = self.message_context.get("mute",
-                                                                   False)
-            if "more_speech" not in message_context.keys():
-                message_context["more_speech"] = self.message_context.get(
-                    "more_speech", False)
         message_context["source"] = self.name
         return message_context
 
@@ -818,11 +812,8 @@ class MycroftSkill(object):
                                            together with speech
                        message_context:    message.context field
                """
-        if message_context is None:
-            # use current context
-            message_context = {}
-        if metadata is None:
-            metadata = {}
+        message_context = message_context or self.message_context
+        metadata = metadata or {}
         # registers the skill as being active
         self.enclosure.register(self.name)
         data = {'utterance': utterance,
