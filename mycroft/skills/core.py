@@ -35,8 +35,9 @@ from mycroft.filesystem import FileSystemAccess
 from mycroft.messagebus.message import Message
 from mycroft.metrics import report_metric
 from mycroft.skills.settings import SkillSettings
-from mycroft.util import resolve_resource_file
+from mycroft.util import get_language_dir
 from mycroft.util.log import LOG
+from mycroft.dialog import get_all_vocab
 
 # python 2+3 compatibility
 from past.builtins import basestring
@@ -147,7 +148,7 @@ def load_skill(skill_descriptor, emitter, skill_id, BLACKLISTED_SKILLS=None):
             # The very first time a skill is run, speak the intro
             first_run = skill.settings.get("__mycroft_skill_firstrun", True)
             if first_run:
-                LOG.info("First run of "+skill_descriptor["name"])
+                LOG.info("First run of " + skill_descriptor["name"])
                 skill.settings["__mycroft_skill_firstrun"] = False
                 skill.settings.store()
                 intro = skill.get_intro_message()
@@ -407,10 +408,7 @@ class MycroftSkill(object):
             else:
                 return get_announcement()
 
-        # TODO: Load with something like mycroft.dialog.get_all()
-        cancel_voc = 'text/' + self.lang + '/cancel.voc'
-        with open(resolve_resource_file(cancel_voc)) as f:
-            cancel_words = list(filter(bool, f.read().split('\n')))
+        cancel_words = get_all_vocab("cancel", self.lang)
 
         def is_cancel(utterance):
             return utterance in cancel_words
@@ -529,7 +527,9 @@ class MycroftSkill(object):
             name += ".value"
 
         try:
-            with open(join(self.root_dir, 'dialog', self.lang, name)) as f:
+            lang_dir = get_language_dir(join(self.root_dir, 'dialog'),
+                                        self.lang)
+            with open(join(lang_dir, name)) as f:
                 reader = csv.reader(f, delimiter=delim)
                 for row in reader:
                     # skip blank or comment lines
@@ -585,7 +585,8 @@ class MycroftSkill(object):
 
     def __translate_file(self, name, data):
         """Load and render lines from dialog/<lang>/<name>"""
-        with open(join(self.root_dir, 'dialog', self.lang, name)) as f:
+        lang_dir = get_language_dir(join(self.root_dir, 'dialog'), self.lang)
+        with open(join(lang_dir, name)) as f:
             text = f.read().replace('{{', '{').replace('}}', '}')
             return text.format(**data or {}).split('\n')
 
@@ -902,7 +903,8 @@ class MycroftSkill(object):
                    message_context=message_context)
 
     def init_dialog(self, root_directory):
-        dialog_dir = join(root_directory, 'dialog', self.lang)
+        dialog_dir = get_language_dir(join(root_directory, 'dialog'),
+                                      self.lang)
         if exists(dialog_dir):
             self.dialog_renderer = DialogLoader().load(dialog_dir)
         else:
@@ -910,8 +912,10 @@ class MycroftSkill(object):
 
     def load_data_files(self, root_directory):
         self.init_dialog(root_directory)
-        self.load_vocab_files(join(root_directory, 'vocab', self.lang))
-        regex_path = join(root_directory, 'regex', self.lang)
+        self.load_vocab_files(
+            get_language_dir(join(root_directory, 'vocab'), self.lang))
+        regex_path = get_language_dir(join(root_directory, 'regex'),
+                                      self.lang)
         self.root_dir = root_directory
         if exists(regex_path):
             self.load_regex_files(regex_path)
@@ -1054,7 +1058,8 @@ class MycroftSkill(object):
         unique_name = self._unique_name(name)
         data = {'event': unique_name}
         self.remove_event(unique_name)
-        self.emitter.emit(Message('mycroft.scheduler.remove_event', data=data))
+        self.emitter.emit(
+            Message('mycroft.scheduler.remove_event', data=data))
 
     def get_scheduled_event_status(self, name):
         """
@@ -1086,7 +1091,8 @@ class MycroftSkill(object):
         self.emitter.emit(Message('mycroft.scheduler.get_event', data=data))
 
         start_wait = time.time()
-        while finished_callback[0] is False and time.time() - start_wait < 3.0:
+        while finished_callback[0] is False \
+                and time.time() - start_wait < 3.0:
             time.sleep(0.1)
         if time.time() - start_wait > 3.0:
             raise Exception("Event Status Messagebus Timeout")
@@ -1241,13 +1247,13 @@ class FallbackSkill(MycroftSkill):
             register a fallback with the list of fallback handlers
             and with the list of handlers registered by this instance
         """
+
         def wrapper(*args, **kwargs):
             if handler(*args, **kwargs):
                 self.make_active()
                 return True
             return False
-        handler = wrapper
-        self.instance_fallback_handlers.append(handler)
+handler = wrapper        self.instance_fallback_handlers.append(handler)
         # folder path
         try:
             skill_folder = self._dir

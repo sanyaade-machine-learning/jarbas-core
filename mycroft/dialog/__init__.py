@@ -18,7 +18,7 @@ from io import open
 import os
 import re
 
-from mycroft.util import resolve_resource_file
+from mycroft.util import resolve_resource_file, get_language_resource_path
 from mycroft.util.log import LOG
 
 
@@ -139,7 +139,8 @@ def get(phrase, lang=None, context=None):
         from mycroft.configuration import Configuration
         lang = Configuration.get().get("lang")
 
-    filename = "text/" + lang.lower() + "/" + phrase + ".dialog"
+    filename = get_language_resource_path("text", lang.lower()) + "/" +  \
+        phrase + ".dialog"
     template = resolve_resource_file(filename)
     if not template:
         LOG.debug("Resource file not found: " + filename)
@@ -150,3 +151,59 @@ def get(phrase, lang=None, context=None):
     if not context:
         context = {}
     return stache.render("template", context)
+
+
+def get_all_dialog(phrase, lang=None):
+    """
+    Looks up a resource file for the given phrase.  If no file
+    is found, the requested phrase is returned as the string.
+    This will use the default language for translations.
+
+    Args:
+        phrase (str): resource phrase to retrieve/translate
+        lang (str): the language to use
+
+    Returns:
+        list: a list with all versions of the phrase
+    """
+    if not lang:
+        from mycroft.configuration import Configuration
+        lang = Configuration.get().get("lang", "en-us")
+
+    dialog_filename = get_language_resource_path("text", lang.lower()) + "/" \
+        + phrase + ".dialog"
+    template = resolve_resource_file(dialog_filename)
+    if not template:
+        LOG.debug("Resource file not found: " + dialog_filename)
+        return [phrase]
+    with open(template) as f:
+        phrases = list(filter(bool, f.read().split('\n')))
+    return phrases
+
+
+def get_all_vocab(phrase, lang=None):
+    """
+    Looks up a resource file for the given phrase.  If no file
+    is found, the requested phrase is returned as the string.
+    This will use the default language for translations.
+
+    Args:
+        phrase (str): resource phrase to retrieve/translate
+        lang (str): the language to use
+
+    Returns:
+        list: a list with all versions of the phrase
+    """
+    if not lang:
+        from mycroft.configuration import Configuration
+        lang = Configuration.get().get("lang", "en-us")
+
+    voc_filename = get_language_resource_path("text", lang.lower()) + "/" + \
+        phrase + ".voc"
+    template = resolve_resource_file(voc_filename)
+    if not template:
+        LOG.debug("Resource file not found: " + voc_filename)
+        return [phrase]
+    with open(template) as f:
+        phrases = list(filter(bool, f.read().split('\n')))
+    return phrases
