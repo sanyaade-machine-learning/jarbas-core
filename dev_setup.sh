@@ -252,5 +252,5 @@ md5sum requirements.txt dev_setup.sh > .installed
 
 
 # make sure this package is found in import
-ln -s ${DIR}/mycroft /usr/local/lib/python2.7/dist-packages/mycroft
-ln -s ${DIR}/msm /usr/local/lib/python2.7/dist-packages/msm
+ln -sf ${DIR}/mycroft /usr/local/lib/python2.7/dist-packages/mycroft
+ln -sf ${DIR}/msm /usr/local/lib/python2.7/dist-packages/msm
