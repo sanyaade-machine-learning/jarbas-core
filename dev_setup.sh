@@ -237,11 +237,12 @@ echo "Skipping mimic build."
 # "${TOP}/scripts/install-pygtk.sh" " ${CORES}"
 
 # install opencv
-if [[ "$mycroft_platform" == "picroft" || "$mycroft_platform" == "mycroft_mark_1" ]] ; then
-    "${TOP}/scripts/install_opencv_pi.sh"
-else
-    "${TOP}/scripts/install_opencv.sh"
-fi
+#if [[ "$mycroft_platform" == "picroft" || "$mycroft_platform" ==
+#"mycroft_mark_1" ]] ; then
+#    "${TOP}/scripts/install_opencv_pi.sh"
+#else
+#    "${TOP}/scripts/install_opencv.sh"
+#fi
 
 # set permissions for common scripts
 chmod +x start-mycroft.sh
