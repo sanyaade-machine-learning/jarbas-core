@@ -110,7 +110,7 @@ class SkillSettings(dict):
         #   t.daemon = True
         #   t.start()
 
-        self.load_skill_settings()
+        self.load_skill_settings_from_file()
 
     @property
     def _is_stored(self):
@@ -268,7 +268,7 @@ class SkillSettings(dict):
         #    t.daemon = True
         #    t.start()
 
-    def load_skill_settings(self):
+    def load_skill_settings_from_file(self):
         """ If settings.json exist, open and read stored values into self """
         if isfile(self._settings_path):
             with open(self._settings_path) as f:
