@@ -35,9 +35,9 @@ from mycroft.filesystem import FileSystemAccess
 from mycroft.messagebus.message import Message
 from mycroft.metrics import report_metric
 from mycroft.skills.settings import SkillSettings
-from mycroft.util import resolve_resource_file, get_language_dir, \
-    get_language_resource_path
+from mycroft.util import get_language_dir
 from mycroft.util.log import LOG
+from mycroft.dialog import get_all_vocab
 
 # python 2+3 compatibility
 from past.builtins import basestring
@@ -402,11 +402,7 @@ class MycroftSkill(object):
             else:
                 return get_announcement()
 
-        # TODO: Load with something like mycroft.dialog.get_all()
-        cancel_voc = get_language_resource_path("text",
-                                                self.lang) + '/cancel.voc'
-        with open(resolve_resource_file(cancel_voc)) as f:
-            cancel_words = list(filter(bool, f.read().split('\n')))
+        cancel_words = get_all_vocab("cancel", self.lang)
 
         def is_cancel(utterance):
             return utterance in cancel_words
