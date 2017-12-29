@@ -87,7 +87,7 @@ fi
 # Determine if on picroft/mk1?
 picroft_mk1="false"
 vwrap="true"
-use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
+use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'false')"
 if [[ "${mycroft_platform}" == "picroft" ]] || [[ "${mycroft_platform}" == "mycroft_mark_1" ]] ; then
   picroft_mk1="true"
 else

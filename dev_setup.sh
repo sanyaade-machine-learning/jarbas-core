@@ -55,8 +55,8 @@ show_help() {
 	echo "not as root/sudo."
 }
 
-opt_skipmimic=false
-opt_allowroot=false
+opt_skipmimic=true
+opt_allowroot=true
 
 for var in "$@"
 do
@@ -65,20 +65,9 @@ do
         exit 0
     fi
 
-    if [[ ${var} == "-r" ]] || [[ ${var} == "--allow-root" ]] ; then
-        opt_allowroot=true
-    fi
-
-    if [[ ${var} == "-sm" ]] ; then
-        opt_skipmimic=true
-    fi
 done
 
-if [ $(id -u) -eq 0 ] && [ "${opt_allowroot}" != true ] ; then
-  echo "This script should not be run as root or with sudo."
-  echo "To force, rerun with --allow-root"
-  exit 1
-fi
+
 
 found_exe() {
     hash "$1" 2>/dev/null
@@ -117,7 +106,7 @@ if [[ ! -d "${mycroft_skill_folder}" ]] ; then
   exit 101
 fi
 
-use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
+use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'false')"
 
 install_deps() {
     echo "Installing packages..."
@@ -241,15 +230,11 @@ echo "Building with $CORES cores."
 #build and install mimic
 cd "${TOP}"
 
-if [[ "$build_mimic" == 'y' ]] || [[ "$build_mimic" == 'Y' ]]; then
-  echo "WARNING: The following can take a long time to run!"
-  "${TOP}/scripts/install-mimic.sh" " ${CORES}"
-else
-  echo "Skipping mimic build."
-fi
+echo "Skipping mimic build."
+
 
 # install pygtk for desktop_launcher skill
-"${TOP}/scripts/install-pygtk.sh" " ${CORES}"
+# "${TOP}/scripts/install-pygtk.sh" " ${CORES}"
 
 # install opencv
 if [[ "$mycroft_platform" == "picroft" || "$mycroft_platform" == "mycroft_mark_1" ]] ; then

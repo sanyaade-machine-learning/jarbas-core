@@ -38,7 +38,7 @@ function get_config_value() {
   echo "$default"
 }
 
-use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
+use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'false')"
 if [[ ${use_virtualenvwrapper} == "true" ]] ; then
     if [ -z "$WORKON_HOME" ]; then
         VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/mycroft"}
