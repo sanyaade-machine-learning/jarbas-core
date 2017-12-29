@@ -74,7 +74,7 @@ class MycroftAPI(object):
                 headers=self.headers, verify=False
             )
             try:
-                return response.json()["echo"]
+                return response.json()
             except:
                 print response.text
                 raise ValueError("Invalid api key")
@@ -82,11 +82,16 @@ class MycroftAPI(object):
             print e
             raise ConnectionError("Could not connect")
 
-ap = MycroftAPI("test_key")
+
+
+# test connection
 #print ap.hello_world()
+
+# test if admin privileges are properly blocked
+#ap = MycroftAPI("test_key")
 #try:
 #    print ap.new_user("new_key", "0", "test")
-#    print "whoa, anyone can make himself an user"
+#    print "whoa, anyone can make himself an user_id"
 #except:
 #    pass
 #try:
@@ -95,9 +100,13 @@ ap = MycroftAPI("test_key")
 #except:
 #    pass
 
+# test if admin privileges are properly allowed
+
 #ap = MycroftAPI("admin_key")
-print ap.hello_world()
 #print ap.new_user("new_key", "0", "test")
 #print ap.get_api()
-print ap.ask_mycroft("do you work?")
-print ap.get_intent("hello world")
+
+# test functionality
+ap = MycroftAPI("test_key")
+print ap.ask_mycroft("hello world")
+#print ap.get_intent("hello world")

@@ -3,10 +3,19 @@ from mycroft.skills.intent_service import IntentService
 from mycroft.util import LOG
 from mycroft.util.parse import normalize
 from mycroft.messagebus.client.ws import WebsocketClient
+from mycroft.messagebus.message import Message
 from threading import Thread
+from time import sleep
+from Queue import Queue
 
 ws = None
+queue = Queue()
+waiting = False
+reply = ""
+user_id = ""
+answer = None
 intents = None
+timeout = 10
 
 
 def connect():
@@ -42,9 +51,30 @@ def intent(utterance, lang="en-us"):
 @btc
 @requires_auth
 def ask(utterance):
-    print request
-    result = {"error": "not implemented", "echo": utterance}
+    global user_id
+    ip = request.remote_addr
+    user = request.headers["Authorization"]
+    data = {"utterances": [utterance]}
+    user_id = str(ip) + ":" + str(user)
+    context = {"source": ip, "target": user, "user_id": user_id}
+    message = Message("recognizer_loop:utterance", data, context)
+    result = get_answer(message, "speak", context)
     return nice_json(result)
+
+
+def get_answer(message=None, reply="speak", context=None):
+    # TODO use handler complete messages instead of a single reply, skills
+    # may emit more than 1 speak message
+    global ws, queue, answer, waiting
+    answer = None
+    queue.put((message, reply))
+    start = time.time()
+    while answer is None and time.time() - start < timeout:
+        sleep(0.1)
+    waiting = False
+    # TODO use dialog file for time out
+    return answer or Message(reply, {"utterance": "server timed out"},
+                             context).serialize()
 
 
 @app.route("/stt/recognize", methods=['PUT'])
@@ -69,6 +99,28 @@ def tts(voice, sentence):
     return nice_json(result)
 
 
+def asker():
+    global queue, ws, waiting, reply
+    while True:
+        if queue.empty() or waiting:
+            sleep(0.1)
+            continue
+        message, reply = queue.get()
+        waiting = True
+        ws.on(reply, listener)
+        ws.emit(message)
+
+
+def listener(message):
+    global answer, waiting, user_id, ws
+    message.context = message.context or {}
+    if message.context.get("user_id", "") == user_id:
+        message.context["source"] = "https_server"
+        answer = message.serialize()
+        waiting = False
+        ws.remove_all_listeners(message.type)
+
+
 if __name__ == "__main__":
     global app, ws
     # connect to internal mycroft
@@ -76,7 +128,9 @@ if __name__ == "__main__":
     event_thread = Thread(target=connect)
     event_thread.setDaemon(True)
     event_thread.start()
-
+    asker_thread = Thread(target=asker)
+    asker_thread.setDaemon(True)
+    asker_thread.start()
     intents = IntentService(ws)
     port = 6712
     start(app, port)

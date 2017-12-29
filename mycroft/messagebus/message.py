@@ -100,7 +100,7 @@ class Message(object):
         if 'target' in data:
             new_context['target'] = data['target']
         elif 'client_name' in context:
-            context['target'] = context['client_name']
+            new_context['target'] = context['client_name']
         return Message(type, data, context=new_context)
 
     def publish(self, type, data, context=None):
