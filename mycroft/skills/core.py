@@ -24,8 +24,7 @@ import abc
 import re
 from adapt.intent import Intent, IntentBuilder
 from os import listdir
-from os.path import join, abspath, dirname, splitext, basename, exists, \
-    normpath
+from os.path import join, abspath, dirname, splitext, basename, exists
 from threading import Event
 
 from mycroft.api import DeviceApi
@@ -1028,8 +1027,8 @@ class MycroftSkill(object):
         self.emitter.emit(Message('mycroft.scheduler.get_event', data=data))
 
         start_wait = time.time()
-        while finished_callback[
-            0] is False and time.time() - start_wait < 3.0:
+        while finished_callback[0] is False \
+                and time.time() - start_wait < 3.0:
             time.sleep(0.1)
         if time.time() - start_wait > 3.0:
             raise Exception("Event Status Messagebus Timeout")
