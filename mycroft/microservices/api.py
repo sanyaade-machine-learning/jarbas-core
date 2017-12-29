@@ -3,7 +3,7 @@ from requests.exceptions import ConnectionError
 
 
 class MycroftAPI(object):
-    def __init__(self, api, lang="en-us", url="https://0.0.0.0:6712/"):
+    def __init__(self, api, lang="en-us", url="https://104.236.133.170:6712/"):
         self.api = api
         self.headers = {"Authorization": str(self.api)}
         self.lang = lang
