@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright 2017 Mycroft AI Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,14 +13,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-from mycroft.configuration.config import Configuration, LocalConf, \
-    RemoteConf, \
-                   SYSTEM_CONFIG, USER_CONFIG
+if [ -z "$WORKON_HOME" ]; then
+    VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/mycroft"}
+else
+    VIRTUALENV_ROOT="$WORKON_HOME/mycroft"
+fi
 
+source "${VIRTUALENV_ROOT}/bin/activate"
 
-# Compatibility
-class ConfigurationManager(Configuration):
-    @staticmethod
-    def instance():
-        return Configuration.get()
+easy_install pip==7.1.2
+pip install --upgrade virtualenv
+pip install -r requirements.txt

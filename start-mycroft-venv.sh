@@ -22,6 +22,11 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 scripts_dir="$DIR/scripts"
 mkdir -p $scripts_dir/logs
 
+if [ -z "$WORKON_HOME" ]; then
+    VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/mycroft"}
+else
+    VIRTUALENV_ROOT="$WORKON_HOME/mycroft"
+fi
 
 function help() {
   echo "${script}:  Mycroft command/service launcher"
@@ -61,7 +66,6 @@ _script=""
 function name-to-script-path() {
     case ${1} in
     "bus")             _script=${DIR}/mycroft/messagebus/service/main.py ;;
-    "micro")           _script=${DIR}/mycroft/microservices/main.py ;;
     "skills")          _script=${DIR}/mycroft/skills/main.py ;;
     "audio")           _script=${DIR}/mycroft/audio/main.py ;;
     "voice")           _script=${DIR}/mycroft/client/speech/main.py ;;
@@ -85,6 +89,7 @@ function launch-process() {
     if ($first_time) ; then
         echo "Initializing..."
         ${DIR}/scripts/prepare-msm.sh
+        source ${VIRTUALENV_ROOT}/bin/activate
         first_time=false
     fi
 
@@ -99,6 +104,7 @@ function launch-background() {
     if ($first_time) ; then
         echo "Initializing..."
         ${DIR}/scripts/prepare-msm.sh
+        source ${VIRTUALENV_ROOT}/bin/activate
         first_time=false
     fi
 
@@ -124,23 +130,12 @@ case ${_opt} in
   "all")
     echo "Starting all mycroft-core services"
     launch-background bus
-    launch-background micro
     launch-background skills
     launch-background audio
     launch-background voice
     ;;
 
-  "server")
-    echo "Starting all mycroft-core server services"
-    launch-background bus
-    launch-background micro
-    launch-background skills
-    ;;
-
   "bus")
-    launch-background ${_opt}
-    ;;
-  "micro")
     launch-background ${_opt}
     ;;
   "audio")
