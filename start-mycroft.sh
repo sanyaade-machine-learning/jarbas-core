@@ -21,7 +21,7 @@ script=${script##*/}
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 # make sure this package is found in import
-ln -s ${DIR}/mycroft /usr/local/lib/python2.7/dist-packages/mycroft
+ln -s ${DIR} /usr/local/lib/python2.7/dist-packages/mycroft
 
 scripts_dir="$DIR/scripts"
 mkdir -p $scripts_dir/logs
