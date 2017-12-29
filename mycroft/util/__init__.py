@@ -76,6 +76,51 @@ def resolve_resource_file(res_name):
     return None  # Resource cannot be resolved
 
 
+def resolve_resource_dir(res_name):
+    """Convert a resource into an absolute path.
+
+    Resource names are in the form: 'path/where/file/located'
+
+    The system wil look for ~/.mycroft/res_name first, and
+    if not found will look at /opt/mycroft/res_name,
+    then finally it will look for res_name in the 'mycroft/res'
+    folder of the source code package.
+
+    Example:
+    With mycroft running as the user 'bob', if you called
+        resolve_resource_file('snd/beep.wav')
+    it would return either '/home/bob/.mycroft/snd/beep.wav' or
+    '/opt/mycroft/snd/beep.wav' or '.../mycroft/res/snd/beep.wav',
+    where the '...' is replaced by the path where the package has
+    been installed.
+
+    Args:
+        res_name (str): a resource path
+    """
+
+    # First look for fully qualified dir (e.g. a user setting)
+    if os.path.isdir(res_name):
+        return res_name
+
+    # Now look for ~/.mycroft/res_name (in user folder)
+    res_path = os.path.expanduser("~/.mycroft/" + res_name)
+    if os.path.isdir(res_path):
+        return res_path
+
+    # Next look for /opt/mycroft/res/res_name
+    res_path = os.path.expanduser("/opt/mycroft/" + res_name)
+    if os.path.isdir(res_path):
+        return res_path
+
+    # Finally look for it in the source package
+    res_path = os.path.join(os.path.dirname(__file__), '..', 'res', res_name)
+    res_path = os.path.abspath(os.path.normpath(res_path))
+    if os.path.isdir(res_path):
+        return res_path
+
+    return None  # Resource path cannot be resolved
+
+
 def play_wav(uri):
     config = mycroft.configuration.Configuration.get()
     play_cmd = config.get("play_wav_cmdline")
@@ -266,3 +311,57 @@ def stop_speaking():
 def get_arch():
     """ Get architecture string of system. """
     return os.uname()[4]
+
+
+def get_language_resource_path(resource_name, lang="en-us"):
+    # checks for all language variations and returns best path
+    lang_path = os.path.join(resource_name, lang)
+    lang_path = resolve_resource_dir(lang_path)
+    # base_path/en-us
+    if lang_path is not None:
+        return lang_path
+    if "-" in lang:
+        main = lang.split("-")[0]
+        # base_path/en
+        general_lang_path = os.path.join(resource_name, main)
+        general_lang_path = resolve_resource_dir(general_lang_path)
+        if general_lang_path is not None:
+            return general_lang_path
+    else:
+        main = lang
+
+    # base_path/en-uk, base_path/en-au...
+    res_path = os.path.join(os.path.dirname(__file__), '..', 'res', resource_name)
+    base_path = os.path.abspath(os.path.normpath(res_path))
+
+    candidates = [f for f in os.listdir(base_path) if f.startswith(main)]
+
+    paths = [os.path.join(base_path, c) for c in candidates]
+    # TODO how to choose best local dialect?
+    if len(paths):
+        return paths[0]
+
+    return os.path.join(resource_name, lang)
+
+
+def get_language_dir(base_path, lang="en-us"):
+    # checks for all language variations and returns best path
+    lang_path = os.path.join(base_path, lang)
+    # base_path/en-us
+    if os.path.isdir(lang_path):
+        return lang_path
+    if "-" in lang:
+        main = lang.split("-")[0]
+        # base_path/en
+        general_lang_path = os.path.join(base_path, main)
+        if os.path.isdir(general_lang_path):
+            return general_lang_path
+    else:
+        main = lang
+    # base_path/en-uk, base_path/en-au...
+    candidates = [f for f in os.listdir(base_path) if f.startswith(main)]
+    paths = [os.path.join(base_path, c) for c in candidates]
+    # TODO how to choose best local dialect?
+    if len(paths):
+        return paths[0]
+    return os.path.join(base_path, lang)
