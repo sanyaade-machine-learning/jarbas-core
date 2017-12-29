@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from config import Configuration, LocalConf, RemoteConf, \
-                   SYSTEM_CONFIG, USER_CONFIG
+from mycroft.configuration.config import Configuration, LocalConf, \
+    RemoteConf, SYSTEM_CONFIG, USER_CONFIG
 
 
 # Compatibility

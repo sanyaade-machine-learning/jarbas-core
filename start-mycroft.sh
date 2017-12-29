@@ -147,7 +147,7 @@ function launch-background() {
     fi
 
     # Launch process in background, sending log to scripts/log/mycroft-*.log
-    screen python ${_script} $_params >> ${scripts_dir}/logs/mycroft-${1}.log 2>&1
+    python ${_script} $_params >> ${scripts_dir}/logs/mycroft-${1}.log 2>&1
 }
 
 _opt=$1
