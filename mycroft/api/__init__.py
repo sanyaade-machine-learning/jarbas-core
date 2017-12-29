@@ -17,6 +17,8 @@
 # import requests
 # from requests import HTTPError
 
+# python 2/3 compatibility
+from future.utils import iteritems
 # from mycroft.configuration import Configuration
 # from mycroft.configuration.config import DEFAULT_CONFIG, SYSTEM_CONFIG, \
 #    USER_CONFIG, LocalConf
@@ -271,6 +273,22 @@ class DeviceApi(Api):
         """ Deprecated, see get_location() """
         # TODO: Eliminate ASAP, for backwards compatibility only
         return self.get_location()
+
+    def get_oauth_token(self, dev_cred):
+        """
+            Get Oauth token for dev_credential dev_cred.
+
+            Argument:
+                dev_cred:   development credentials identifier
+
+            Returns:
+                json string containing token and additional information
+        """
+        #return self.request({
+        #    "method": "GET",
+        #    "path": "/" + self.identity.uuid + "/token/" + str(dev_cred)
+        #})
+        return None
 
 
 class STTApi(Api):

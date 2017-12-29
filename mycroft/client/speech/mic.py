@@ -134,6 +134,10 @@ class MutableMicrophone(Microphone):
         return self.muted
 
 
+def get_silence(num_bytes):
+    return b'\0' * num_bytes
+
+
 class ResponsiveRecognizer(speech_recognition.Recognizer):
     # Padding of silence when feeding to pocketsphinx
     SILENCE_SEC = 0.01
@@ -250,7 +254,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                                     sec_per_buffer)
 
         # bytearray to store audio in
-        byte_data = '\0' * source.SAMPLE_WIDTH
+        byte_data = get_silence(source.SAMPLE_WIDTH)
 
         phrase_complete = False
         while num_chunks < max_chunks and not phrase_complete:
@@ -366,7 +370,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         num_silent_bytes = int(self.SILENCE_SEC * source.SAMPLE_RATE *
                                source.SAMPLE_WIDTH)
 
-        silence = '\0' * num_silent_bytes
+        silence = get_silence(num_silent_bytes)
 
         # bytearray to store audio in
         byte_data = silence

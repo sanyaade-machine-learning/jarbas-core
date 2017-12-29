@@ -16,6 +16,16 @@
 #
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from difflib import SequenceMatcher
+
+
+def fuzzy_match(x, against):
+    """Perform a 'fuzzy' comparison between two strings.
+    Returns:
+        float: match percentage -- 1.0 for perfect match,
+               down to 0.0 for no match at all.
+    """
+    return SequenceMatcher(None, x, against).ratio()
 
 
 def extractnumber(text, lang="en-us"):
@@ -379,8 +389,8 @@ def extract_datetime_en(str, currentDate=None):
                 m = monthsShort.index(word)
             used += 1
             datestr = months[m]
-            if wordPrev[0].isdigit() or \
-                    (wordPrev == "of" and wordPrevPrev[0].isdigit()):
+            if wordPrev and (wordPrev[0].isdigit() or
+                             (wordPrev == "of" and wordPrevPrev[0].isdigit())):
                 if wordPrev == "of" and wordPrevPrev[0].isdigit():
                     datestr += " " + words[idx - 2]
                     used += 1
@@ -541,6 +551,9 @@ def extract_datetime_en(str, currentDate=None):
                     nextWord = wordNext.replace(".", "")
                     if nextWord == "am" or nextWord == "pm":
                         remainder = nextWord
+                        used += 1
+                    elif nextWord == "tonight":
+                        remainder = "pm"
                         used += 1
                     elif wordNext == "in" and wordNextNext == "the" and \
                             words[idx + 3] == "morning":

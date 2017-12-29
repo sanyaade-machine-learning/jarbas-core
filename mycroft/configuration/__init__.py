@@ -13,8 +13,7 @@
 # limitations under the License.
 #
 from mycroft.configuration.config import Configuration, LocalConf, \
-    RemoteConf, \
-                   SYSTEM_CONFIG, USER_CONFIG
+    RemoteConf, SYSTEM_CONFIG, USER_CONFIG
 
 
 # Compatibility
