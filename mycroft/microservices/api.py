@@ -3,16 +3,16 @@ from requests.exceptions import ConnectionError
 
 
 class MycroftAPI(object):
-    URL = "https://0.0.0.0:6712/"
-
-    def __init__(self, api):
+    def __init__(self, api, lang="en-us", url="https://0.0.0.0:6712/"):
         self.api = api
         self.headers = {"Authorization": str(self.api)}
+        self.lang = lang
+        self.url = url
 
     def hello_world(self):
        try:
            response = requests.get(
-               MycroftAPI.URL,
+               self.url,
                headers=self.headers, verify=False
            )
            return response.text
@@ -24,7 +24,7 @@ class MycroftAPI(object):
         #
         try:
             response = requests.put(
-                MycroftAPI.URL+"new_user/"+key+"/"+id+"/"+name,
+                self.url+"new_user/"+key+"/"+id+"/"+name,
                 headers=self.headers, verify=False
             )
             try:
@@ -40,7 +40,7 @@ class MycroftAPI(object):
         #
         try:
             response = requests.get(
-                MycroftAPI.URL+"get_api",
+                self.url+"get_api",
                 headers=self.headers, verify=False
             )
             try:
@@ -52,10 +52,11 @@ class MycroftAPI(object):
             print e
             raise ConnectionError("Could not connect")
 
-    def get_intent(self, utterance, lang="en-us"):
+    def get_intent(self, utterance, lang=None):
+        lang = lang or self.lang
         try:
             response = requests.get(
-                MycroftAPI.URL+"/intent/"+lang+"/"+utterance,
+                self.url+"/intent/"+lang+"/"+utterance,
                 headers=self.headers, verify=False
             )
             try:
@@ -67,10 +68,11 @@ class MycroftAPI(object):
             print e
             raise ConnectionError("Could not connect")
 
-    def ask_mycroft(self, utterance):
+    def ask_mycroft(self, utterance, lang=None):
+        lang = lang or self.lang
         try:
             response = requests.get(
-                MycroftAPI.URL+"ask/"+utterance,
+                self.url+"ask/"+lang+"/"+utterance,
                 headers=self.headers, verify=False
             )
             try:
@@ -109,4 +111,5 @@ class MycroftAPI(object):
 # test functionality
 ap = MycroftAPI("test_key")
 print ap.ask_mycroft("hello world")
-#print ap.get_intent("hello world")
+print ap.ask_mycroft("do you like pizza")
+print ap.ask_mycroft("tell me a joke")

@@ -74,11 +74,6 @@ do
     fi
 done
 
-if [ $(id -u) -eq 0 ] && [ "${opt_allowroot}" != true ] ; then
-  echo "This script should not be run as root or with sudo."
-  echo "To force, rerun with --allow-root"
-  exit 1
-fi
 
 found_exe() {
     hash "$1" 2>/dev/null

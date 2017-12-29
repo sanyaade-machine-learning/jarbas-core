@@ -47,3 +47,9 @@ authenticated separately
 
 status: started
 
+# TODOS
+
+adapt context field per user
+converse per user
+language selection per query
+

@@ -66,6 +66,7 @@ _script=""
 function name-to-script-path() {
     case ${1} in
     "bus")             _script=${DIR}/mycroft/messagebus/service/main.py ;;
+    "micro")           _script=${DIR}/mycroft/microservices/main.py ;;
     "skills")          _script=${DIR}/mycroft/skills/main.py ;;
     "audio")           _script=${DIR}/mycroft/audio/main.py ;;
     "voice")           _script=${DIR}/mycroft/client/speech/main.py ;;
@@ -130,12 +131,23 @@ case ${_opt} in
   "all")
     echo "Starting all mycroft-core services"
     launch-background bus
+    launch-background micro
     launch-background skills
     launch-background audio
     launch-background voice
     ;;
 
+  "server")
+    echo "Starting all mycroft-core server services"
+    launch-background bus
+    launch-background micro
+    launch-background skills
+    ;;
+
   "bus")
+    launch-background ${_opt}
+    ;;
+  "micro")
     launch-background ${_opt}
     ;;
   "audio")

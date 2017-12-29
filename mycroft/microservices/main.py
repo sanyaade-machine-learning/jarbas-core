@@ -16,7 +16,7 @@ user_id = ""
 answer_utt = ""
 answer = None
 intents = None
-timeout = 10
+timeout = 30
 
 
 def connect():
@@ -47,15 +47,15 @@ def intent(utterance, lang="en-us"):
     return nice_json(result)
 
 
-@app.route("/ask/<utterance>", methods=['GET'])
+@app.route("/ask/<lang>/<utterance>", methods=['GET'])
 @noindex
 @btc
 @requires_auth
-def ask(utterance):
+def ask(utterance, lang="en-us"):
     global user_id
     ip = request.remote_addr
     user = request.headers["Authorization"]
-    data = {"utterances": [utterance]}
+    data = {"utterances": [utterance], "lang": lang}
     user_id = str(ip) + ":" + str(user)
     context = {"source": ip, "target": user, "user_id": user_id}
     message = Message("recognizer_loop:utterance", data, context)
@@ -72,8 +72,11 @@ def get_answer(message=None, reply="speak", context=None):
         sleep(0.1)
     waiting = False
     # TODO use dialog file for time out
-    return answer or Message(reply, {"utterance": "server timed out"},
-                             context).serialize()
+    answer = answer or Message(reply, {"utterance": "server timed out"},
+                             context)
+    if isinstance(answer, Message):
+        answer = answer.serialize()
+    return answer
 
 
 @app.route("/stt/recognize", methods=['PUT'])
@@ -116,7 +119,7 @@ def listener(message):
     if message.context.get("user_id", "") == user_id:
         message.context["source"] = "https_server"
         if "utterance" in message.data.keys():
-            answer_utt += message.data["utterance"] + " "
+            answer_utt += message.data["utterance"] + ". "
         # use last message, update utterance only
         answer = message
 
