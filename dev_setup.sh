@@ -102,9 +102,8 @@ fi
 
 mycroft_skill_folder="$(get_config_value '.skills.directory' '/opt/mycroft/skills')"
 if [[ ! -d "${mycroft_skill_folder}" ]] ; then
-  echo "ERROR: Unable to find/access ${mycroft_skill_folder}!"
-  sudo mkdir ${mycroft_skill_folder}
-  exit 101
+  echo "WARNING: Unable to find/access ${mycroft_skill_folder}! Creating it"
+  sudo mkdir -p ${mycroft_skill_folder}
 fi
 
 use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'false')"
