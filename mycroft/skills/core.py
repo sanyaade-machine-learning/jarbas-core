@@ -1249,17 +1249,20 @@ class FallbackSkill(MycroftSkill):
         """
 
         def wrapper(*args, **kwargs):
-            if handler(*args, **kwargs):
-                self.make_active()
-                return True
+            try:
+                if handler(*args, **kwargs):
+                    self.make_active()
+                    return True
+            except Exception as e:
+                print e
             return False
-handler = wrapper        self.instance_fallback_handlers.append(handler)
+        self.instance_fallback_handlers.append(wrapper)
         # folder path
         try:
             skill_folder = self._dir
         except:
             skill_folder = dirname(__file__)  # skill
-        self._register_fallback(handler, priority, skill_folder,
+        self._register_fallback(wrapper, priority, skill_folder,
                                 self.handle_update_message_context)
 
     @classmethod
