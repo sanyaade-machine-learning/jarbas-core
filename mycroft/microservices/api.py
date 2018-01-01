@@ -3,7 +3,7 @@ from requests.exceptions import ConnectionError
 
 
 class MycroftAPI(object):
-    def __init__(self, api, lang="en-us", url="https://0.0.0.0:6712/"):
+    def __init__(self, api, lang="en-us", url="https://104.236.133.170:6712/"):
         self.api = api
         self.headers = {"Authorization": str(self.api)}
         self.lang = lang
@@ -109,9 +109,9 @@ class MycroftAPI(object):
 #print ap.get_api()
 
 # test functionality
-ap = MycroftAPI("test_key")
+#ap = MycroftAPI("test_key")
 # test hello world
-print ap.ask_mycroft("hello world")
-print ap.ask_mycroft("what is your ip")
+#print ap.ask_mycroft("hello world")
+#print ap.ask_mycroft("what is your ip")
 # test multi speak messages answer
-print ap.ask_mycroft("tell me about quantum decoherence")
+#print ap.ask_mycroft("tell me about quantum decoherence")
