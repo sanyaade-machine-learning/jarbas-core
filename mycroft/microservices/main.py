@@ -6,17 +6,15 @@ from mycroft.messagebus.client.ws import WebsocketClient
 from mycroft.messagebus.message import Message
 from threading import Thread
 from time import sleep
-from Queue import Queue
 
 ws = None
-queue = Queue()
 waiting = False
-reply = ""
 user_id = ""
 answer_utt = ""
 answer = None
+
 intents = None
-timeout = 30
+timeout = 60
 
 
 def connect():
@@ -52,7 +50,7 @@ def intent(utterance, lang="en-us"):
 @btc
 @requires_auth
 def ask(utterance, lang="en-us"):
-    global user_id
+    global user_id, answer_utt, answer
     ip = request.remote_addr
     user = request.headers["Authorization"]
     data = {"utterances": [utterance], "lang": lang}
@@ -60,25 +58,40 @@ def ask(utterance, lang="en-us"):
     context = {"source": ip, "target": user, "user_id": user_id}
     message = Message("recognizer_loop:utterance", data, context)
     result = get_answer(message, "speak", context)
+    # reset vars
+    answer = None
+    answer_utt = ""
+    user_id = ""
     return nice_json(result)
 
 
 def get_answer(message=None, reply="speak", context=None):
-    global ws, queue, answer, waiting
+    global ws, answer, waiting, timeout
     answer = None
-    queue.put((message, reply))
+    # capture this reply
+    ws.on(reply, listener)
+    # emit message
+    ws.emit(message)
+    # correct answer context
+
+    waiting = True
+    # wait until timeout, complete failure or enf of event handler signal
     start = time.time()
-    while answer is None and time.time() - start < timeout:
+    while waiting and time.time() - start < timeout:
         sleep(0.1)
     waiting = False
-    # TODO use dialog file for time out
-    target = context["target"]
-    context["target"] = context["source"]
-    context["source"] = target
-    answer = answer or Message(reply, {"utterance": "server timed out"},
+
+    answer = answer or Message("speak", {"utterance": "server timed out"},
                              context)
-    if isinstance(answer, Message):
-        answer = answer.serialize()
+    if not answer.context:
+        answer.context = {}
+        answer.context["target"] = context["source"]
+        answer.context["source"] = "https_server"
+
+    # serialize into json
+    answer = answer.serialize()
+    # stop listening for this kind of reply
+    ws.remove(reply, listener)
     return answer
 
 
@@ -104,37 +117,29 @@ def tts(voice, sentence):
     return nice_json(result)
 
 
-def asker():
-    global queue, ws, waiting, reply
-    while True:
-        if queue.empty() or waiting:
-            sleep(0.1)
-            continue
-        message, reply = queue.get()
-        waiting = True
-        ws.on(reply, listener)
-        ws.emit(message)
-
-
 def listener(message):
-    global answer, user_id, ws, answer_utt
+    global answer, user_id, answer_utt
     message.context = message.context or {}
     if message.context.get("user_id", "") == user_id:
         message.context["source"] = "https_server"
-        if "utterance" in message.data.keys():
-            answer_utt += message.data["utterance"] + ". "
+        if "utterance" in message.data.keys() and answer_utt:
+            message.data["utterance"] = answer_utt + ". " + message.data["utterance"]
+        answer_utt = message.data["utterance"]
         # use last message, update utterance only
         answer = message
 
 
 def end_wait(message):
-    global answer, answer_utt, waiting
+    global answer, waiting
     if not waiting:
         return
-    if "utterance" in answer.data.keys():
-        answer.data["utterance"] = answer_utt
-    answer_utt = ""
-    answer = answer.serialize()
+    if message.type == "complete_intent_failure":
+        answer = Message("speak", {"utterance": "i have no idea how to "
+                                                "answer that"})
+    # no answer but end of handler
+    elif answer is None:
+        answer = Message("speak", {"utterance": "something went wrong, "
+                                                "ask me later"})
     waiting = False
 
 if __name__ == "__main__":
@@ -142,11 +147,9 @@ if __name__ == "__main__":
     # connect to internal mycroft
     ws = WebsocketClient()
     ws.on("mycroft.skill.handler.complete", end_wait)
+    ws.on("complete_intent_failure", end_wait)
     event_thread = Thread(target=connect)
     event_thread.setDaemon(True)
     event_thread.start()
-    asker_thread = Thread(target=asker)
-    asker_thread.setDaemon(True)
-    asker_thread.start()
     port = 6712
     start(app, port)
