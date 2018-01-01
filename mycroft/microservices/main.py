@@ -72,6 +72,9 @@ def get_answer(message=None, reply="speak", context=None):
         sleep(0.1)
     waiting = False
     # TODO use dialog file for time out
+    target = context["target"]
+    context["target"] = context["source"]
+    context["source"] = target
     answer = answer or Message(reply, {"utterance": "server timed out"},
                              context)
     if isinstance(answer, Message):
@@ -145,6 +148,5 @@ if __name__ == "__main__":
     asker_thread = Thread(target=asker)
     asker_thread.setDaemon(True)
     asker_thread.start()
-    #intents = IntentService(ws)
     port = 6712
     start(app, port)

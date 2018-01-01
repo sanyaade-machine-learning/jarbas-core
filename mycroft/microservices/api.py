@@ -111,5 +111,8 @@ class MycroftAPI(object):
 # test functionality
 ap = MycroftAPI("test_key")
 print ap.ask_mycroft("hello world")
-print ap.ask_mycroft("do you like pizza")
-print ap.ask_mycroft("tell me a joke")
+print ap.ask_mycroft("who are you")
+print ap.ask_mycroft("what time is it")
+print ap.ask_mycroft("what is your ip")
+print ap.ask_mycroft("who is elon musk")
+print ap.ask_mycroft("tell me about quantum decoherence")
