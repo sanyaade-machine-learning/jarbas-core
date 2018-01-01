@@ -47,7 +47,7 @@ DEBUG = Configuration.get().get("debug", False)
 skills_config = Configuration.get().get("skills")
 BLACKLISTED_SKILLS = skills_config.get("blacklisted_skills", [])
 PRIORITY_SKILLS = skills_config.get("priority_skills", [])
-
+AUTO_UPDATE = skills_config.get("auto_update", False)
 SKILLS_DIR = skills_config.get("directory") or join(expanduser("~"),
                                                     '.mycroft/skills')
 if not exists(SKILLS_DIR):
@@ -213,7 +213,7 @@ class SkillManager(Thread):
                 speak (bool, optional): Speak the result? Defaults to False
         """
         # Don't invoke msm if already running
-        if exists(MSM_BIN) and self.__msm_lock.acquire():
+        if exists(MSM_BIN) and self.__msm_lock.acquire() and AUTO_UPDATE:
             try:
                 # Invoke the MSM script to do the hard work.
                 LOG.debug("==== Invoking Mycroft Skill Manager: " + MSM_BIN)
