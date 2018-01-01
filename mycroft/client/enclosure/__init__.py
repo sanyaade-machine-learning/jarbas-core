@@ -13,7 +13,10 @@
 # limitations under the License.
 #
 import subprocess
-from Queue import Queue
+import time
+import sys
+from threading import Thread, Timer
+import serial
 import mycroft.dialog
 from mycroft.api import has_been_paired
 
@@ -25,7 +28,10 @@ from mycroft.util.audio_test import record
 from mycroft.messagebus.client.ws import WebsocketClient
 from threading import Thread
 from mycroft.util.log import LOG
-import time
+if sys.version_info[0] < 3:
+    from Queue import Queue
+else:
+    from queue import Queue
 
 
 class Enclosure(object):
@@ -427,15 +433,23 @@ class EnclosureReader(Thread):
             subprocess.call('speaker-test -P 10 -l 0 -s 1', shell=True)
 
         if "unit.shutdown" in data:
+            # Eyes to soft gray on shutdown
+            self.ws.emit(Message("enclosure.eyes.color",
+                                 {'r': 70, 'g': 65, 'b': 69}))
             self.ws.emit(
                 Message("enclosure.eyes.timedspin",
                         {'length': 12000}))
             self.ws.emit(Message("enclosure.mouth.reset"))
+            time.sleep(0.5)  # give the system time to pass the message
             subprocess.call('systemctl poweroff -i', shell=True)
 
         if "unit.reboot" in data:
+            # Eyes to soft gray on reboot
+            self.ws.emit(Message("enclosure.eyes.color",
+                                 {'r': 70, 'g': 65, 'b': 69}))
             self.ws.emit(Message("enclosure.eyes.spin"))
             self.ws.emit(Message("enclosure.mouth.reset"))
+            time.sleep(0.5)  # give the system time to pass the message
             subprocess.call('systemctl reboot -i', shell=True)
 
         if "unit.setwifi" in data:

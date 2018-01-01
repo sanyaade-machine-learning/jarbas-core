@@ -21,6 +21,17 @@ from mycroft.util.parse import get_gender
 from mycroft.util.parse import extract_datetime
 from mycroft.util.parse import extractnumber
 from mycroft.util.parse import normalize
+from mycroft.util.parse import fuzzy_match
+
+
+class TestFuzzyMatch(unittest.TestCase):
+    def test_matches(self):
+        self.assertTrue(fuzzy_match("you and me", "you and me") >= 1.0)
+        self.assertTrue(fuzzy_match("you and me", "you") < 0.5)
+        self.assertTrue(fuzzy_match("You", "you") > 0.5)
+        self.assertTrue(fuzzy_match("you and me", "you") ==
+                        fuzzy_match("you", "you and me"))
+        self.assertTrue(fuzzy_match("you and me", "he or they") < 0.2)
 
 
 class TestNormalize(unittest.TestCase):
@@ -135,6 +146,10 @@ class TestNormalize(unittest.TestCase):
                     "2021-07-01 00:00:00", "remind me to wake up")
         testExtract("What is the weather 3 days after tomorrow?",
                     "2017-07-01 00:00:00", "what is weather")
+        testExtract("december 3",
+                    "2017-12-03 00:00:00", "")
+        testExtract("lets meet at 8:00 tonight",
+                    "2017-06-27 20:00:00", "lets meet")
 
     def test_spaces(self):
         self.assertEqual(normalize("  this   is  a    test"),
