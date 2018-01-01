@@ -46,10 +46,10 @@ DEBUG = Configuration.get().get("debug", False)
 skills_config = Configuration.get().get("skills")
 BLACKLISTED_SKILLS = skills_config.get("blacklisted_skills", [])
 PRIORITY_SKILLS = skills_config.get("priority_skills", [])
-SKILLS_DIR = skills_config.get("directory") or '/opt/mycroft/skills'
+SKILLS_DIR = skills_config.get("directory") or '~/.mycroft/skills'
 
-installer_config = Configuration.get().get("SkillInstallerSkill")
-MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH, 'mycroft',
+installer_config = Configuration.get().get("SkillInstallerSkill", {})
+MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH,
                                             'msm', 'msm'))
 
 MINUTES = 60  # number of seconds in a minute (syntatic sugar)
