@@ -473,7 +473,8 @@ class MycroftSkill(object):
             used in last 5 minutes
         """
         self.emitter.emit(Message('active_skill_request',
-                                  {"skill_id": self.skill_id}))
+                                  {"skill_id": self.skill_id}),
+                          context=self.message_context)
 
     def _register_decorated(self):
         """
@@ -607,7 +608,8 @@ class MycroftSkill(object):
                 # Indicate that the skill handler is starting
                 name = get_handler_name(handler)
                 self.emitter.emit(Message("mycroft.skill.handler.start",
-                                          data={'handler': name}))
+                                          data={'handler': name}),
+                                  context=self.message_context)
                 if need_self:
                     # When registring from decorator self is required
                     if len(getargspec(handler).args) == 2:
@@ -648,10 +650,12 @@ class MycroftSkill(object):
                 # indicate completion with exception
                 self.emitter.emit(Message('mycroft.skill.handler.complete',
                                           data={'handler': name,
-                                                'exception': e.message}))
+                                                'exception': e.message}),
+                                  context=self.message_context)
             # Indicate that the skill handler has completed
             self.emitter.emit(Message('mycroft.skill.handler.complete',
-                                      data={'handler': name}))
+                                      data={'handler': name}),
+                              context=self.message_context)
 
         if handler:
             self.emitter.on(name, self.handle_update_message_context)
@@ -798,7 +802,8 @@ class MycroftSkill(object):
         if not isinstance(word, basestring):
             raise ValueError('word should be a string')
         self.emitter.emit(Message('add_context',
-                                  {'context': context, 'word': word}))
+                                  {'context': context, 'word': word}),
+                          context=self.message_context)
 
     def remove_context(self, context):
         """
@@ -806,7 +811,8 @@ class MycroftSkill(object):
         """
         if not isinstance(context, basestring):
             raise ValueError('context should be a string')
-        self.emitter.emit(Message('remove_context', {'context': context}))
+        self.emitter.emit(Message('remove_context', {'context': context}),
+                          context=self.message_context)
 
     def register_vocabulary(self, entity, entity_type):
         """ Register a word to an keyword
@@ -1003,7 +1009,8 @@ class MycroftSkill(object):
         event_data['repeat'] = repeat
         event_data['data'] = data
         self.emitter.emit(Message('mycroft.scheduler.schedule_event',
-                                  data=event_data))
+                                  data=event_data,
+                                  context=self.message_context))
 
     def schedule_event(self, handler, when, data=None, name=None):
         """
@@ -1045,7 +1052,8 @@ class MycroftSkill(object):
             'event': self._unique_name(name),
             'data': data
         }
-        self.emitter.emit(Message('mycroft.schedule.update_event', data=data))
+        self.emitter.emit(Message('mycroft.schedule.update_event', data=data,
+                                  context=self.message_context))
 
     def cancel_scheduled_event(self, name):
         """
@@ -1059,7 +1067,8 @@ class MycroftSkill(object):
         data = {'event': unique_name}
         self.remove_event(unique_name)
         self.emitter.emit(
-            Message('mycroft.scheduler.remove_event', data=data))
+            Message('mycroft.scheduler.remove_event', data=data,
+                    context=self.message_context))
 
     def get_scheduled_event_status(self, name):
         """
@@ -1088,7 +1097,8 @@ class MycroftSkill(object):
 
         emitter_name = 'mycroft.event_status.callback.{}'.format(event_name)
         self.emitter.once(emitter_name, callback)
-        self.emitter.emit(Message('mycroft.scheduler.get_event', data=data))
+        self.emitter.emit(Message('mycroft.scheduler.get_event', data=data,
+                                  context=self.message_context))
 
         start_wait = time.time()
         while finished_callback[0] is False \
@@ -1114,6 +1124,7 @@ class FallbackSkill(MycroftSkill):
     folders = {}
     override = skills_config.get("fallback_override", False)
     order = skills_config.get("fallback_priority", [])
+    context = {}
 
     def __init__(self, name=None, emitter=None):
         MycroftSkill.__init__(self, name, emitter)
@@ -1144,12 +1155,14 @@ class FallbackSkill(MycroftSkill):
                             if context_update_handler is not None:
                                 context_update_handler(message)
                             if handler(message):
+                                message_context = handler.__self__.message_context
                                 #  indicate completion
                                 ws.emit(Message(
                                     'mycroft.skill.handler.complete',
                                     data={'handler': "fallback",
                                           "fallback_handler": get_handler_name(
-                                              handler)}))
+                                              handler)},
+                                    context=message_context))
                                 return True
                         except Exception as e:
                             LOG.info(
@@ -1160,22 +1173,24 @@ class FallbackSkill(MycroftSkill):
             LOG.info("Missing fallbacks " + str(missing_folders))
             for folder in missing_folders:
                 LOG.info("fallback not in ordered list, trying it now: " +
-                            folder)
+                         folder)
                 handler, context_update_handler = cls.folders[folder]
                 try:
                     if context_update_handler is not None:
                         context_update_handler(message)
                     if handler(message):
+                        message_context = handler.__self__.message_context
                         #  indicate completion
                         ws.emit(Message(
                             'mycroft.skill.handler.complete',
                             data={'handler': "fallback",
                                   "fallback_handler": get_handler_name(
-                                      handler)}))
+                                      handler)},
+                            context=message_context))
                         return True
                 except Exception as e:
                     LOG.info('Exception in fallback: ' +
-                                handler.__self__.name + " " + str(e))
+                             handler.__self__.name + " " + str(e))
             return False
 
         def priority_handler(message):
@@ -1187,22 +1202,26 @@ class FallbackSkill(MycroftSkill):
                     if context_update_handler is not None:
                         context_update_handler(message)
                     if handler(message):
+                        message_context = handler.__self__.message_context
                         #  indicate completion
                         ws.emit(Message(
                             'mycroft.skill.handler.complete',
                             data={'handler': "fallback",
                                   "fallback_handler": get_handler_name(
-                                      handler)}))
+                                      handler)},
+                            context=message_context))
                         return True
                 except Exception as e:
                     LOG.exception('Exception in fallback: ' +
-                                handler.__self__.name + " " + str(e))
+                                  handler.__self__.name + " " + str(e))
             return False
 
         def handler(message):
+            message_context = handler.__self__.message_context
             # indicate fallback handling start
             ws.emit(Message("mycroft.skill.handler.start",
-                            data={'handler': "fallback"}))
+                            data={'handler': "fallback"},
+                            context=message_context))
 
             if cls.override:
                 success = ordered_handler(message)
@@ -1210,12 +1229,13 @@ class FallbackSkill(MycroftSkill):
                 success = priority_handler(message)
             if not success:
                 ws.emit(Message('complete_intent_failure'))
-                LOG.warn('No fallback could handle intent.')
+                LOG.warning('No fallback could handle intent.')
                 #  indicate completion with exception
                 ws.emit(Message('mycroft.skill.handler.complete',
                                 data={'handler': "fallback",
                                       'exception':
-                                          "No fallback could handle intent."}))
+                                          "No fallback could handle intent."},
+                                context=message_context))
 
         return handler
 
@@ -1256,6 +1276,7 @@ class FallbackSkill(MycroftSkill):
             except Exception as e:
                 print e
             return False
+
         self.instance_fallback_handlers.append(wrapper)
         # folder path
         try:
