@@ -8,11 +8,8 @@ from threading import Thread
 from time import sleep
 
 ws = None
-waiting = False
-user_id = ""
-answer_utt = ""
-answer = None
-
+answers = {}
+users_on_hold = {}
 intents = None
 timeout = 60
 
@@ -22,125 +19,113 @@ def connect():
     ws.run_forever()
 
 
-@app.route("/intent/<lang>/<utterance>", methods=['GET'])
-@noindex
-@btc
-@requires_auth
-def intent(utterance, lang="en-us"):
-    result = {}
-    try:
-        # normalize() changes "it's a boy" to "it is boy", etc.
-        best_intent = next(intents.engine.determine_intent(
-            normalize(utterance, lang), 100,
-            include_tags=True,
-            context_manager=intents.context_manager))
-        # TODO - Should Adapt handle this?
-        best_intent['utterance'] = utterance
-        result = best_intent
-    except StopIteration:
-        # don't show error in log
-        pass
-    except Exception as e:
-        LOG.exception(e)
-    return nice_json(result)
-
-
-@app.route("/ask/<lang>/<utterance>", methods=['GET'])
+@app.route("/ask/<lang>/<utterance>", methods=['PUT', 'GET'])
 @noindex
 @btc
 @requires_auth
 def ask(utterance, lang="en-us"):
-    global user_id, answer_utt, answer
+    global users_on_hold, answers
     ip = request.remote_addr
     user = request.headers["Authorization"]
     data = {"utterances": [utterance], "lang": lang}
     user_id = str(ip) + ":" + str(user)
     context = {"source": ip, "target": user, "user_id": user_id}
     message = Message("recognizer_loop:utterance", data, context)
-    result = get_answer(message, "speak", context)
-    # reset vars
-    answer = None
-    answer_utt = ""
-    user_id = ""
-    return nice_json(result)
-
-
-def get_answer(message=None, reply="speak", context=None):
-    global ws, answer, waiting, timeout
-    answer = None
-    # capture this reply
-    ws.on(reply, listener)
+    # clean prev answer # TODO figure out how to answer both, timestamps?
+    if user_id in answers:
+        answers.pop(user_id)
+    users_on_hold[user_id] = False
+    answers[user_id] = None
     # emit message
     ws.emit(message)
-    # correct answer context
-
-    waiting = True
-    # wait until timeout, complete failure or enf of event handler signal
-    start = time.time()
-    while waiting and time.time() - start < timeout:
-        sleep(0.1)
-    waiting = False
-
-    answer = answer or Message("speak", {"utterance": "server timed out"},
-                             context)
-    if not answer.context:
-        answer.context = {}
-        answer.context["target"] = context["source"]
-        answer.context["source"] = "https_server"
-
-    # serialize into json
-    answer = answer.serialize()
-    # stop listening for this kind of reply
-    ws.remove(reply, listener)
-    return answer
-
-
-@app.route("/stt/recognize", methods=['PUT'])
-@noindex
-@btc
-@requires_auth
-def stt():
-    file_data = request.data
-    path = "{}/stt.wav".format(root_dir())
-    with open(path, "wb") as f:
-        f.write(file_data)
-    result = {"error": "not implemented"}
+    result = {"status": "processing"}
     return nice_json(result)
 
 
-@app.route("/tts/<voice>/<sentence>", methods=['GET'])
+@app.route("/get_answer", methods=['GET', 'PUT'])
 @noindex
 @btc
 @requires_auth
-def tts(voice, sentence):
-    result = {"error": "not implemented"}
+def get_answer():
+    global users_on_hold, answers
+    ip = request.remote_addr
+    user = request.headers["Authorization"]
+    user_id = str(ip) + ":" + str(user)
+    if users_on_hold.get(user_id, False):
+        # if answer is ready
+        answer = Message("speak", answers[user_id]["data"], answers[
+            user_id]["context"]).serialize()
+        users_on_hold.pop(user_id)
+        answers.pop(user_id)
+        result = {"status": "done", "answer": answer}
+    else:
+        result = {"status": "processing"}
+    return nice_json(result)
+
+
+@app.route("/cancel", methods=['GET', 'PUT'])
+@noindex
+@btc
+@requires_auth
+def cancel_answer():
+    global users_on_hold, answers
+    ip = request.remote_addr
+    user = request.headers["Authorization"]
+    user_id = str(ip) + ":" + str(user)
+    if user_id in users_on_hold.keys():
+        users_on_hold.pop(user_id)
+        answers.pop(user_id)
+    result = {"status": "canceled"}
     return nice_json(result)
 
 
 def listener(message):
-    global answer, user_id, answer_utt
+    ''' listens for speak messages and checks if we are supposed to send it to some user '''
+    global users_on_hold, answers
     message.context = message.context or {}
-    if message.context.get("user_id", "") == user_id:
+    user = message.context.get("user_id", "")
+    print "listen", user
+    if user in users_on_hold.keys():  # are we waiting to answer this user?
         message.context["source"] = "https_server"
-        if "utterance" in message.data.keys() and answer_utt:
-            message.data["utterance"] = answer_utt + ". " + message.data["utterance"]
-        answer_utt = message.data["utterance"]
-        # use last message, update utterance only
-        answer = message
+        if answers[user] is not None:
+            # update data and context
+            for k in message.context.keys():
+                answers[user]["context"][k] = message.context[k]
+            for k in message.data.keys():
+                # update utterance
+                if k == "utterance":
+                    answers[user]["data"]["utterance"] = \
+                        answers[user]["data"]["utterance"] + ". " + \
+                        message.data[
+                            "utterance"]
+                else:
+                    answers[user]["data"][k] = message.data[k]
+        else:
+            # create answer
+            answers[user] = {"data": message.data, "context": message.context}
 
 
 def end_wait(message):
-    global answer, waiting
-    if not waiting:
-        return
-    if message.type == "complete_intent_failure":
-        answer = Message("speak", {"utterance": "i have no idea how to "
-                                                "answer that"})
-    # no answer but end of handler
-    elif answer is None:
-        answer = Message("speak", {"utterance": "something went wrong, "
-                                                "ask me later"})
-    waiting = False
+    ''' stop capturing answers for this user '''
+    global users_on_hold, answers
+    user = message.context.get("user_id", "")
+    print "end", user
+    if user in users_on_hold.keys():
+        # mark as answered
+        users_on_hold[user] = True
+        # process possible failure scenarios
+        context = {}
+        if message.type == "complete_intent_failure":
+
+            answers[user] = {"data": {"utterance": "i have no idea how to "
+                                                   "answer that"}, "context":
+                                 context}
+        # no answer but end of handler
+        elif answers[user] is None:
+            answers[user] = {"data": {"utterance": "something went wrong, "
+                                                   "ask me later"}, "context":
+                                 context}
+
 
 if __name__ == "__main__":
     global app, ws
@@ -148,6 +133,7 @@ if __name__ == "__main__":
     ws = WebsocketClient()
     ws.on("mycroft.skill.handler.complete", end_wait)
     ws.on("complete_intent_failure", end_wait)
+    ws.on("speak", listener)
     event_thread = Thread(target=connect)
     event_thread.setDaemon(True)
     event_thread.start()

@@ -1,13 +1,22 @@
 import requests
 from requests.exceptions import ConnectionError
+import time
+
+# filter warnings, this should be removed once we stop using self signed
+# certs for debug
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class MycroftAPI(object):
-    def __init__(self, api, lang="en-us", url="https://104.236.133.170:6712/"):
+    def __init__(self, api, lang="en-us", url="https://0.0.0.0:6712/"):
         self.api = api
         self.headers = {"Authorization": str(self.api)}
         self.lang = lang
         self.url = url
+        self.timeout = 50
+        self.wait_time = 0.5
 
     def hello_world(self):
        try:
@@ -17,8 +26,7 @@ class MycroftAPI(object):
            )
            return response.text
        except ConnectionError as e:
-           print e
-           raise ConnectionError("Could not connect")
+           raise ConnectionError("Could not connect: " + str(e))
 
     def new_user(self, key, id, name):
         #
@@ -71,18 +79,48 @@ class MycroftAPI(object):
     def ask_mycroft(self, utterance, lang=None):
         lang = lang or self.lang
         try:
-            response = requests.get(
+            response = requests.put(
                 self.url+"ask/"+lang+"/"+utterance,
                 headers=self.headers, verify=False
             )
             try:
-                return response.json()
+                ans = response.json()
+                if ans["status"] == "processing":
+                    # start waiting
+                    start = time.time()
+                    while ans["status"] == "processing":
+                        time.sleep(self.wait_time)
+                        if time.time() - start > self.timeout:
+                            try:
+                                response = requests.put(
+                                    self.url + "cancel",
+                                    headers=self.headers, verify=False
+                                )
+                            except Exception as e:
+                                print e
+
+                            return {"type": "speak",
+                                    "data": {"utterance": "server timed "
+                                                          "out"},
+                                    "context": {"source": "https server",
+                                                "target": self.api}}
+                        try:
+                            response = requests.get(
+                                self.url + "get_answer",
+                                headers=self.headers, verify=False
+                            )
+                            ans = response.json()
+                        except Exception as e:
+                            raise ValueError("Unexpected Error: " + str(e))
+                    return ans["answer"]
+                else:
+                    raise ValueError("Received unexpected status from "
+                                     "server: " + str(ans))
             except:
                 print response.text
-                raise ValueError("Invalid api key")
+                raise ValueError("Invalid api key: " + str(self.api))
         except ConnectionError as e:
-            print e
-            raise ConnectionError("Could not connect")
+            raise ConnectionError("Could not connect: " + str(e))
 
 
 
@@ -115,3 +153,7 @@ class MycroftAPI(object):
 #print ap.ask_mycroft("what is your ip")
 # test multi speak messages answer
 #print ap.ask_mycroft("tell me about quantum decoherence")
+
+ap = MycroftAPI("test_key")
+print ap.ask_mycroft("hello world")
+print ap.ask_mycroft("tell me about quantum decoherence")
