@@ -36,7 +36,8 @@ from mycroft.skills.intent_service import IntentService
 from mycroft.skills.padatious_service import PadatiousService
 from mycroft.util import connected
 from mycroft.util.log import LOG
-
+from os.path import exists, join, expanduser
+from os import makedirs
 
 ws = None
 event_scheduler = None
@@ -46,7 +47,11 @@ DEBUG = Configuration.get().get("debug", False)
 skills_config = Configuration.get().get("skills")
 BLACKLISTED_SKILLS = skills_config.get("blacklisted_skills", [])
 PRIORITY_SKILLS = skills_config.get("priority_skills", [])
-SKILLS_DIR = skills_config.get("directory") or '~/.mycroft/skills'
+
+SKILLS_DIR = skills_config.get("directory") or join(expanduser("~"),
+                                                    '.mycroft/skills')
+if not exists(SKILLS_DIR):
+    makedirs(SKILLS_DIR)
 
 installer_config = Configuration.get().get("SkillInstallerSkill", {})
 MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH,
