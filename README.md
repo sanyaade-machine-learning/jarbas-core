@@ -38,7 +38,8 @@ unlisted once merged
 - disable identity manager
 - disable mycroft ai remote skill settings
 - privacy compromising options removed from config (server, opt in, ww upload, mycroft stt)
-- [secure websocket](https://github.com/MycroftAI/mycroft-core/pull/1148) by default
+- secure websocket by default
+- disable [auto skills update](https://github.com/MycroftAI/mycroft-core/pull/1342) to avoid [malware distribution](https://jarbasai.github.io//posts/2017/10/skills_malware/)
 
 # dev tools
 
