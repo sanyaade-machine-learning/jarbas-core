@@ -143,8 +143,7 @@ function launch-background() {
     fi
 
     # Launch process in background, sending log to scripts/log/mycroft-*.log
-    screen python ${_script} $_params >> ${scripts_dir}/logs/mycroft-${1}.log
-    2>&1 &
+    python ${_script} $_params >> ${scripts_dir}/logs/mycroft-${1}.log 2>&1 &
 }
 
 _opt=$1
@@ -157,8 +156,6 @@ case ${_opt} in
     launch-background bus
     launch-background micro
     launch-background skills
-    launch-background audio
-    launch-background voice
     ;;
 
   "server")
@@ -169,53 +166,16 @@ case ${_opt} in
     ;;
 
   "bus")
-    launch-background ${_opt}
+    launch-process ${_opt}
     ;;
   "micro")
-    launch-background ${_opt}
-    ;;
-  "audio")
-    launch-background ${_opt}
+    launch-process ${_opt}
     ;;
   "skills")
-    launch-background ${_opt}
-    ;;
-  "voice")
-    launch-background ${_opt}
-    ;;
-
-  "debug")
-    echo "Starting all mycroft-core services"
-    launch-background bus
-    launch-background skills
-    launch-background audio
-    launch-background voice
-    launch-process cli
+    launch-process ${_opt}
     ;;
 
   "cli")
-    launch-process ${_opt}
-    ;;
-  "wifi")
-    launch-background ${_opt}
-    ;;
-  "skill_container")
-    launch-process ${_opt}
-    ;;
-  "unittest")
-    nose2 -t ./ -s test/unittests/ --with-coverage \
-        --config=test/unittests/unittest.cfg
-    ;;
-  "audiotest")
-    launch-process ${_opt}
-    ;;
-  "audioaccuracytest")
-    launch-process ${_opt}
-    ;;
-  "sdkdoc")
-    launch-process ${_opt}
-    ;;
-  "enclosure")
     launch-process ${_opt}
     ;;
 
