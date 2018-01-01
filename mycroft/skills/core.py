@@ -1280,7 +1280,7 @@ class FallbackSkill(MycroftSkill):
                 del cls.fallback_handlers[priority]
                 success = True
         if not success:
-            LOG.warn('Could not remove fallback!')
+            LOG.warning('Could not remove fallback!')
 
         success = False
         for folder in cls.folders.keys():
@@ -1289,7 +1289,7 @@ class FallbackSkill(MycroftSkill):
                 del cls.folders[folder]
                 success = True
         if not success:
-            LOG.warn('Could not remove ordered fallback!')
+            LOG.warning('Could not remove ordered fallback!')
 
     def remove_instance_handlers(self):
         """
