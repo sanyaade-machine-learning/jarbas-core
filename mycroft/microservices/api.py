@@ -29,7 +29,7 @@ class MycroftAPI(object):
            raise ConnectionError("Could not connect: " + str(e))
 
     def new_user(self, key, id, name):
-        #
+        ''' add a new user, requires admin api '''
         try:
             response = requests.put(
                 self.url+"new_user/"+key+"/"+id+"/"+name,
@@ -41,11 +41,10 @@ class MycroftAPI(object):
                 print response.text
                 raise ValueError("Invalid admin api key")
         except ConnectionError as e:
-            print e
-            raise ConnectionError("Could not connect")
+            raise ConnectionError("Could not connect: " + str(e))
 
     def get_api(self):
-        #
+        ''' get an api key string, requires admin api '''
         try:
             response = requests.get(
                 self.url+"get_api",
@@ -57,10 +56,10 @@ class MycroftAPI(object):
                 print response.text
                 raise ValueError("Invalid admin api key")
         except ConnectionError as e:
-            print e
-            raise ConnectionError("Could not connect")
+            raise ConnectionError("Could not connect: " + str(e))
 
     def get_intent(self, utterance, lang=None):
+        ''' get intent this utterance will trigger NOT AVAILABLE '''
         lang = lang or self.lang
         try:
             response = requests.get(
@@ -77,6 +76,7 @@ class MycroftAPI(object):
             raise ConnectionError("Could not connect")
 
     def ask_mycroft(self, utterance, lang=None):
+        ''' ask something to mycroft '''
         lang = lang or self.lang
         try:
             response = requests.put(
@@ -122,38 +122,30 @@ class MycroftAPI(object):
         except ConnectionError as e:
             raise ConnectionError("Could not connect: " + str(e))
 
+if __name__ == "__main__":
 
 
-# test connection
-#print ap.hello_world()
+    # test if admin privileges are properly blocked
+    ap = MycroftAPI("test_key")
+    # test connection
+    print ap.hello_world()
+    try:
+        print ap.new_user("new_key", "0", "test")
+        print "whoa, anyone can make himself an user_id"
+    except:
+        pass
+    try:
+        print ap.get_api()
+        print "whoa, anyone can generate an api key"
+    except:
+        pass
 
-# test if admin privileges are properly blocked
-#ap = MycroftAPI("test_key")
-#try:
-#    print ap.new_user("new_key", "0", "test")
-#    print "whoa, anyone can make himself an user_id"
-#except:
-#    pass
-#try:
-#    print ap.get_api()
-#    print "whoa, anyone can generate an api key"
-#except:
-#    pass
+    # test if admin privileges are properly allowed
+    ap = MycroftAPI("admin_key")
+    print ap.new_user("new_key", "0", "test")
+    print ap.get_api()
 
-# test if admin privileges are properly allowed
-
-#ap = MycroftAPI("admin_key")
-#print ap.new_user("new_key", "0", "test")
-#print ap.get_api()
-
-# test functionality
-#ap = MycroftAPI("test_key")
-# test hello world
-#print ap.ask_mycroft("hello world")
-#print ap.ask_mycroft("what is your ip")
-# test multi speak messages answer
-#print ap.ask_mycroft("tell me about quantum decoherence")
-
-ap = MycroftAPI("test_key")
-print ap.ask_mycroft("hello world")
-print ap.ask_mycroft("tell me about quantum decoherence")
+    # test functionality
+    ap = MycroftAPI("new_key")
+    print ap.ask_mycroft("hello world")
+    print ap.ask_mycroft("tell me about quantum decoherence")
