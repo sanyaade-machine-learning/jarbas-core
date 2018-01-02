@@ -36,7 +36,7 @@ from mycroft.skills.intent_service import IntentService
 from mycroft.skills.padatious_service import PadatiousService
 from mycroft.util import connected
 from mycroft.util.log import LOG
-from os.path import exists
+from os.path import exists, join, expanduser
 from os import makedirs
 
 ws = None
@@ -47,12 +47,15 @@ DEBUG = Configuration.get().get("debug", False)
 skills_config = Configuration.get().get("skills")
 BLACKLISTED_SKILLS = skills_config.get("blacklisted_skills", [])
 PRIORITY_SKILLS = skills_config.get("priority_skills", [])
-SKILLS_DIR = skills_config.get("directory") or '/opt/mycroft/skills'
+AUTO_UPDATE = skills_config.get("auto_update", False)
+SKILLS_DIR = skills_config.get("directory") or join(expanduser("~"),
+                                                    '.mycroft/jarbas_skills')
 if not exists(SKILLS_DIR):
     makedirs(SKILLS_DIR)
-AUTO_UPDATE = skills_config.get("auto_update", False)
-installer_config = Configuration.get().get("SkillInstallerSkill")
-MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH, 'msm', 'msm'))
+
+installer_config = Configuration.get().get("SkillInstallerSkill", {})
+MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH,
+                                            'msm', 'msm'))
 
 MINUTES = 60  # number of seconds in a minute (syntatic sugar)
 
@@ -211,6 +214,7 @@ class SkillManager(Thread):
         """
         if not AUTO_UPDATE:
             return
+
         # Don't invoke msm if already running
         if exists(MSM_BIN) and self.__msm_lock.acquire():
             try:
