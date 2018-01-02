@@ -474,8 +474,8 @@ class MycroftSkill(object):
             used in last 5 minutes
         """
         self.emitter.emit(Message('active_skill_request',
-                                  {"skill_id": self.skill_id}),
-                          context=self.message_context)
+                                  {"skill_id": self.skill_id},
+                          context=self.message_context))
 
     def _register_decorated(self):
         """
@@ -1156,6 +1156,10 @@ class FallbackSkill(MycroftSkill):
                                           "fallback_handler": get_handler_name(
                                               handler)},
                                     context=message_context))
+                                try:
+                                    handler.__self__.make_active()
+                                except:
+                                    pass
                                 return True
                         except Exception as e:
                             LOG.info(
@@ -1182,7 +1186,10 @@ class FallbackSkill(MycroftSkill):
                                   "fallback_handler": get_handler_name(
                                       handler)},
                             context=message_context))
-                        handler.__self__.make_active()
+                        try:
+                            handler.__self__.make_active()
+                        except:
+                            pass
                         cls.context = message.context
                         return True
                 except Exception as e:
@@ -1198,7 +1205,11 @@ class FallbackSkill(MycroftSkill):
                 try:
                     context_update_handler(message)
                     if handler(message):
-                        message_context = handler.__self__.message_context
+                        try:
+                            message_context = \
+                                handler.__self__.message_context
+                        except:
+                            message_context = cls.context
                         #  indicate completion
                         ws.emit(Message(
                             'mycroft.skill.handler.complete',
@@ -1206,7 +1217,10 @@ class FallbackSkill(MycroftSkill):
                                   "fallback_handler": get_handler_name(
                                       handler)},
                             context=message_context))
-                        handler.__self__.make_active()
+                        try:
+                            handler.__self__.make_active()
+                        except:
+                            pass
                         cls.context = message.context
                         return True
                 except Exception as e:
