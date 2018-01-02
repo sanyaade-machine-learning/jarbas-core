@@ -14,14 +14,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
+
 function get_config_value() {
   key="$1"
   default="$2"
   value="null"
-  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf ; do
-    if [[ -r ~/.mycroft/mycroft.conf ]] ; then
-        value=$( jq -r "$key" "$file" )
+  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
+    if [[ -r $file ]] ; then
+        echo "$file"
+        # remove comments
+        # assume they may be preceded by whitespace, but nothing else
+        parsed="$( sed 's:^\s*//.*$::g' $file )"
+        echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
+        value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
         if [[ "${value}" != "null" ]] ;  then
+            rm -rf $DIR/mycroft/configuration/sys.conf
             echo "$value"
             return
         fi
@@ -30,19 +45,12 @@ function get_config_value() {
   echo "$default"
 }
 
+
 mycroft_root_dir='/opt/mycroft'
 skills_dir="$(get_config_value '.skills.directory' '/opt/mycroft/skills')"
 
 # exit on any error
 set -Ee
-
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ]; do
-  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-  SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-done
-DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
  
 chmod +x ${DIR}/../msm/msm
 
