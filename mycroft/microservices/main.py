@@ -86,10 +86,11 @@ def listener(message):
     user = message.context.get("user_id", "")
     print "listen", user
     if user in users_on_hold.keys():  # are we waiting to answer this user?
-        message.context["source"] = "https_server"
         if answers[user] is not None:
             # update data and context
             for k in message.context.keys():
+                if k == "source" and ":https_server" not in message.context[k]:
+                    message.context["source"] += ":https_server"
                 answers[user]["context"][k] = message.context[k]
             for k in message.data.keys():
                 # update utterance
