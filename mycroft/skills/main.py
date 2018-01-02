@@ -20,7 +20,6 @@ from threading import Timer, Thread, Event, Lock
 import gc
 
 import os
-from os.path import exists, join
 
 import mycroft.dialog
 import mycroft.lock
@@ -47,7 +46,6 @@ DEBUG = Configuration.get().get("debug", False)
 skills_config = Configuration.get().get("skills")
 BLACKLISTED_SKILLS = skills_config.get("blacklisted_skills", [])
 PRIORITY_SKILLS = skills_config.get("priority_skills", [])
-AUTO_UPDATE = skills_config.get("auto_update", False)
 SKILLS_DIR = skills_config.get("directory") or join(expanduser("~"),
                                                     '.mycroft/jarbas_skills')
 if not exists(SKILLS_DIR):
@@ -212,9 +210,6 @@ class SkillManager(Thread):
             Args:
                 speak (bool, optional): Speak the result? Defaults to False
         """
-        if not AUTO_UPDATE:
-            return
-
         # Don't invoke msm if already running
         if exists(MSM_BIN) and self.__msm_lock.acquire():
             try:
@@ -335,8 +330,13 @@ class SkillManager(Thread):
         # Scan the file folder that contains Skills.  If a Skill is updated,
         # unload the existing version from memory and reload from the disk.
         while not self._stop_event.is_set():
+
+            # check if skill updates are enabled
+            update = Configuration.get().get("skills", {}).get(
+                "auto_update", True)
+
             # Update skills once an hour
-            if time.time() >= self.next_download:
+            if time.time() >= self.next_download and update:
                 self.download_skills()
 
             # Look for recently changed skill(s) needing a reload
