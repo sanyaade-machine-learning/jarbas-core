@@ -123,8 +123,6 @@ class MycroftAPI(object):
             raise ConnectionError("Could not connect: " + str(e))
 
 if __name__ == "__main__":
-
-
     # test if admin privileges are properly blocked
     ap = MycroftAPI("test_key")
     # test connection
