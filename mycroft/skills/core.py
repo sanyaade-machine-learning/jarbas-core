@@ -1115,6 +1115,7 @@ class FallbackSkill(MycroftSkill):
     folders = {}
     override = skills_config.get("fallback_override", False)
     order = skills_config.get("fallback_priority", [])
+    context = {}
 
     def __init__(self, name=None, emitter=None):
         MycroftSkill.__init__(self, name, emitter)
@@ -1205,7 +1206,7 @@ class FallbackSkill(MycroftSkill):
             return False
 
         def handler(message):
-            message_context = handler.__self__.message_context
+            message_context = cls.context
             # indicate fallback handling start
             ws.emit(Message("mycroft.skill.handler.start",
                             data={'handler': "fallback"},
@@ -1241,12 +1242,19 @@ class FallbackSkill(MycroftSkill):
         while priority in cls.fallback_handlers:
             priority += 1
 
-        cls.fallback_handlers[priority] = handler, context_update_handler
+        def context_handler(message):
+            try:
+                cls.context = message.context
+                context_update_handler(message)
+            except:
+                pass
+
+        cls.fallback_handlers[priority] = handler, context_handler
 
         # folder name
         if skill_folder:
             skill_folder = skill_folder.split("/")[-1]
-            cls.folders[skill_folder] = handler, context_update_handler
+            cls.folders[skill_folder] = handler, context_handler
         else:
             LOG.warning("skill folder error registering fallback")
 
