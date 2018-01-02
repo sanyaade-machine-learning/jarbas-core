@@ -24,7 +24,8 @@ import abc
 import re
 from adapt.intent import Intent, IntentBuilder
 from os import listdir
-from os.path import join, abspath, dirname, splitext, basename, exists
+from os.path import join, abspath, dirname, splitext, basename, exists, \
+    realpath
 from threading import Event
 
 from mycroft.api import DeviceApi
@@ -1143,7 +1144,11 @@ class FallbackSkill(MycroftSkill):
                         try:
                             context_update_handler(message)
                             if handler(message):
-                                message_context = handler.__self__.message_context
+                                try:
+                                    message_context = \
+                                    handler.__self__.message_context
+                                except:
+                                    message_context = cls.context
                                 #  indicate completion
                                 ws.emit(Message(
                                     'mycroft.skill.handler.complete',
@@ -1165,7 +1170,11 @@ class FallbackSkill(MycroftSkill):
                 try:
                     context_update_handler(message)
                     if handler(message):
-                        message_context = handler.__self__.message_context
+                        try:
+                            message_context = \
+                                handler.__self__.message_context
+                        except:
+                            message_context = cls.context
                         #  indicate completion
                         ws.emit(Message(
                             'mycroft.skill.handler.complete',
@@ -1174,6 +1183,7 @@ class FallbackSkill(MycroftSkill):
                                       handler)},
                             context=message_context))
                         handler.__self__.make_active()
+                        cls.context = message.context
                         return True
                 except Exception as e:
                     LOG.info('Exception in fallback: ' +
@@ -1197,6 +1207,7 @@ class FallbackSkill(MycroftSkill):
                                       handler)},
                             context=message_context))
                         handler.__self__.make_active()
+                        cls.context = message.context
                         return True
                 except Exception as e:
                     LOG.exception('Exception in fallback: ' +
@@ -1204,11 +1215,11 @@ class FallbackSkill(MycroftSkill):
             return False
 
         def handler(message):
-            message_context = cls.context
+            cls.context = message.context
             # indicate fallback handling start
             ws.emit(Message("mycroft.skill.handler.start",
                             data={'handler': "fallback"},
-                            context=message_context))
+                            context=cls.context))
 
             if cls.override:
                 success = ordered_handler(message)
@@ -1222,7 +1233,7 @@ class FallbackSkill(MycroftSkill):
                                 data={'handler': "fallback",
                                       'exception':
                                           "No fallback could handle intent."},
-                                context=message_context))
+                                context=cls.context))
 
         return handler
 
@@ -1242,7 +1253,6 @@ class FallbackSkill(MycroftSkill):
 
         def context_handler(message):
             try:
-                cls.context = message.context
                 context_update_handler(message)
             except Exception as e:
                 LOG.error(e)
@@ -1254,7 +1264,7 @@ class FallbackSkill(MycroftSkill):
             skill_folder = skill_folder.split("/")[-1]
             cls.folders[skill_folder] = handler, context_handler
         else:
-            LOG.warning("skill folder error registering fallback")
+            LOG.error("skill folder error registering fallback")
 
     def register_fallback(self, handler, priority):
         """
@@ -1264,10 +1274,9 @@ class FallbackSkill(MycroftSkill):
 
         self.instance_fallback_handlers.append(handler)
         # folder path
-        try:
-            skill_folder = self._dir
-        except:
-            skill_folder = dirname(__file__)  # skill
+        skill_folder = self._dir # skill
+        if not skill_folder:
+            raise EnvironmentError("could not get skill dir")
         self._register_fallback(handler, priority, skill_folder,
                                 self.handle_update_message_context)
 

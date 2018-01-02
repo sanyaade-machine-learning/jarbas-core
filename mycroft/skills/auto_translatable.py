@@ -133,7 +133,7 @@ class AutotranslatableFallback(FallbackSkill):
             modify fallback handler for input auto-translation
         """
         if self.input_lang:
-            def new_handler(message):
+            def universal_translate_handler(message):
                 # auto_Translate input
                 ut = message.data.get("utterance")
                 if ut:
@@ -147,8 +147,17 @@ class AutotranslatableFallback(FallbackSkill):
                                                                    self.input_lang)
                 return handler(message)
 
-            self.instance_fallback_handlers.append(new_handler)
-            self._register_fallback(new_handler, priority)
+            self.instance_fallback_handlers.append(universal_translate_handler)
+            skill_folder = self._dir  # skill
+            if not skill_folder:
+                raise EnvironmentError("could not get skill dir")
+            self._register_fallback(universal_translate_handler, priority, skill_folder,
+                                    self.handle_update_message_context)
         else:
             self.instance_fallback_handlers.append(handler)
-            self._register_fallback(handler, priority)
+            # folder path
+            skill_folder = self._dir  # skill
+            if not skill_folder:
+                raise EnvironmentError("could not get skill dir")
+            self._register_fallback(handler, priority, skill_folder,
+                                    self.handle_update_message_context)
