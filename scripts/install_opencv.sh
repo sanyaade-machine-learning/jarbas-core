@@ -1,10 +1,10 @@
-sudo apt-get install -y libtiff5-dev:i386 libtiff5-dev libjasper-dev \
- libpng12-dev libgtk2.0-dev libavcodec-dev libavformat-dev libswscale-dev \
- libv4l-dev libatlas-base-dev gfortran
+#sudo apt-get install -y libtiff5-dev:i386 libtiff5-dev libjasper-dev \
+# libpng12-dev libgtk2.0-dev libavcodec-dev libavformat-dev libswscale-dev \
+# libv4l-dev libatlas-base-dev gfortran
 
-sudo pip install numpy
-git clone https://github.com/opencv/opencv
-git clone https://github.com/opencv/opencv_contrib
+#sudo pip install numpy
+#git clone https://github.com/opencv/opencv
+#git clone https://github.com/opencv/opencv_contrib
 cd opencv_contrib
 cd ../opencv
 mkdir build

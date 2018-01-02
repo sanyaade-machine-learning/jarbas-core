@@ -55,7 +55,24 @@ input_lines() {
     printf -v $var_name "$lines"  # $var_name=$lines
 }
 
-skills_dir=/opt/mycroft/skills
+
+function get_config_value() {
+  key="$1"
+  default="$2"
+  value="null"
+  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf ; do
+    if [[ -r ~/.mycroft/mycroft.conf ]] ; then
+        value=$( jq -r "$key" "$file" )
+        if [[ "${value}" != "null" ]] ;  then
+            echo "$value"
+            return
+        fi
+    fi
+  done
+  echo "$default"
+}
+
+skills_dir="$(get_config_value '.skills.directory' '/opt/mycroft/skills')"
 
 if [ "$#" -gt "2" ] || [ "$1" = "-h" ]; then
     echo "Usage: $0"
