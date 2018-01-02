@@ -608,8 +608,8 @@ class MycroftSkill(object):
                 # Indicate that the skill handler is starting
                 name = get_handler_name(handler)
                 self.emitter.emit(Message("mycroft.skill.handler.start",
-                                          data={'handler': name}),
-                                  context=self.message_context)
+                                          data={'handler': name},
+                                  context=self.message_context))
                 if need_self:
                     # When registring from decorator self is required
                     if len(getargspec(handler).args) == 2:
@@ -650,12 +650,12 @@ class MycroftSkill(object):
                 # indicate completion with exception
                 self.emitter.emit(Message('mycroft.skill.handler.complete',
                                           data={'handler': name,
-                                                'exception': e.message}),
-                                  context=self.message_context)
+                                                'exception': e.message},
+                                  context=self.message_context))
             # Indicate that the skill handler has completed
             self.emitter.emit(Message('mycroft.skill.handler.complete',
-                                      data={'handler': name}),
-                              context=self.message_context)
+                                      data={'handler': name},
+                              context=self.message_context))
 
         if handler:
             self.emitter.on(name, self.handle_update_message_context)
@@ -841,12 +841,6 @@ class MycroftSkill(object):
             if "target" not in message_context.keys():
                 message_context["target"] = self.message_context.get("target",
                                                                      "all")
-            if "mute" not in message_context.keys():
-                message_context["mute"] = self.message_context.get("mute",
-                                                                   False)
-            if "more_speech" not in message_context.keys():
-                message_context["more_speech"] = self.message_context.get(
-                    "more_speech", False)
         message_context["source"] = self.name
         return message_context
 
@@ -867,11 +861,8 @@ class MycroftSkill(object):
                                            together with speech
                        message_context:    message.context field
                """
-        if message_context is None:
-            # use current context
-            message_context = {}
-        if metadata is None:
-            metadata = {}
+        message_context = message_context or self.message_context
+        metadata = metadata or {}
         # registers the skill as being active
         self.enclosure.register(self.name)
         data = {'utterance': utterance,
@@ -1124,7 +1115,6 @@ class FallbackSkill(MycroftSkill):
     folders = {}
     override = skills_config.get("fallback_override", False)
     order = skills_config.get("fallback_priority", [])
-    context = {}
 
     def __init__(self, name=None, emitter=None):
         MycroftSkill.__init__(self, name, emitter)
@@ -1143,10 +1133,8 @@ class FallbackSkill(MycroftSkill):
             LOG.info("Fallbacks " + str(missing_folders))
             # try fallbacks in ordered list
             for folder in cls.order:
-                print folder
                 for f in cls.folders.keys():
                     if folder == f:
-                        print f
                         if f in missing_folders:
                             missing_folders.remove(f)
                         LOG.info("Trying ordered fallback: " + folder)

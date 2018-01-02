@@ -56,7 +56,7 @@ unlisted once merged
 - [fallback order override](https://github.com/MycroftAI/mycroft-core/pull/987) option in config
 - [enable/disable/status TTS](https://github.com/MycroftAI/mycroft-core/pull/556) signal
 - [enable/disable intent signal](https://github.com/MycroftAI/mycroft-core/pull/860)
-
+- add symlink to python packages so git cloned mycroft can be imported globally
 
 
 # Links:

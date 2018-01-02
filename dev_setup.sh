@@ -208,3 +208,7 @@ chmod +x start-mycroft.sh
 chmod +x stop-mycroft.sh
 
 md5sum requirements.txt dev_setup.sh > .installed
+
+
+# make sure this package is found in import
+ln -sf ${DIR}/mycroft /usr/local/lib/python2.7/dist-packages/mycroft

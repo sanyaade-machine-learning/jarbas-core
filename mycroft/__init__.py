@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from os.path import abspath, dirname, join
+from os.path import dirname, join, realpath
 
 from mycroft.api import Api
 from mycroft.messagebus.message import Message
@@ -20,4 +20,4 @@ from mycroft.skills.context import adds_context, removes_context
 from mycroft.skills.core import MycroftSkill, FallbackSkill, \
     intent_handler, intent_file_handler
 
-MYCROFT_ROOT_PATH = abspath(join(dirname(__file__), '..'))
+MYCROFT_ROOT_PATH = realpath(join(dirname(__file__), '..'))
