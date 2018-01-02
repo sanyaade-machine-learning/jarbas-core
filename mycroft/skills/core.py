@@ -1141,8 +1141,7 @@ class FallbackSkill(MycroftSkill):
                         LOG.info("Trying ordered fallback: " + folder)
                         handler, context_update_handler = cls.folders[f]
                         try:
-                            if context_update_handler is not None:
-                                context_update_handler(message)
+                            context_update_handler(message)
                             if handler(message):
                                 message_context = handler.__self__.message_context
                                 #  indicate completion
@@ -1156,8 +1155,7 @@ class FallbackSkill(MycroftSkill):
                         except Exception as e:
                             LOG.info(
                                 'Exception in fallback: ' +
-                                handler.__self__.name + " " + str(e))
-
+                                folder + " " + str(e))
             # try fallbacks missing from ordered list
             LOG.info("Missing fallbacks " + str(missing_folders))
             for folder in missing_folders:
@@ -1165,8 +1163,7 @@ class FallbackSkill(MycroftSkill):
                          folder)
                 handler, context_update_handler = cls.folders[folder]
                 try:
-                    if context_update_handler is not None:
-                        context_update_handler(message)
+                    context_update_handler(message)
                     if handler(message):
                         message_context = handler.__self__.message_context
                         #  indicate completion
@@ -1176,10 +1173,11 @@ class FallbackSkill(MycroftSkill):
                                   "fallback_handler": get_handler_name(
                                       handler)},
                             context=message_context))
+                        handler.__self__.make_active()
                         return True
                 except Exception as e:
                     LOG.info('Exception in fallback: ' +
-                             handler.__self__.name + " " + str(e))
+                             folder + " " + str(e))
             return False
 
         def priority_handler(message):
@@ -1188,8 +1186,7 @@ class FallbackSkill(MycroftSkill):
                     cls.fallback_handlers.items(),
                     key=operator.itemgetter(0)):
                 try:
-                    if context_update_handler is not None:
-                        context_update_handler(message)
+                    context_update_handler(message)
                     if handler(message):
                         message_context = handler.__self__.message_context
                         #  indicate completion
@@ -1199,6 +1196,7 @@ class FallbackSkill(MycroftSkill):
                                   "fallback_handler": get_handler_name(
                                       handler)},
                             context=message_context))
+                        handler.__self__.make_active()
                         return True
                 except Exception as e:
                     LOG.exception('Exception in fallback: ' +
@@ -1246,8 +1244,8 @@ class FallbackSkill(MycroftSkill):
             try:
                 cls.context = message.context
                 context_update_handler(message)
-            except:
-                pass
+            except Exception as e:
+                LOG.error(e)
 
         cls.fallback_handlers[priority] = handler, context_handler
 
@@ -1264,22 +1262,13 @@ class FallbackSkill(MycroftSkill):
             and with the list of handlers registered by this instance
         """
 
-        def wrapper(*args, **kwargs):
-            try:
-                if handler(*args, **kwargs):
-                    self.make_active()
-                    return True
-            except Exception as e:
-                LOG.error(e)
-            return False
-
-        self.instance_fallback_handlers.append(wrapper)
+        self.instance_fallback_handlers.append(handler)
         # folder path
         try:
             skill_folder = self._dir
         except:
             skill_folder = dirname(__file__)  # skill
-        self._register_fallback(wrapper, priority, skill_folder,
+        self._register_fallback(handler, priority, skill_folder,
                                 self.handle_update_message_context)
 
     @classmethod
