@@ -1270,7 +1270,7 @@ class FallbackSkill(MycroftSkill):
                     self.make_active()
                     return True
             except Exception as e:
-                print e
+                LOG.error(e)
             return False
 
         self.instance_fallback_handlers.append(wrapper)
