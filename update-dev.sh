@@ -54,7 +54,7 @@ if [[ ${use_virtualenvwrapper} == "true" ]] ; then
     pip install --upgrade virtualenv
     pip install -r requirements.txt
 else
-    easy_install pip
+    sudo easy_install pip
     sudo pip install -r requirements.txt
 fi
 
