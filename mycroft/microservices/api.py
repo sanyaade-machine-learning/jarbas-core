@@ -10,12 +10,12 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class MycroftAPI(object):
-    def __init__(self, api, lang="en-us", url="https://0.0.0.0:6712/"):
+    def __init__(self, api, lang="en-us", url="https://104.236.133.170:6712/"):
         self.api = api
         self.headers = {"Authorization": str(self.api)}
         self.lang = lang
         self.url = url
-        self.timeout = 50
+        self.timeout = 10
         self.wait_time = 0.5
 
     def hello_world(self):
@@ -146,4 +146,6 @@ if __name__ == "__main__":
     # test functionality
     ap = MycroftAPI("new_key")
     print ap.ask_mycroft("hello world")
+    print ap.ask_mycroft("tell me a joke")
     print ap.ask_mycroft("tell me about quantum decoherence")
+    print ap.ask_mycroft("do you like pizza")
