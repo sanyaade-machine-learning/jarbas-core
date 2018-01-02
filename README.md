@@ -57,7 +57,8 @@ unlisted once merged
 - [enable/disable/status TTS](https://github.com/MycroftAI/mycroft-core/pull/556) signal
 - [enable/disable intent signal](https://github.com/MycroftAI/mycroft-core/pull/860)
 - add symlink to python packages so git cloned mycroft can be imported globally
-
+- skills dir configurable in config file
+- use virtualenv option in config file
 
 # Links:
 
