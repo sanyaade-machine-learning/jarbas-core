@@ -87,6 +87,9 @@ class JarbasServerFactory(WebSocketServerFactory):
         super(JarbasServerFactory, self).__init__(*args, **kwargs)
         # list of clients
         self.clients = {}
+        # ip block policy
+        self.ip_list = []
+        self.blacklist = True # if False, ip_list is a whitelist
         # mycroft_ws
         self.emitter = None
         self.emitter_thread = None
@@ -119,12 +122,13 @@ class JarbasServerFactory(WebSocketServerFactory):
        """
         logger.info("registering client: " + str(client.peer))
         t, ip, sock = client.peer.split(":")
-        # see if blacklisted
-        if ip in self.ip_list and self.ip_blacklist:
+        # see if ip adress is blacklisted
+        if ip in self.ip_list and self.blacklist:
             logger.warning("Blacklisted ip tried to connect: " + ip)
             self.unregister_client(client, reason=u"Blacklisted ip")
             return
-        elif ip not in self.ip_list and not self.ip_blacklist:
+        # see if ip adress is whitelisted
+        elif ip not in self.ip_list and not self.blacklist:
             logger.warning("Unknown ip tried to connect: " + ip)
             #  if not whitelisted kick
             self.unregister_client(client, reason=u"Unknown ip")
@@ -154,7 +158,7 @@ class JarbasServerFactory(WebSocketServerFactory):
        """
         logger.info("processing message from client: " + str(client.peer))
         client_data = self.clients[client.peer]
-        client_type, ip, sock_num = client.peer.split(":")
+        client_protocol, ip, sock_num = client.peer.split(":")
 
     # mycroft handlers
     def handle_speak(self, message):
