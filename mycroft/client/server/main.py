@@ -5,7 +5,6 @@ import json
 from twisted.internet import reactor, ssl
 from autobahn.twisted.websocket import WebSocketServerProtocol, \
     WebSocketServerFactory
-
 from mycroft.messagebus.client.ws import WebsocketClient
 from mycroft.messagebus.message import Message
 from mycroft.util.log import LOG as logger
@@ -31,9 +30,14 @@ class MyServerProtocol(WebSocketServerProtocol):
     def onConnect(self, request):
         logger.info("Client connecting: {0}".format(request.peer))
         # validate user
+
         api = request.headers.get("api")
         if api not in users:
             raise ValueError("Invalid API key")
+        # send message to internal mycroft bus
+        ip = request.peer.split(":")[1]
+        data = {"ip": ip, "headers": request.headers}
+        self.factory.emitter_send("client.connect", data)
         # return a pair with WS protocol spoken (or None for any) and
         # custom headers to send in initial WS opening handshake HTTP response
         headers = {"server": NAME}
@@ -59,7 +63,11 @@ class MyServerProtocol(WebSocketServerProtocol):
         self.factory.process_message(self, payload, isBinary)
 
     def onClose(self, wasClean, code, reason):
+        self.factory.unregister_client(self, reason=u"connection closed")
         logger.info("WebSocket connection closed: {0}".format(reason))
+        ip = self.peer.split(":")[1]
+        data = {"ip": ip, "code": code, "reason": "connection closed", "wasClean": wasClean}
+        self.factory.emitter_send("client.disconnect", data)
 
     def connectionLost(self, reason):
         """
@@ -67,7 +75,10 @@ class MyServerProtocol(WebSocketServerProtocol):
        Remove client from list of tracked connections.
        """
         self.factory.unregister_client(self, reason=u"connection lost")
-        logger.info("WebSocket connection closed: {0}".format(reason))
+        logger.info("WebSocket connection lost: {0}".format(reason))
+        ip = self.peer.split(":")[1]
+        data = {"ip": ip, "reason": "connection lost"}
+        self.factory.emitter_send("client.disconnect", data)
 
 
 # server internals
@@ -80,6 +91,11 @@ class MyServerFactory(WebSocketServerFactory):
         self.emitter = None
         self.emitter_thread = None
         self.create_internal_emitter()
+
+    def emitter_send(self, type, data=None, context=None):
+        data = data or {}
+        context = context or {}
+        self.emitter.emit(Message(type, data, context))
 
     def connect_to_internal_emitter(self):
         self.emitter.run_forever()

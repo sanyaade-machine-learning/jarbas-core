@@ -17,6 +17,7 @@ class MyClientProtocol(WebSocketClientProtocol):
 
     def onConnect(self, response):
         logger.info("Server connected: {0}".format(response.peer))
+        print response.headers
         self.factory.emitter.emit(Message("server.connected",
                                           {"server_id": response.headers[
                                               "server"]}))
@@ -125,7 +126,8 @@ if __name__ == '__main__':
     api = config.get("api", "test_key")
     headers = {'API': api}
     adress = u"wss://" + host + u":" + str(port)
-    factory = MyClientFactory(adress, headers=headers)
+    factory = MyClientFactory(adress, headers=headers,
+                              useragent="JarbasClientv0.1")
     factory.protocol = MyClientProtocol
     contextFactory = ssl.ClientContextFactory()
     reactor.connectSSL(host, port, factory, contextFactory)
