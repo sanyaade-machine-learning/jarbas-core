@@ -13,7 +13,7 @@ from mycroft.util.log import LOG as logger
 from mycroft.configuration import Configuration
 
 
-class MyClientProtocol(WebSocketClientProtocol):
+class JarbasClientProtocol(WebSocketClientProtocol):
 
     def onConnect(self, response):
         logger.info("Server connected: {0}".format(response.peer))
@@ -51,11 +51,11 @@ class MyClientProtocol(WebSocketClientProtocol):
             return json.dumps(message.__dict__)
 
 
-class MyClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
-    protocol = MyClientProtocol
+class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
+    protocol = JarbasClientProtocol
 
     def __init__(self, *args, **kwargs):
-        super(MyClientFactory, self).__init__(*args, **kwargs)
+        super(JarbasClientFactory, self).__init__(*args, **kwargs)
         self.client = None
         self.status = "disconnected"
         # mycroft_ws
@@ -126,9 +126,9 @@ if __name__ == '__main__':
     api = config.get("api", "test_key")
     headers = {'API': api}
     adress = u"wss://" + host + u":" + str(port)
-    factory = MyClientFactory(adress, headers=headers,
-                              useragent="JarbasClientv0.1")
-    factory.protocol = MyClientProtocol
+    factory = JarbasClientFactory(adress, headers=headers,
+                                  useragent="JarbasClientv0.1")
+    factory.protocol = JarbasClientProtocol
     contextFactory = ssl.ClientContextFactory()
     reactor.connectSSL(host, port, factory, contextFactory)
     reactor.run()

@@ -26,7 +26,7 @@ with open("{}/database/users.json".format(root_dir()), "r") as f:
 
 
 # protocol
-class MyServerProtocol(WebSocketServerProtocol):
+class JarbasServerProtocol(WebSocketServerProtocol):
     def onConnect(self, request):
         logger.info("Client connecting: {0}".format(request.peer))
         # validate user
@@ -82,9 +82,9 @@ class MyServerProtocol(WebSocketServerProtocol):
 
 
 # server internals
-class MyServerFactory(WebSocketServerFactory):
+class JarbasServerFactory(WebSocketServerFactory):
     def __init__(self, *args, **kwargs):
-        super(MyServerFactory, self).__init__(*args, **kwargs)
+        super(JarbasServerFactory, self).__init__(*args, **kwargs)
         # list of clients
         self.clients = {}
         # mycroft_ws
@@ -176,8 +176,8 @@ if __name__ == '__main__':
     key = config.get("key_file",
                      dirname(__file__) + '/certs/JarbasServer.key')
 
-    factory = MyServerFactory(adress)
-    factory.protocol = MyServerProtocol
+    factory = JarbasServerFactory(adress)
+    factory.protocol = JarbasServerProtocol
     if max_connections >= 0:
         factory.setProtocolOptions(maxConnections=max_connections)
 
