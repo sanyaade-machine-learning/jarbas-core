@@ -117,6 +117,7 @@ class JarbasServerFactory(WebSocketServerFactory):
     def register_internal_messages(self):
         # catch all messages
         self.emitter.on('message', self.handle_message)
+        self.emitter.on('client.broadcast', self.handle_broadcast)
 
     # websocket handlers
     def register_client(self, client):
@@ -174,6 +175,18 @@ class JarbasServerFactory(WebSocketServerFactory):
             self.emitter.emit(message)
 
     # mycroft handlers
+    def handle_broadcast(self, message):
+        # send message to all clients
+        smsg = message.data.get("payload")
+        is_file = message.data.get("isBinary")
+        if is_file:
+            # TODO send file
+            pass
+        else:
+            # send message to server
+            server_msg = Message.serialize(msg)
+            self.broadcast(msg)
+
     def handle_message(self, message):
         # forward internal messages to clients if they are the target
         message = Message.deserialize(message)
