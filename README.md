@@ -21,7 +21,7 @@ some skills would no longer work/undesired and are blacklisted
 # micro services
 
 for remote access to this server some endpoints are being created, these allow
- external single requests by https for mycroft functionality
+ external single [requests by https](https://github.com/JarbasAl/jarbas-core/tree/server/mycroft/microservices) for mycroft functionality
 
 requires an API key
 
@@ -34,8 +34,8 @@ requires an API key
 # websockets
 
 a websocket connection for asynchronous interface, this is a combination of
-server + client service that bridge 2 mycroft instances, messages can be sent back and forth
-between mycroft instances real time
+[server](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/main.py) + [client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/client.py) service that bridge 2 mycroft instances, messages can
+be sent back and forth between mycroft instances real time
 
 these services check every message context field to see if they should be
 forwarded to a client/server, a secure websocket connection is shared between
