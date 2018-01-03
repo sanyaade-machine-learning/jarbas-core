@@ -1,14 +1,11 @@
-from twisted.python import log
 from twisted.internet import reactor, ssl
 
 from autobahn.twisted.websocket import WebSocketClientFactory, \
-    WebSocketClientProtocol, \
-    connectWS
+    WebSocketClientProtocol
 from twisted.internet.protocol import ReconnectingClientFactory
 
-import sys, json, time
+import json
 from threading import Thread
-from os.path import dirname
 
 from mycroft.messagebus.client.ws import WebsocketClient
 from mycroft.messagebus.message import Message
@@ -20,7 +17,9 @@ class MyClientProtocol(WebSocketClientProtocol):
 
     def onConnect(self, response):
         logger.info("Server connected: {0}".format(response.peer))
-        self.factory.emitter.emit(Message("server.connected"))
+        self.factory.emitter.emit(Message("server.connected",
+                                          {"server_id": response.headers[
+                                              "server"]}))
 
     def onOpen(self):
         logger.info("WebSocket connection open. ")
@@ -28,11 +27,19 @@ class MyClientProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         logger.info("status: " + self.factory.status)
-        self.factory.emitter.emit(Message("server.message.received"))
+        if isBinary:
+            data = {"payload": payload, "isBinary": isBinary}
+        else:
+            data = {"payload": None, "isBinary": isBinary}
+        self.factory.emitter.emit(Message("server.message.received",
+                                  data))
 
     def onClose(self, wasClean, code, reason):
         logger.info("WebSocket connection closed: {0}".format(reason))
-        self.factory.emitter.emit(Message("server.connection.closed"))
+        self.factory.emitter.emit(Message("server.connection.closed",
+                                  {"wasClean": wasClean,
+                                   "reason": reason,
+                                   "code": code}))
 
     def Message_to_raw_data(self, message):
         # convert a Message object into raw data that can be sent over
@@ -103,16 +110,22 @@ class MyClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
             context = {}
         msg = self.client.Message_to_raw_data(Message(type, data, context))
         self.client.sendMessage(msg, isBinary=False)
-        self.emitter.emit(Message("server.message.sent"))
+        self.emitter.emit(Message("server.message.sent",
+                                  {"type": type,
+                                   "data": data,
+                                   "context": context,
+                                   "raw": msg}))
 
 
 if __name__ == '__main__':
 
     config = Configuration.get().get("client", {})
-    host = config.get("host", "174.59.239.227")
+    host = config.get("host", "0.0.0.0")
     port = config.get("port", 5678)
+    api = config.get("api", "test_key")
+    headers = {'API': api}
     adress = u"wss://" + host + u":" + str(port)
-    factory = MyClientFactory(adress)
+    factory = MyClientFactory(adress, headers=headers)
     factory.protocol = MyClientProtocol
     contextFactory = ssl.ClientContextFactory()
     reactor.connectSSL(host, port, factory, contextFactory)

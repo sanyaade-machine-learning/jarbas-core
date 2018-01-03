@@ -1,9 +1,8 @@
 from os.path import exists, dirname
 from threading import Thread
-
+import os
+import json
 from twisted.internet import reactor, ssl
-from twisted.python import log
-from twisted.internet import reactor
 from autobahn.twisted.websocket import WebSocketServerProtocol, \
     WebSocketServerFactory
 
@@ -15,11 +14,30 @@ from mycroft.util.ssl.self_signed import create_self_signed_cert
 
 author = "jarbas"
 
+NAME = Configuration.get().get("server", {}).get("name", "JarbasServer")
+
+
+# TODO move into a sql db in some other code
+def root_dir():
+    """ Returns root directory for this project """
+    return os.path.dirname(os.path.realpath(__file__ + '/.'))
+
+with open("{}/database/users.json".format(root_dir()), "r") as f:
+    users = json.load(f)
+
 
 # protocol
 class MyServerProtocol(WebSocketServerProtocol):
     def onConnect(self, request):
         logger.info("Client connecting: {0}".format(request.peer))
+        # validate user
+        api = request.headers.get("api")
+        if api not in users:
+            raise ValueError("Invalid API key")
+        # return a pair with WS protocol spoken (or None for any) and
+        # custom headers to send in initial WS opening handshake HTTP response
+        headers = {"server": NAME}
+        return (None, headers)
 
     def onOpen(self):
         """
@@ -30,7 +48,6 @@ class MyServerProtocol(WebSocketServerProtocol):
        Register client in factory, so that it is able to track it.
        """
         self.factory.register_client(self)
-        self.factory.request_client_pgp(self)
         logger.info("WebSocket connection open.")
 
     def onMessage(self, payload, isBinary):
@@ -79,7 +96,7 @@ class MyServerFactory(WebSocketServerFactory):
         self.emitter.on('speak', self.handle_speak)
         self.emitter.on('complete_intent_failure', self.handle_failure)
 
-    # webasocket handlers
+    # websocket handlers
     def register_client(self, client):
         """
        Add client to list of managed connections.
