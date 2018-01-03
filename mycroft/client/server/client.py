@@ -76,9 +76,9 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
         self.emitter_thread.start()
 
     def register_internal_messages(self):
-        self.emitter.on('"server.message.received"',
+        self.emitter.on("server.message.received",
                         self.handle_receive_server_message)
-        self.emitter.on('"server.message.send"',
+        self.emitter.on("server.message.send",
                         self.handle_send_server_message)
 
     # websocket handlers
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     config = Configuration.get().get("client", {})
     host = config.get("host", "0.0.0.0")
     port = config.get("port", 5678)
-    api = config.get("api", "test_key")
+    api = config.get("api", "test_kkkey")
     headers = {'API': api}
     adress = u"wss://" + host + u":" + str(port)
     factory = JarbasClientFactory(adress, headers=headers,

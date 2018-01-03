@@ -31,13 +31,18 @@ class JarbasServerProtocol(WebSocketServerProtocol):
         logger.info("Client connecting: {0}".format(request.peer))
         # validate user
         api = request.headers.get("api")
+        ip = request.peer.split(":")[1]
+        context = {"source": self.peer}
         if api not in users:
             logger.info("Client provided an invalid api key")
+            self.factory.emitter_send("client.connection.error",
+                                      {"error": "invalid api key",
+                                       "ip": ip,
+                                       "api_key": api},
+                                      context)
             raise ValueError("Invalid API key")
         # send message to internal mycroft bus
-        ip = request.peer.split(":")[1]
         data = {"ip": ip, "headers": request.headers}
-        context = {"source": self.peer}
         self.factory.emitter_send("client.connect", data, context)
         # return a pair with WS protocol spoken (or None for any) and
         # custom headers to send in initial WS opening handshake HTTP response
@@ -118,6 +123,7 @@ class JarbasServerFactory(WebSocketServerFactory):
         # catch all messages
         self.emitter.on('message', self.handle_message)
         self.emitter.on('client.broadcast', self.handle_broadcast)
+        self.emitter.on('client.send', self.handle_send)
 
     # websocket handlers
     def register_client(self, client):
@@ -148,7 +154,7 @@ class JarbasServerFactory(WebSocketServerFactory):
             client_data = self.clients[client.peer] or {}
             j, ip, sock_num = client.peer.split(":")
             context = {"user": client_data.get("names", ["unknown_user"])[0],
-                       "source": ip + ":" + str(sock_num)}
+                       "source": client.peer}
             self.emitter.emit(
                 Message("user.disconnect",
                         {"reason": reason, "ip": ip, "sock": sock_num},
@@ -163,6 +169,9 @@ class JarbasServerFactory(WebSocketServerFactory):
         logger.info("processing message from client: " + str(client.peer))
         client_data = self.clients[client.peer]
         client_protocol, ip, sock_num = client.peer.split(":")
+        # TODO this would be the place to check for blacklisted
+        # messages/skills/intents per user
+
         if isBinary:
             # TODO receive files
             pass
@@ -175,17 +184,37 @@ class JarbasServerFactory(WebSocketServerFactory):
             self.emitter.emit(message)
 
     # mycroft handlers
+    def handle_send(self, message):
+        # send message to client
+        msg = message.data.get("payload")
+        is_file = message.data.get("isBinary")
+        peer = message.data.get("peer")
+        if is_file:
+            # TODO send file
+            pass
+        elif peer in self.clients:
+            # send message to client
+            client = self.clients[peer]
+            payload = Message.serialize(msg)
+            client.sendMessage(payload, False)
+        else:
+            logger.error("That client is not connected")
+            self.emitter_send("client.send.error",
+                                      {"error": "That client is not connected",
+                                       "peer": peer},
+                                      message.context)
+
     def handle_broadcast(self, message):
         # send message to all clients
-        smsg = message.data.get("payload")
+        msg = message.data.get("payload")
         is_file = message.data.get("isBinary")
         if is_file:
             # TODO send file
             pass
         else:
-            # send message to server
+            # send message to all clients
             server_msg = Message.serialize(msg)
-            self.broadcast(msg)
+            self.broadcast(server_msg)
 
     def handle_message(self, message):
         # forward internal messages to clients if they are the target
