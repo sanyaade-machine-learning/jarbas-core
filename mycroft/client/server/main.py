@@ -30,9 +30,9 @@ class JarbasServerProtocol(WebSocketServerProtocol):
     def onConnect(self, request):
         logger.info("Client connecting: {0}".format(request.peer))
         # validate user
-
         api = request.headers.get("api")
         if api not in users:
+            logger.info("Client provided an invalid api key")
             raise ValueError("Invalid API key")
         # send message to internal mycroft bus
         ip = request.peer.split(":")[1]
