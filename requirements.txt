@@ -33,9 +33,9 @@ langdetect
 
 #tools
 pronouncing==0.1.5
-flask
 pyopenssl
+flask
 flask-sslify
-flask-socketio
-flask-sqlalchemy
 yagmail
+autobahn
+twisted

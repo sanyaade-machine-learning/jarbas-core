@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from os.path import dirname, join
+from os.path import exists
+
 from tornado import autoreload, web, ioloop
 
 from mycroft.configuration import Configuration
@@ -19,10 +22,7 @@ from mycroft.lock import Lock  # creates/supports PID locking file
 from mycroft.messagebus.service.ws import WebsocketEventHandler
 from mycroft.util import validate_param
 from mycroft.util.log import LOG
-from mycroft.messagebus.service.self_signed import create_self_signed_cert
-from os.path import dirname, join
-
-from os.path import exists
+from mycroft.util.ssl.self_signed import create_self_signed_cert
 
 settings = {
     'debug': True
