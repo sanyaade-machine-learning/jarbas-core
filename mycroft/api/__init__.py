@@ -19,7 +19,7 @@
 
 # python 2/3 compatibility
 from future.utils import iteritems
-# from mycroft.configuration import Configuration
+from mycroft.configuration import Configuration
 # from mycroft.configuration.config import DEFAULT_CONFIG, SYSTEM_CONFIG, \
 #    USER_CONFIG, LocalConf
 # from mycroft.identity import IdentityManager
@@ -182,12 +182,35 @@ class DeviceApi(Api):
         #})
         return None
 
-    def send_email(self, title, body, sender):
-        # return self.request({
-        #    "method": "PUT",
-        #    "path": "/" + self.identity.uuid + "/message",
-        #    "json": {"title": title, "body": body, "sender": sender}
-        # })
+    def send_email(self, title, body, sender=None):
+        # sender is meant to id which skill triggered it and is
+        # currently ignored / backwards compatibility
+        import yagmail
+        config = Configuration.get().get("email", {})
+        my_mail = config.get("mail")
+        my_pass = config.get("password")
+        with yagmail.SMTP(my_mail, my_pass) as yag:
+            yag.send(my_mail, title, body)
+        return True
+
+    def send_email_to(self, title, body, recipient=None, sender=None):
+        # sender is meant to id which skill triggered it and is
+        # currently ignored / backwards compatibility
+        import yagmail
+        config = Configuration.get().get("email", {})
+        my_mail = config.get("mail")
+        my_pass = config.get("password")
+        recipient = recipient or my_mail
+        with yagmail.SMTP(my_mail, my_pass) as yag:
+            yag.send(recipient, title, body)
+        return True
+
+    def report_metric(self, name, data):
+        #return self.request({
+        #    "method": "POST",
+        #    "path": "/" + self.identity.uuid + "/metric/" + name,
+        #    "json": data
+        #})
         return None
 
     def report_metric(self, name, data):
