@@ -40,9 +40,9 @@ unlisted once merged
 - privacy compromising options removed from config (server, opt in, ww upload, mycroft stt)
 - secure websocket by default
 - disable [auto skills update](https://github.com/MycroftAI/mycroft-core/pull/1342) to avoid [malware distribution](https://jarbasai.github.io//posts/2017/10/skills_malware/)
+- send emails from your own account, instead of using mycroft's api
 
 # dev tools
-
 - [messagebus api](https://github.com/MycroftAI/mycroft-core/pull/1013)
 - include [auto_translatable skill class](https://github.com/JarbasAl/auto_translatable_skills)
 - util to [get phonemes](https://github.com/MycroftAI/mycroft-core/pull/1174)

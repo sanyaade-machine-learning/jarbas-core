@@ -30,6 +30,7 @@ google-api-python-client==1.6.4
 # dev setup tools
 pep8==1.7.0
 fann2==1.0.7
+
 # Also update in mycroft/skills/padatious_service.py
 padatious==0.3.7
 
@@ -39,3 +40,4 @@ langdetect
 
 #tools
 pronouncing==0.1.5
+yagmail
