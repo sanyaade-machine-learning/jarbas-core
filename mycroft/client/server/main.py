@@ -37,7 +37,8 @@ class JarbasServerProtocol(WebSocketServerProtocol):
         # send message to internal mycroft bus
         ip = request.peer.split(":")[1]
         data = {"ip": ip, "headers": request.headers}
-        self.factory.emitter_send("client.connect", data)
+        context = {"source": self.peer}
+        self.factory.emitter_send("client.connect", data, context)
         # return a pair with WS protocol spoken (or None for any) and
         # custom headers to send in initial WS opening handshake HTTP response
         headers = {"server": NAME}
@@ -67,7 +68,8 @@ class JarbasServerProtocol(WebSocketServerProtocol):
         logger.info("WebSocket connection closed: {0}".format(reason))
         ip = self.peer.split(":")[1]
         data = {"ip": ip, "code": code, "reason": "connection closed", "wasClean": wasClean}
-        self.factory.emitter_send("client.disconnect", data)
+        context = {"source": self.peer}
+        self.factory.emitter_send("client.disconnect", data, context)
 
     def connectionLost(self, reason):
         """
@@ -78,7 +80,8 @@ class JarbasServerProtocol(WebSocketServerProtocol):
         logger.info("WebSocket connection lost: {0}".format(reason))
         ip = self.peer.split(":")[1]
         data = {"ip": ip, "reason": "connection lost"}
-        self.factory.emitter_send("client.disconnect", data)
+        context = {"source": self.peer}
+        self.factory.emitter_send("client.disconnect", data, context)
 
 
 # server internals
@@ -112,8 +115,8 @@ class JarbasServerFactory(WebSocketServerFactory):
         self.emitter_thread.start()
 
     def register_internal_messages(self):
-        self.emitter.on('speak', self.handle_speak)
-        self.emitter.on('complete_intent_failure', self.handle_failure)
+        # catch all messages
+        self.emitter.on('message', self.handle_message)
 
     # websocket handlers
     def register_client(self, client):
@@ -141,7 +144,7 @@ class JarbasServerFactory(WebSocketServerFactory):
        """
         logger.info("deregistering client: " + str(client.peer))
         if client.peer in self.clients.keys():
-            client_data = self.clients[client.peer]
+            client_data = self.clients[client.peer] or {}
             j, ip, sock_num = client.peer.split(":")
             context = {"user": client_data.get("names", ["unknown_user"])[0],
                        "source": ip + ":" + str(sock_num)}
@@ -159,13 +162,29 @@ class JarbasServerFactory(WebSocketServerFactory):
         logger.info("processing message from client: " + str(client.peer))
         client_data = self.clients[client.peer]
         client_protocol, ip, sock_num = client.peer.split(":")
+        if isBinary:
+            # TODO receive files
+            pass
+        else:
+            # add context for this message
+            message = Message.deserialize(payload)
+            message.context["source"] = client.peer
+            message.context["destinatary"] = "skills"
+            # send client message to internal mycroft bus
+            self.emitter.emit(message)
 
     # mycroft handlers
-    def handle_speak(self, message):
-        pass
-
-    def handle_failure(self, message):
-        pass
+    def handle_message(self, message):
+        # forward internal messages to clients if they are the target
+        message = Message.deserialize(message)
+        if message.type == "complete_intent_failure":
+            message.type = "server.complete_intent_failure"
+        message.context = message.context or {}
+        peer = message.context.get("destinatary")
+        if peer and peer in self.clients:
+            client_data = self.clients[peer] or {}
+            client = client_data.get("object")
+            client.sendMessage(message.serialize(), False)
 
 if __name__ == '__main__':
 
