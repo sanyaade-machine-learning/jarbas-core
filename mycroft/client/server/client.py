@@ -28,7 +28,7 @@ class JarbasClientProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         logger.info("status: " + self.factory.status)
-        if isBinary:
+        if not isBinary:
             data = {"payload": payload, "isBinary": isBinary}
         else:
             data = {"payload": None, "isBinary": isBinary}
@@ -76,8 +76,10 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
         self.emitter_thread.start()
 
     def register_internal_messages(self):
-        self.emitter.on('speak', self.handle_speak)
-        self.emitter.on('recognizer_loop:utterance', self.handle_utterance)
+        self.emitter.on('"server.message.received"',
+                        self.handle_receive_server_message)
+        self.emitter.on('"server.message.send"',
+                        self.handle_send_server_message)
 
     # websocket handlers
     def clientConnectionFailed(self, connector, reason):
@@ -91,11 +93,27 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
         self.retry(connector)
 
     # mycroft handlers
-    def handle_speak(self, event):
-        utterance = event.data.get('utterance')
+    def handle_receive_server_message(self, message):
+        server_msg = message.data.get("payload")
+        is_file = message.data.get("isBinary")
+        if is_file:
+            # TODO received file
+            pass
+        else:
+            # forward server message to internal bus
+            message = Message.deserialize(server_msg)
+            self.emitter.emit(message)
 
-    def handle_utterance(self, event):
-        pass
+    def handle_send_server_message(self, message):
+        server_msg = message.data.get("payload")
+        is_file = message.data.get("isBinary")
+        if is_file:
+            # TODO send file
+            pass
+        else:
+            # send message to server
+            server_msg = Message.deserialize(server_msg)
+            self.sendMessage(server_msg.type, server_msg.data, server_msg.context)
 
     def sendRaw(self, data):
         if self.client is None:
