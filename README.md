@@ -17,6 +17,7 @@ Privacy enhanced mycroft
 - en-us language model included
 - secure websocket by default
 - disable auto skills update to avoid [malware distribution](https://jarbasai.github.io//posts/2017/10/skills_malware/)
+- send emails from your own account, instead of using mycroft's api
 
 Mycroft [![Build Status](https://travis-ci.org/MycroftAI/mycroft-core.svg?branch=master)](https://travis-ci.org/MycroftAI/mycroft-core) [![Coverage Status](https://coveralls.io/repos/github/MycroftAI/mycroft-core/badge.svg?branch=dev)](https://coveralls.io/github/MycroftAI/mycroft-core?branch=dev)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)

@@ -463,6 +463,19 @@ class MycroftSkill(object):
         """
         DeviceApi().send_email(title, body, basename(self.root_dir))
 
+    def send_email_to(self, title, body, recipient):
+        """
+        Send an email to the registered user's email
+
+        Args:
+            title (str): Title of email
+            body  (str): HTML body of email. This supports
+                         simple HTML like bold and italics
+            recipient (str): send to this email
+        """
+        DeviceApi().send_email_to(title, body, recipient, basename(
+            self.root_dir))
+
     def make_active(self):
         """
             Bump skill to active_skill list in intent_service
