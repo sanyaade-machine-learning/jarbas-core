@@ -17,13 +17,13 @@ class JarbasClientProtocol(WebSocketClientProtocol):
 
     def onConnect(self, response):
         logger.info("Server connected: {0}".format(response.peer))
-        print response.headers
         self.factory.emitter.emit(Message("server.connected",
                                           {"server_id": response.headers[
                                               "server"]}))
 
     def onOpen(self):
         logger.info("WebSocket connection open. ")
+        self.factory.client = self
         self.factory.emitter.emit(Message("server.websocket.open"))
 
     def onMessage(self, payload, isBinary):
