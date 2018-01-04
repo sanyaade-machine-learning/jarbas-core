@@ -5,11 +5,14 @@ from autobahn.twisted.websocket import WebSocketClientFactory, \
 from twisted.internet.protocol import ReconnectingClientFactory
 
 import json
+import sys
 from threading import Thread
 
 import logging
 
 logger = logging.getLogger("Standalone_Mycroft_Client")
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.setLevel("INFO")
 
 
 class JarbasClientProtocol(WebSocketClientProtocol):
