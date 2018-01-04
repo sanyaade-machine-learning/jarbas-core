@@ -31,7 +31,7 @@ class JarbasClientProtocol(WebSocketClientProtocol):
             msg = json.loads(payload)
             if msg.get("type", "") == "speak":
                 utterance = msg["data"]["utterance"]
-                print "Output:", utterance
+                logger.info("Output: " + utterance)
         else:
             pass
 
