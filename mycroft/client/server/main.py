@@ -33,6 +33,7 @@ class JarbasServerProtocol(WebSocketServerProtocol):
         api = request.headers.get("api")
         ip = request.peer.split(":")[1]
         context = {"source": self.peer}
+        self.platform = request.headers.get("platform", "unknown")
         if api not in users:
             logger.info("Client provided an invalid api key")
             self.factory.emitter_send("client.connection.error",
@@ -57,7 +58,7 @@ class JarbasServerProtocol(WebSocketServerProtocol):
 
        Register client in factory, so that it is able to track it.
        """
-        self.factory.register_client(self)
+        self.factory.register_client(self, self.platform)
         logger.info("WebSocket connection open.")
 
     def onMessage(self, payload, isBinary):
@@ -126,10 +127,11 @@ class JarbasServerFactory(WebSocketServerFactory):
         self.emitter.on('client.send', self.handle_send)
 
     # websocket handlers
-    def register_client(self, client):
+    def register_client(self, client, platform=None):
         """
        Add client to list of managed connections.
        """
+        platform = platform or "unknown"
         logger.info("registering client: " + str(client.peer))
         t, ip, sock = client.peer.split(":")
         # see if ip adress is blacklisted
@@ -143,7 +145,8 @@ class JarbasServerFactory(WebSocketServerFactory):
             #  if not whitelisted kick
             self.unregister_client(client, reason=u"Unknown ip")
             return
-        self.clients[client.peer] = {"object": client, "status": "connected"}
+        self.clients[client.peer] = {"object": client, "status":
+            "connected", "platform": platform}
 
     def unregister_client(self, client, code=3078, reason=u"unregister client request"):
         """
@@ -180,6 +183,8 @@ class JarbasServerFactory(WebSocketServerFactory):
             message = Message.deserialize(payload)
             message.context["source"] = client.peer
             message.context["destinatary"] = "skills"
+            message.context["platform"] = client_data.get("platform",
+                                                          "unknonw")
             # send client message to internal mycroft bus
             self.emitter.emit(message)
 

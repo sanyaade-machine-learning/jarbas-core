@@ -14,6 +14,8 @@ logger = logging.getLogger("Standalone_Mycroft_Client")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel("INFO")
 
+platform = "JarbasCliClientv0.1"
+
 
 class JarbasClientProtocol(WebSocketClientProtocol):
 
@@ -45,7 +47,7 @@ class JarbasClientProtocol(WebSocketClientProtocol):
             msg = {"data": {"utterances": [line], "lang": "en-us"},
                    "type": "recognizer_loop:utterance",
                    "context": {"source": self.peer, "destinatary":
-                       "https_server"}}
+                       "https_server", "platform": platform}}
             msg = json.dumps(msg)
             self.sendMessage(msg, False)
 

@@ -12,6 +12,9 @@ from mycroft.messagebus.message import Message
 from mycroft.util.log import LOG as logger
 from mycroft.configuration import Configuration
 
+platform = "JarbasClient:" + Configuration.get().get("enclosure", {}).get(
+    "platform", "linux")
+
 
 class JarbasClientProtocol(WebSocketClientProtocol):
 
@@ -113,6 +116,7 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
         else:
             # send message to server
             server_msg = Message.deserialize(server_msg)
+            server_msg.context["platform"] = platform
             self.sendMessage(server_msg.type, server_msg.data, server_msg.context)
 
     def sendRaw(self, data):

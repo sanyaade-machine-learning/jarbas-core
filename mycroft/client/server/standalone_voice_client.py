@@ -13,6 +13,8 @@ logger = logging.getLogger("Standalone_Mycroft_Client")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel("INFO")
 
+platform = "JarbasVoiceClientv0.1"
+
 
 class JarbasClientProtocol(WebSocketClientProtocol):
     def onConnect(self, response):
@@ -20,6 +22,7 @@ class JarbasClientProtocol(WebSocketClientProtocol):
 
     def onOpen(self):
         logger.info("WebSocket connection open. ")
+        self.factory.client = self
         self.factory.start_listening()
 
     def onMessage(self, payload, isBinary):
@@ -45,6 +48,7 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
         self.stop_listening = None
+        self.client = None
 
     def start_listening(self):
         with self.microphone as source:
@@ -61,9 +65,15 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
             # for testing purposes, we're just using the default API key
             # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
             # instead of `r.recognize_google(audio)`
+            line = recognizer.recognize_google(audio)
             logger.info(
-                "Google Speech Recognition thinks you said " + recognizer.recognize_google(
-                    audio))
+                "Google Speech Recognition thinks you said " + line)
+            msg = {"data": {"utterances": [line], "lang": "en-us"},
+                   "type": "recognizer_loop:utterance",
+                   "context": {"source": self.peer, "destinatary":
+                       "https_server", "platform": platform}}
+            msg = json.dumps(msg)
+            self.client.sendMessage(msg, False)
         except sr.UnknownValueError:
             logger.info(
                 "Google Speech Recognition could not understand audio")
@@ -71,6 +81,7 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
             logger.info(
                 "Could not request results from Google Speech Recognition service; {0}".format(
                     e))
+
 
     # websocket handlers
     def clientConnectionFailed(self, connector, reason):
