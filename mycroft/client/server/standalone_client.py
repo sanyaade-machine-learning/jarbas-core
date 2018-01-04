@@ -25,7 +25,10 @@ class JarbasClientProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            print payload
+            msg = json.loads(payload)
+            if msg.get("type", "") == "speak":
+                utterance = msg["data"]["utterance"]
+                print "Output:", utterance
         else:
             pass
 
