@@ -45,6 +45,14 @@ authenticated separately
 this allows for example client-mycroft to ask server for face recognition, or
 server-mycroft to ask camera-mycroft for a picture
 
+# Clients
+
+turn anything with an internet connection into a mycroft endpoint
+
+any jarbas install can be a [full client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/client.py)
+theres a standalone [command line input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/standalone_cli_client.py)
+theres a standalone [voice input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/standalone_voice_client.py)
+
 
 # new bus messages
 
@@ -72,7 +80,6 @@ client side
 
 # TODOS
 
-        - make api try to use websocket and only use https as fallback
         - client in javascript that connects a browser websocket chat to a server-mycroft
         - adapt context field per user
         - converse per user
