@@ -104,7 +104,7 @@ if __name__ == '__main__':
     headers = {'API': api}
     adress = u"wss://" + host + u":" + str(port)
     factory = JarbasClientFactory(adress, headers=headers,
-                                  useragent="StandaloneJarbasVoiceClientv0.1")
+                                  useragent=platform)
     factory.protocol = JarbasClientProtocol
     contextFactory = ssl.ClientContextFactory()
     reactor.connectSSL(host, port, factory, contextFactory)
