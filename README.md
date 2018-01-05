@@ -52,7 +52,7 @@ turn anything with an internet connection into a mycroft endpoint
 - any jarbas install can be a [full client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/client.py)
 - theres a standalone [command line input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/standalone_cli_client.py)
 - theres a standalone [voice input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/standalone_voice_client.py)
-
+- standalone/web remi client (webpage)
 
 # new bus messages
 
@@ -80,6 +80,7 @@ client side
 
 # TODOS
 
+        - SSL for remi
         - client in javascript that connects a browser websocket chat to a server-mycroft
         - adapt context field per user
         - converse per user
