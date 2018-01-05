@@ -1,6 +1,7 @@
 import requests
 from requests.exceptions import ConnectionError
 import time
+import json
 
 # filter warnings, this should be removed once we stop using self signed
 # certs for debug
@@ -112,7 +113,7 @@ class MycroftAPI(object):
                             ans = response.json()
                         except Exception as e:
                             raise ValueError("Unexpected Error: " + str(e))
-                    return ans["answer"]
+                    return json.loads(ans["answer"])
                 else:
                     raise ValueError("Received unexpected status from "
                                      "server: " + str(ans))
