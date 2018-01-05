@@ -28,8 +28,9 @@ requires an API key
     from mycroft.microservices.api import MycroftAPI
 
     ap = MycroftAPI("api_key")
-    json_responde = ap.ask_mycroft("hello world")
+    json_response = ap.ask_mycroft("hello world")
 
+there is a [cli client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/microservices/standalone_https_cli_client.py) available using the http endpoint
 
 # websockets
 
