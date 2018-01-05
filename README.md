@@ -52,8 +52,8 @@ turn anything with an internet connection into a mycroft endpoint
 - any jarbas install can be a [full client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/client.py)
 - theres a standalone [command line input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/standalone_cli_client.py)
 - theres a standalone [voice input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/standalone_voice_client.py)
-- standalone/web [remi](https://github.com/dddomodossola/remi) client (webpage)
-- local remi client (connects to a local instance)
+- standalone/web [remi client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/clients/standalone_remi_client.py) (webpage)
+- [local remi](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/remi/main.py) client (connects to a local instance)
 
 # new bus messages
 
