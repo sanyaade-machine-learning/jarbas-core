@@ -21,7 +21,7 @@ def connect():
 
 @app.route("/ask/<lang>/<utterance>", methods=['PUT', 'GET'])
 @noindex
-@btc
+@donation
 @requires_auth
 def ask(utterance, lang="en-us"):
     global users_on_hold, answers
@@ -44,7 +44,7 @@ def ask(utterance, lang="en-us"):
 
 @app.route("/get_answer", methods=['GET', 'PUT'])
 @noindex
-@btc
+@donation
 @requires_auth
 def get_answer():
     global users_on_hold, answers
@@ -65,7 +65,7 @@ def get_answer():
 
 @app.route("/cancel", methods=['GET', 'PUT'])
 @noindex
-@btc
+@donation
 @requires_auth
 def cancel_answer():
     global users_on_hold, answers
@@ -79,14 +79,34 @@ def cancel_answer():
     return nice_json(result)
 
 
-@app.route("/intents/<lang>/<utterance>", methods=['PUT', 'GET'])
+@app.route("/get_intent/<lang>/<utterance>", methods=['PUT', 'GET'])
 @noindex
-@btc
+@donation
 @requires_auth
 def get_intent(utterance, lang="en-us"):
-    global users_on_hold, answers
+    global intents
     intent = intents.get_intent(utterance, lang)
     result = intent or {}
+    return nice_json(result)
+
+
+@app.route("/intent_map/<lang>/", methods=['PUT', 'GET'])
+@noindex
+@donation
+@requires_auth
+def get_intent_map(lang="en-us"):
+    global intents
+    result = intents.get_intent_map(lang)
+    return nice_json(result)
+
+
+@app.route("/vocab_map/<lang>/", methods=['PUT', 'GET'])
+@noindex
+@donation
+@requires_auth
+def get_intent_map(lang="en-us"):
+    global intents
+    result = intents.get_vocab_map(lang)
     return nice_json(result)
 
 

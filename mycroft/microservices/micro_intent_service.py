@@ -1,10 +1,58 @@
-from mycroft.skills.intent_service import IntentService, normalize, LOG
+from mycroft.skills.intent_service import IntentService, normalize, LOG, open_intent_envelope
 
 
 class MicroIntentService(IntentService):
 
+    def __init__(self, ws):
+        self.intent_map = {}
+        self.vocab_map = {}
+        IntentService.__init__(self, ws)
+
     def handle_utterance(self, message):
         pass
+
+    def handle_register_vocab(self, message):
+        start_concept = message.data.get('start')
+        end_concept = message.data.get('end')
+        regex_str = message.data.get('regex')
+        alias_of = message.data.get('alias_of')
+        if regex_str:
+            self.engine.register_regex_entity(regex_str)
+        else:
+            self.vocab_map[start_concept] = end_concept
+            self.engine.register_entity(
+                start_concept, end_concept, alias_of=alias_of)
+
+    def handle_register_intent(self, message):
+        intent = open_intent_envelope(message)
+        self.engine.register_intent_parser(intent)
+        skill_id, intent = message.data.get("name", "None:None").split(":")
+        LOG.info("Registered: " + intent)
+        if skill_id not in self.intent_map.keys():
+            self.intent_map[skill_id] = []
+        self.intent_map[skill_id].append(intent)
+
+    def handle_detach_intent(self, message):
+        intent_name = message.data.get('intent_name')
+        new_parsers = [
+            p for p in self.engine.intent_parsers if p.name != intent_name]
+        self.engine.intent_parsers = new_parsers
+        skill_id, intent = intent_name.split(":")
+        self.intent_map[skill_id].pop(intent)
+
+    def handle_detach_skill(self, message):
+        skill_id = message.data.get('skill_id')
+        new_parsers = [
+            p for p in self.engine.intent_parsers if
+            not p.name.startswith(skill_id)]
+        self.engine.intent_parsers = new_parsers
+        self.intent_map.pop(skill_id)
+
+    def get_intent_map(self, lang="en-us"):
+        return self.intent_map
+
+    def get_vocab_map(self, lang="en-us"):
+        return self.vocab_map
 
     def get_intent(self, utterance, lang="en-us"):
         best_intent = None

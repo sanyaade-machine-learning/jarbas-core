@@ -11,7 +11,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class MycroftAPI(object):
-    def __init__(self, api, lang="en-us", url="https://104.236.133.170:6712/"):
+    def __init__(self, api, lang="en-us", url="https://0.0.0.0:6712/"):
         self.api = api
         self.headers = {"Authorization": str(self.api)}
         self.lang = lang
@@ -59,12 +59,46 @@ class MycroftAPI(object):
         except ConnectionError as e:
             raise ConnectionError("Could not connect: " + str(e))
 
+    def get_vocab_map(self, lang=None):
+        ''' get intent this utterance will trigger NOT AVAILABLE '''
+        lang = lang or self.lang
+        try:
+            response = requests.get(
+                self.url+"vocab_map/"+lang,
+                headers=self.headers, verify=False
+            )
+            try:
+                return response.json()
+            except:
+                print response.text
+                raise ValueError("Invalid api key")
+        except ConnectionError as e:
+            print e
+            raise ConnectionError("Could not connect")
+
+    def get_intent_map(self, lang=None):
+        ''' get intent this utterance will trigger NOT AVAILABLE '''
+        lang = lang or self.lang
+        try:
+            response = requests.get(
+                self.url+"intent_map/"+lang,
+                headers=self.headers, verify=False
+            )
+            try:
+                return response.json()
+            except:
+                print response.text
+                raise ValueError("Invalid api key")
+        except ConnectionError as e:
+            print e
+            raise ConnectionError("Could not connect")
+
     def get_intent(self, utterance, lang=None):
         ''' get intent this utterance will trigger NOT AVAILABLE '''
         lang = lang or self.lang
         try:
             response = requests.get(
-                self.url+"/intent/"+lang+"/"+utterance,
+                self.url+"get_intent/"+lang+"/"+utterance,
                 headers=self.headers, verify=False
             )
             try:
@@ -126,6 +160,11 @@ class MycroftAPI(object):
 if __name__ == "__main__":
     # test if admin privileges are properly blocked
     ap = MycroftAPI("test_key")
+
+    print ap.get_intent("hello world")
+    print ap.get_intent_map()
+    import sys
+    sys.exit()
     # test connection
     print ap.hello_world()
     try:
@@ -150,3 +189,4 @@ if __name__ == "__main__":
     print ap.ask_mycroft("tell me a joke")
     print ap.ask_mycroft("tell me about quantum decoherence")
     print ap.ask_mycroft("do you like pizza")
+

@@ -54,7 +54,7 @@ def noindex(f):
     return add_response_headers({'X-Robots-Tag': 'noindex'})(f)
 
 
-def btc(f):
+def donation(f):
     """This decorator passes btc request """
     return add_response_headers({'BTC':
                                      '1aeuaAijzwK4Jk2ixomRkqjF6Q3JxXp9Q',
@@ -116,7 +116,7 @@ def requires_admin(f):
 
 @app.route("/", methods=['GET'])
 @noindex
-@btc
+@donation
 def hello():
     return nice_json({
         "uri": "/",
@@ -128,7 +128,7 @@ def hello():
 
 @app.route("/new_user/<api>/<id>/<name>", methods=['PUT'])
 @noindex
-@btc
+@donation
 @requires_admin
 def add_user(api, id, name):
     result = {"id": id, "last_active": 0, "name": name}
@@ -142,7 +142,7 @@ def add_user(api, id, name):
 
 @app.route("/get_api", methods=['GET'])
 @noindex
-@btc
+@donation
 @requires_admin
 def new_api():
     api = gen_api(save=False)
