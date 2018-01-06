@@ -21,7 +21,7 @@ some skills would no longer work/undesired and are blacklisted
 # micro services
 
 for remote access to this server some endpoints are being created, these allow
- external single [requests by https](https://github.com/JarbasAl/jarbas-core/tree/server/mycroft/microservices) for mycroft functionality
+ external single [requests by https](https://github.com/JarbasAl/jarbas-core/tree/server/mycroft/server/microservices) for mycroft functionality
 
 requires an API key
 
@@ -30,12 +30,12 @@ requires an API key
     ap = MycroftAPI("api_key")
     json_response = ap.ask_mycroft("hello world")
 
-there is a [cli client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/microservices/standalone_https_cli_client.py) available using the http endpoint
+there is a [cli client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/server/microservices/standalone_https_cli_client.py) available using the http endpoint
 
 # websockets
 
 a websocket connection for asynchronous interface, this is a combination of
-[server](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/main.py) + [client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/client.py) service that bridge 2 mycroft instances, messages can
+[server](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/server/main.py) + [client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/server/clients/jarbas_client.py) service that bridge 2 mycroft instances, messages can
 be sent back and forth between mycroft instances real time
 
 these services check every message context field to see if they should be
@@ -48,12 +48,12 @@ server-mycroft to ask camera-mycroft for a picture
 
 # Clients
 
-turn anything with an internet connection into a mycroft endpoint
+turn anything with an internet connection into a [mycroft endpoint](https://github.com/JarbasAl/jarbas-core/tree/server/mycroft/server/clients)
 
-- any jarbas install can be a [full client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/client.py)
-- theres a standalone [command line input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/standalone_cli_client.py)
-- theres a standalone [voice input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/standalone_voice_client.py)
-- standalone/web [remi client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/server/clients/standalone_remi_client.py) (webpage)
+- any jarbas install can be a [full client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/server/clients/jarbas_client.py)
+- theres a standalone [command line input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/server/clients/standalone_cli_client.py)
+- theres a standalone [voice input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/server/clients/standalone_voice_client.py)
+- standalone/web [remi client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/server/clients/standalone_remi_client.py) (webpage)
 - [local remi](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/remi/main.py) client (connects to a local instance)
 
 # new bus messages
@@ -72,7 +72,7 @@ server side
 client side
 
         - server.connected - {"data": {"server_id": "AutobahnPython/17.6.2, JarbasServer"}, "type": "server.connected", "context": null}
-        - server.websocket.open - {"data": {}, "type": "server.websocket.open", "context": null}
+        - server.websocket.client/open - {"data": {}, "type": "server.websocket.open", "context": null}
         - server.message.received - TODO add example from logs
         - server.message.send - TODO add example from logs
         - server.complete_intent_failure - TODO add example from logs
