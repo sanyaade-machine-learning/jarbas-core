@@ -56,7 +56,10 @@ def noindex(f):
 
 def btc(f):
     """This decorator passes btc request """
-    return add_response_headers({'BTC': '1aeuaAijzwK4Jk2ixomRkqjF6Q3JxXp9Q'})(
+    return add_response_headers({'BTC':
+                                     '1aeuaAijzwK4Jk2ixomRkqjF6Q3JxXp9Q',
+                                 "Patreon": "patreon.com/jarbasAI",
+                                 "Paypal": "paypal.me/jarbasAI"})(
         f)
 
 

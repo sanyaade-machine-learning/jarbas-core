@@ -5,7 +5,7 @@ from mycroft.util.parse import normalize
 from mycroft.messagebus.client.ws import WebsocketClient
 from mycroft.messagebus.message import Message
 from threading import Thread
-from time import sleep
+from mycroft.microservices.micro_intent_service import MicroIntentService
 
 ws = None
 answers = {}
@@ -79,6 +79,17 @@ def cancel_answer():
     return nice_json(result)
 
 
+@app.route("/intents/<lang>/<utterance>", methods=['PUT', 'GET'])
+@noindex
+@btc
+@requires_auth
+def get_intent(utterance, lang="en-us"):
+    global users_on_hold, answers
+    intent = intents.get_intent(utterance, lang)
+    result = intent or {}
+    return nice_json(result)
+
+
 def listener(message):
     ''' listens for speak messages and checks if we are supposed to send it to some user '''
     global users_on_hold, answers
@@ -130,7 +141,7 @@ def end_wait(message):
 
 
 if __name__ == "__main__":
-    global app, ws
+    global app, ws, intents
     # connect to internal mycroft
     ws = WebsocketClient()
     ws.on("mycroft.skill.handler.complete", end_wait)
@@ -140,4 +151,5 @@ if __name__ == "__main__":
     event_thread.setDaemon(True)
     event_thread.start()
     port = 6712
+    intents = MicroIntentService(ws)
     start(app, port)

@@ -68,7 +68,7 @@ class MycroftAPI(object):
                 headers=self.headers, verify=False
             )
             try:
-                return response.json()["echo"]
+                return response.json()
             except:
                 print response.text
                 raise ValueError("Invalid api key")
