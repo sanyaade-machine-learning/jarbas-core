@@ -1,17 +1,19 @@
+import json
+import os
+import ssl
+import time
 from functools import wraps
+
 from flask import Flask, make_response
 from flask import request, Response
 from flask_sslify import SSLify
-import ssl
-import time
-import os
-import json
-from mycroft.microservices import gen_api
+
+from mycroft.server.microservices import gen_api
 
 
 def root_dir():
     """ Returns root directory for this project """
-    return os.path.dirname(os.path.realpath(__file__ + '/.'))
+    return os.path.dirname(os.path.dirname(os.path.realpath(__file__ + '/.')))
 
 
 def nice_json(arg):

@@ -1,4 +1,4 @@
-from mycroft.microservices.api import MycroftAPI
+from mycroft.server.microservices.api import MycroftAPI
 
 if __name__ == "__main__":
     # test if admin privileges are properly blocked

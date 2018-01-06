@@ -104,6 +104,9 @@ case ${OPT} in
   "micro")
     end-process micro
     ;;
+  "server")
+    end-process server
+    ;;
 
 
   *)

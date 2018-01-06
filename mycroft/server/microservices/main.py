@@ -1,11 +1,11 @@
-from mycroft.microservices.base import *
-from mycroft.skills.intent_service import IntentService
-from mycroft.util import LOG
-from mycroft.util.parse import normalize
+from threading import Thread
+
+from mycroft.server.microservices.base import *
+
 from mycroft.messagebus.client.ws import WebsocketClient
 from mycroft.messagebus.message import Message
-from threading import Thread
-from mycroft.microservices.micro_intent_service import MicroIntentService
+from mycroft.server.microservices.micro_intent_service import \
+    MicroIntentService
 
 ws = None
 answers = {}
