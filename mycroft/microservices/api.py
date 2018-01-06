@@ -161,10 +161,7 @@ if __name__ == "__main__":
     # test if admin privileges are properly blocked
     ap = MycroftAPI("test_key")
 
-    print ap.get_intent("hello world")
-    print ap.get_intent_map()
-    import sys
-    sys.exit()
+
     # test connection
     print ap.hello_world()
     try:
@@ -189,4 +186,8 @@ if __name__ == "__main__":
     print ap.ask_mycroft("tell me a joke")
     print ap.ask_mycroft("tell me about quantum decoherence")
     print ap.ask_mycroft("do you like pizza")
+
+    print ap.get_intent("hello world")
+    print ap.get_intent_map()
+    print ap.get_vocab_map()
 
