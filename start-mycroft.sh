@@ -19,18 +19,25 @@ SOURCE="${BASH_SOURCE[0]}"
 script=${0}
 script=${script##*/}
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-
 scripts_dir="$DIR/scripts"
 mkdir -p $scripts_dir/logs
+
+SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
 
 function get_config_value() {
   key="$1"
   default="$2"
   value="null"
-  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf ; do
-    if [[ -r ~/.mycroft/mycroft.conf ]] ; then
-        value=$( jq -r "$key" "$file" )
+  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
+    if [[ -r $file ]] ; then
+        echo "$file"
+        # remove comments
+        # assume they may be preceded by whitespace, but nothing else
+        parsed="$( sed 's:^\s*//.*$::g' $file )"
+        echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
+        value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
         if [[ "${value}" != "null" ]] ;  then
+            rm -rf $DIR/mycroft/configuration/sys.conf
             echo "$value"
             return
         fi
@@ -94,6 +101,7 @@ function name-to-script-path() {
     "wifi")            _script=${DIR}/mycroft/client/wifisetup/main.py ;;
     "skill_container") _script=${DIR}/mycroft/skills/container.py ;;
     "audiotest")       _script=${DIR}/mycroft/util/audio_test.py ;;
+    "unittest")        _script=${DIR}/test/unittests/main.py ;;
     "audioaccuracytest") _script=${DIR}/mycroft/audio-accuracy-test/audio_accuracy_test.py ;;
     "sdkdoc")          _script=${DIR}/doc/generate_sdk_docs.py ;;
     "enclosure")       _script=${DIR}/mycroft/client/enclosure/main.py ;;

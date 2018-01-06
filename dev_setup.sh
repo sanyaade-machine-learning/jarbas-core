@@ -65,23 +65,43 @@ do
         exit 0
     fi
 
+    if [[ ${var} == "-r" ]] || [[ ${var} == "--allow-root" ]] ; then
+        opt_allowroot=true
+    fi
+
+    if [[ ${var} == "-sm" ]] ; then
+        opt_skipmimic=true
+    fi
 done
 
-
+if [ $(id -u) -eq 0 ] && [ "${opt_allowroot}" != true ] ; then
+  echo "This script should not be run as root or with sudo."
+  echo "To force, rerun with --allow-root"
+  exit 1
+fi
 
 found_exe() {
     hash "$1" 2>/dev/null
 }
 
+SOURCE="${BASH_SOURCE[0]}"
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
 
 function get_config_value() {
   key="$1"
   default="$2"
   value="null"
-  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf ; do
-    if [[ -r ~/.mycroft/mycroft.conf ]] ; then
-        value=$( jq -r "$key" "$file" )
+  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
+    if [[ -r $file ]] ; then
+        echo "$file"
+        # remove comments
+        # assume they may be preceded by whitespace, but nothing else
+        parsed="$( sed 's:^\s*//.*$::g' $file )"
+        echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
+        value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
         if [[ "${value}" != "null" ]] ;  then
+            rm -rf $DIR/mycroft/configuration/sys.conf
             echo "$value"
             return
         fi
@@ -115,7 +135,11 @@ install_deps() {
     fi
 
     if found_exe apt-get; then
-        $SUDO apt-get install -y git python python-dev python-setuptools python-virtualenv python-gobject-dev virtualenvwrapper libtool libffi-dev libssl-dev autoconf automake bison swig libglib2.0-dev s3cmd portaudio19-dev mpg123 screen flac curl libicu-dev pkg-config automake libjpeg-dev libfann-dev build-essential jq
+        $SUDO apt-get install -y git python python-dev python-setuptools
+        python-virtualenv python-gobject-dev virtualenvwrapper libtool
+        libffi-dev libssl-dev autoconf automake bison swig libglib2.0-dev
+        s3cmd portaudio19-dev mpg123 screen flac curl libicu-dev pkg-config
+        automake libjpeg-dev libfann-dev build-essential jq g++
     elif found_exe pacman; then
         $SUDO pacman -S --needed git python2 python2-pip python2-setuptools python2-virtualenv python2-gobject python-virtualenvwrapper libtool libffi openssl autoconf bison swig glib2 s3cmd portaudio mpg123 screen flac curl pkg-config icu automake libjpeg-turbo base-devel jq
     elif found_exe dnf; then
@@ -230,8 +254,12 @@ echo "Building with $CORES cores."
 #build and install mimic
 cd "${TOP}"
 
-echo "Skipping mimic build."
-
+if [[ "$build_mimic" == 'y' ]] || [[ "$build_mimic" == 'Y' ]]; then
+  echo "WARNING: The following can take a long time to run!"
+  "${TOP}/scripts/install-mimic.sh" " ${CORES}"
+else
+  echo "Skipping mimic build."
+fi
 
 # install pygtk for desktop_launcher skill
 # "${TOP}/scripts/install-pygtk.sh" " ${CORES}"

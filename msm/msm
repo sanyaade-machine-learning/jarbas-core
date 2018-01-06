@@ -52,14 +52,24 @@ function help() {
   exit 1
 }
 
+SOURCE="${BASH_SOURCE[0]}"
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
+
 function get_config_value() {
   key="$1"
   default="$2"
   value="null"
-  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf ; do
-    if [[ -r ~/.mycroft/mycroft.conf ]] ; then
-        value=$( jq -r "$key" "$file" )
+  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
+    if [[ -r $file ]] ; then
+        echo "$file"
+        # remove comments
+        # assume they may be preceded by whitespace, but nothing else
+        parsed="$( sed 's:^\s*//.*$::g' $file )"
+        echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
+        value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
         if [[ "${value}" != "null" ]] ;  then
+            rm -rf $DIR/mycroft/configuration/sys.conf
             echo "$value"
             return
         fi
@@ -67,6 +77,7 @@ function get_config_value() {
   done
   echo "$default"
 }
+
 
 # Determine the platform
 mycroft_platform="$(get_config_value '.enclosure.platform' 'null')"
@@ -651,25 +662,15 @@ case ${OPT} in
           exit ${exit_code}
       fi
 
-      # Get name and path
-      submods=($(echo "${LIST_CACHE}" | grep 'submodule "' | sed 's/\[submodule "//g'| sed 's/"\]//g'))
-      paths=($(echo "${LIST_CACHE}" | grep 'path =' | sed 's/\path = //g'| sed 's/"\]//g'))
-      # Determine which have been installed
-      results=()
-      for ((i=0;i<${#submods[@]};++i)); do
-          if [[ -d "$mycroft_skill_folder/${paths[i]}" ]] ; then
-              results+=("${submods[i]} ${RED}[${GREEN}installed${RED}]${NOCOLOR}\n\r")
+      submodules=$(echo "${LIST_CACHE}" | grep 'submodule "' | sed 's/\[submodule "//g'| sed 's/"\]//g' | sort)
+      while read -r submod
+      do
+          if [[ -d "$mycroft_skill_folder/$submod" ]] ; then
+              printf "$submod ${RED}[${GREEN}installed${RED}]${NOCOLOR}\n\r"
           else
-              results+=("${submods[i]}\n\r")
+              printf "$submod\n\r"
           fi
-      done
-      # Sort the result alphabetically
-      readarray -t sorted < <(for a in "${results[@]}"; do echo "$a"; done | sort)
-      # Print the output
-      for ((i=0;i<${#sorted[@]};++i)); do
-        printf "${sorted[i]}"
-      done
-
+      done <<< "$submodules"
       exit_code=$?
       ;;
   "update")
