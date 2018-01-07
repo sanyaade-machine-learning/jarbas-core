@@ -193,24 +193,8 @@ if __name__ == "__main__":
     # test if admin privileges are properly blocked
     ap = MycroftAPI("test_key", url="https://104.236.133.170:6712/")
 
-
     # test connection
     print ap.hello_world()
-    try:
-        print ap.new_user("new_key", "0", "test")
-        print "whoa, anyone can make himself an user_id"
-    except:
-        pass
-    try:
-        print ap.get_api()
-        print "whoa, anyone can generate an api key"
-    except:
-        pass
-
-    # test if admin privileges are properly allowed
-    ap = MycroftAPI("admin_key")
-    print ap.new_user("new_key", "0", "test")
-    print ap.get_api()
 
     # test functionality
     ap = MycroftAPI("new_key")
@@ -223,4 +207,25 @@ if __name__ == "__main__":
     print ap.get_intent_map()
     print ap.get_vocab_map()
     print ap.get_skills_map()
+
+    # test admin privileges
+    try:
+        print ap.new_user("new_key", "0", "test")
+        print "whoa, anyone can make himself an user_id"
+    except:
+        pass
+    try:
+        print ap.get_api()
+        print "whoa, anyone can generate an api key"
+    except:
+        pass
+
+    ap = MycroftAPI("admin_key")
+    print ap.new_user("new_key", "0", "test")
+    print ap.get_api()
+    print ap.revoke_api("new_key")
+    print ap.revoke_api("test_key")
+    print ap.revoke_api("invalid_key")
+
+
 
