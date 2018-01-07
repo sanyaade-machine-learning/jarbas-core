@@ -165,13 +165,13 @@ class IntentService(object):
         self.active_skills = []  # [skill_id , timestamp]
         self.converse_timeout = 5  # minutes to prune active_skills
 
-    def handle_skill_shutdown(self, message):
+    def handle_skill_load(self, message):
         name = message.data.get("name")
-        id = message.data.get("id")
+        id = str(message.data.get("id"))
         self.skills_map[id] = name
 
-    def handle_skill_load(self, message):
-        id = message.data.get("id")
+    def handle_skill_shutdown(self, message):
+        id = str(message.data.get("id"))
         self.skills_map.pop(id)
 
     def handle_skill_manifest(self, message):
