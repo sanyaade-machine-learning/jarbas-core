@@ -8,6 +8,8 @@ class MicroIntentService(IntentService):
         self.skills_map = {}
         self.vocab_map = {}
         IntentService.__init__(self, ws)
+        self.emitter.on("skill.loaded", self.handle_skill_load)
+        self.emitter.on("skill.shutdown", self.handle_skill_shutdown)
 
     def handle_utterance(self, message):
         pass
@@ -30,7 +32,6 @@ class MicroIntentService(IntentService):
         self.engine.register_intent_parser(intent)
         skill_id, intent = message.data.get("name", "None:None").split(":")
         LOG.info("Registered: " + intent)
-        self.skills_map[skill_id] = "TODO: get skill name"
         if skill_id not in self.intent_map.keys():
             self.intent_map[skill_id] = []
         self.intent_map[skill_id].append(intent)
@@ -50,6 +51,15 @@ class MicroIntentService(IntentService):
             not p.name.startswith(skill_id)]
         self.engine.intent_parsers = new_parsers
         self.intent_map.pop(skill_id)
+
+    def handle_skill_shutdown(self, message):
+        name = message.data.get("name")
+        id = message.data.get("id")
+        self.skills_map[id] = name
+
+    def handle_skill_load(self, message):
+        id = message.data.get("id")
+        self.skills_map.pop(id)
 
     def get_skills_map(self, lang="en-us"):
         return self.skills_map

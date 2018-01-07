@@ -310,6 +310,12 @@ class SkillManager(Thread):
                                            BLACKLISTED_SKILLS)
             skill["last_modified"] = modified
 
+            self.ws.emit(Message("skill.loaded",
+                                 {'folder': skill_folder,
+                                    "id": skill["id"],
+                                    "name": skill["instance"].name,
+                                    "modified": modified}))
+
     def load_skill_list(self, skills_to_load):
         """ Load the specified list of skills from disk
 
