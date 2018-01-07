@@ -34,6 +34,7 @@ langdetect
 #tools
 pronouncing==0.1.5
 pyopenssl
+service_identity
 flask
 flask-sslify
 yagmail
