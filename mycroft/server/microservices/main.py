@@ -104,7 +104,7 @@ def get_intent_map(lang="en-us"):
 @noindex
 @donation
 @requires_auth
-def get_intent_map(lang="en-us"):
+def get_vocab_map(lang="en-us"):
     global intents
     result = intents.get_vocab_map(lang)
     return nice_json(result)
