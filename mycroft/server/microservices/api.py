@@ -207,4 +207,5 @@ if __name__ == "__main__":
     print ap.get_intent("hello world")
     print ap.get_intent_map()
     print ap.get_vocab_map()
+    print ap.get_skills_map()
 

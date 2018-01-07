@@ -54,6 +54,7 @@ function help() {
 
 SOURCE="${BASH_SOURCE[0]}"
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+DIR="$DIR/.."
 SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
 
 function get_config_value() {
@@ -69,7 +70,7 @@ function get_config_value() {
         echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
         value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
         if [[ "${value}" != "null" ]] ;  then
-            rm -rf $DIR/mycroft/configuration/sys.conf
+            #rm -rf $DIR/mycroft/configuration/sys.conf
             echo "$value"
             return
         fi
