@@ -11,7 +11,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class MycroftAPI(object):
-    def __init__(self, api, lang="en-us", url="https://0.0.0.0:6712/"):
+    def __init__(self, api, lang="en-us", url="https://104.236.133.170:6712/"):
         self.api = api
         self.headers = {"Authorization": str(self.api)}
         self.lang = lang
@@ -65,6 +65,23 @@ class MycroftAPI(object):
         try:
             response = requests.get(
                 self.url+"vocab_map/"+lang,
+                headers=self.headers, verify=False
+            )
+            try:
+                return response.json()
+            except:
+                print response.text
+                raise ValueError("Invalid api key")
+        except ConnectionError as e:
+            print e
+            raise ConnectionError("Could not connect")
+
+    def get_skills_map(self, lang=None):
+        ''' get intent this utterance will trigger NOT AVAILABLE '''
+        lang = lang or self.lang
+        try:
+            response = requests.get(
+                self.url+"skills_map/"+lang,
                 headers=self.headers, verify=False
             )
             try:
@@ -159,7 +176,7 @@ class MycroftAPI(object):
 
 if __name__ == "__main__":
     # test if admin privileges are properly blocked
-    ap = MycroftAPI("test_key")
+    ap = MycroftAPI("test_key", url="https://104.236.133.170:6712/")
 
 
     # test connection

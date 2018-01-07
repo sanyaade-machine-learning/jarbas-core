@@ -5,6 +5,7 @@ class MicroIntentService(IntentService):
 
     def __init__(self, ws):
         self.intent_map = {}
+        self.skills_map = {}
         self.vocab_map = {}
         IntentService.__init__(self, ws)
 
@@ -19,7 +20,8 @@ class MicroIntentService(IntentService):
         if regex_str:
             self.engine.register_regex_entity(regex_str)
         else:
-            self.vocab_map[start_concept] = end_concept
+            if start_concept:
+                self.vocab_map[start_concept] = end_concept
             self.engine.register_entity(
                 start_concept, end_concept, alias_of=alias_of)
 
@@ -28,6 +30,7 @@ class MicroIntentService(IntentService):
         self.engine.register_intent_parser(intent)
         skill_id, intent = message.data.get("name", "None:None").split(":")
         LOG.info("Registered: " + intent)
+        self.skills_map[skill_id] = "TODO: get skill name"
         if skill_id not in self.intent_map.keys():
             self.intent_map[skill_id] = []
         self.intent_map[skill_id].append(intent)
@@ -47,6 +50,9 @@ class MicroIntentService(IntentService):
             not p.name.startswith(skill_id)]
         self.engine.intent_parsers = new_parsers
         self.intent_map.pop(skill_id)
+
+    def get_skill_map(self, lang="en-us"):
+        return self.skills_map
 
     def get_intent_map(self, lang="en-us"):
         return self.intent_map

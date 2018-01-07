@@ -110,6 +110,16 @@ def get_vocab_map(lang="en-us"):
     return nice_json(result)
 
 
+@app.route("/skills_map/<lang>/", methods=['PUT', 'GET'])
+@noindex
+@donation
+@requires_auth
+def get_skills_map(lang="en-us"):
+    global intents
+    result = intents.get_skills_map(lang)
+    return nice_json(result)
+
+
 def listener(message):
     ''' listens for speak messages and checks if we are supposed to send it to some user '''
     global users_on_hold, answers
