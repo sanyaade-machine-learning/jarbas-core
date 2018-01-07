@@ -143,9 +143,9 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
 if __name__ == '__main__':
 
     config = Configuration.get().get("client", {})
-    host = config.get("host", "0.0.0.0")
+    host = config.get("host", "104.236.133.170")
     port = config.get("port", 5678)
-    api = config.get("api", "test_kkkey")
+    api = config.get("api", "test_key")
     headers = {'API': api}
     adress = u"wss://" + host + u":" + str(port)
     factory = JarbasClientFactory(adress, headers=headers,
