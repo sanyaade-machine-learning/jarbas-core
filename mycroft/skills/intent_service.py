@@ -144,10 +144,20 @@ class IntentService(object):
         self.emitter.on('recognizer_loop:utterance', self.handle_utterance)
         self.emitter.on('detach_intent', self.handle_detach_intent)
         self.emitter.on('detach_skill', self.handle_detach_skill)
+        self.emitter.on("mycroft.skills.shutdown", self.handle_skill_shutdown)
+        self.emitter.on("mycroft.skills.manifest", self.handle_skill_manifest)
+        self.emitter.on("mycroft.vocab.manifest", self.handle_vocab_manifest)
+        self.emitter.on("mycroft.intent.manifest", self.handle_intent_manifest)
+        self.emitter.on("mycroft.intent.get", self.handle_intent_get)
         # Context related handlers
         self.emitter.on('add_context', self.handle_add_context)
         self.emitter.on('remove_context', self.handle_remove_context)
         self.emitter.on('clear_context', self.handle_clear_context)
+        # Internal Data
+        self.intent_map = {}
+        self.skills_map = {}
+        self.vocab_map = {}
+
         # Converse method
         self.emitter.on('skill.converse.response',
                         self.handle_converse_response)
@@ -179,6 +189,50 @@ class IntentService(object):
                      wasn't found in the dict.
         """
         return self.skill_names.get(int(skill_id), skill_id)
+
+    def handle_skill_shutdown(self, message):
+        name = message.data.get("name")
+        id = message.data.get("id")
+        self.skills_map[id] = name
+
+    def handle_skill_load(self, message):
+        id = message.data.get("id")
+        self.skills_map.pop(id)
+
+    def handle_skill_manifest(self, message):
+        self.emitter.emit(Message("skill.manifest.response", self.skills_map))
+
+    def handle_intent_manifest(self, message):
+        self.emitter.emit(Message("intent.manifest.response", self.intent_map))
+
+    def handle_vocab_manifest(self, message):
+        self.emitter.emit(Message("vocab.manifest.response", self.vocab_map))
+
+    def handle_intent_get(self, message):
+        utterance = message.data.get("utterance", "")
+        lang = message.data.get("lang", "en-us")
+        intent = self.get_intent(utterance, lang)
+        self.emitter.emit(Message("intent.response", {"utterance": utterance,
+                                                      "intent_data": intent}))
+
+    def get_intent(self, utterance, lang="en-us"):
+        best_intent = None
+        try:
+            # normalize() changes "it's a boy" to "it is boy", etc.
+            best_intent = next(self.engine.determine_intent(
+                normalize(utterance, lang), 100,
+                include_tags=True,
+                context_manager=self.context_manager))
+            # TODO - Should Adapt handle this?
+            best_intent['utterance'] = utterance
+        except Exception as e:
+            # Do not log StopIteration messages
+            pass
+
+        if best_intent and best_intent.get('confidence', 0.0) > 0.0:
+            return best_intent
+        else:
+            return {}
 
     def reset_converse(self, message):
         """Let skills know there was a problem with speech recognition"""
@@ -357,18 +411,26 @@ class IntentService(object):
         if regex_str:
             self.engine.register_regex_entity(regex_str)
         else:
+            if start_concept:
+                self.vocab_map[start_concept] = end_concept
             self.engine.register_entity(
                 start_concept, end_concept, alias_of=alias_of)
 
     def handle_register_intent(self, message):
         intent = open_intent_envelope(message)
         self.engine.register_intent_parser(intent)
+        skill_id, intent = message.data.get("name").split(":")
+        if skill_id not in self.intent_map.keys():
+            self.intent_map[skill_id] = []
+        self.intent_map[skill_id].append(intent)
 
     def handle_detach_intent(self, message):
         intent_name = message.data.get('intent_name')
         new_parsers = [
             p for p in self.engine.intent_parsers if p.name != intent_name]
         self.engine.intent_parsers = new_parsers
+        skill_id, intent = intent_name.split(":")
+        self.intent_map[skill_id].pop(intent)
 
     def handle_detach_skill(self, message):
         skill_id = message.data.get('skill_id')
