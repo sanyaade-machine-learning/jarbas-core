@@ -51,7 +51,7 @@ class MicroIntentService(IntentService):
         self.engine.intent_parsers = new_parsers
         self.intent_map.pop(skill_id)
 
-    def get_skill_map(self, lang="en-us"):
+    def get_skills_map(self, lang="en-us"):
         return self.skills_map
 
     def get_intent_map(self, lang="en-us"):
