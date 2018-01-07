@@ -44,6 +44,21 @@ class MycroftAPI(object):
         except ConnectionError as e:
             raise ConnectionError("Could not connect: " + str(e))
 
+    def revoke_api(self, api):
+        ''' add a new user, requires admin api '''
+        try:
+            response = requests.put(
+                self.url+"revoke_api/"+api,
+                headers=self.headers, verify=False
+            )
+            try:
+                return response.json()
+            except:
+                print response.text
+                raise ValueError("Invalid admin api key")
+        except ConnectionError as e:
+            raise ConnectionError("Could not connect: " + str(e))
+
     def get_api(self):
         ''' get an api key string, requires admin api '''
         try:

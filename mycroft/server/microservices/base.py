@@ -128,6 +128,23 @@ def hello():
     })
 
 
+@app.route("/revoke_api/<api>", methods=['PUT'])
+@noindex
+@donation
+@requires_admin
+def revoke_api(api):
+    if api in users:
+        users.pop(api)
+        with open("{}/database/users.json".format(root_dir()), "w") as f:
+            f.write(json.dumps(users))
+        result = {"removed": True}
+    else:
+        result = {"removed": False, "error": "does not exist"}
+    return nice_json(
+        result
+    )
+
+
 @app.route("/new_user/<api>/<id>/<name>", methods=['PUT'])
 @noindex
 @donation

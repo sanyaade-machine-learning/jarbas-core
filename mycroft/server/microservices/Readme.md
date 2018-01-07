@@ -21,6 +21,9 @@ some functions require an admin api key
     # add a new user with api=generated_key, id=0, name=test
     print ap.new_user("new_key", "0", "test")
 
+    # revoke an api
+    print ap.revoke_api("new_key")
+
 # Determining Intents
 
     from mycroft.microservices.api import MycroftAPI
