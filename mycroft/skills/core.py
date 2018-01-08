@@ -1157,9 +1157,10 @@ class FallbackSkill(MycroftSkill):
                         if f in missing_folders:
                             missing_folders.remove(f)
                         LOG.info("Trying ordered fallback: " + folder)
-                        handler, context_update_handler = cls.folders[f]
+                        handler = cls.folders[f]
                         try:
-                            context_update_handler(message)
+                            handler.__self__.handle_update_message_context(
+                                message)
                             if handler(message):
                                 try:
                                     message_context = \
@@ -1173,10 +1174,7 @@ class FallbackSkill(MycroftSkill):
                                           "fallback_handler": get_handler_name(
                                               handler)},
                                     context=message_context))
-                                try:
-                                    handler.__self__.make_active()
-                                except:
-                                    pass
+                                handler.__self__.make_active()
                                 return True
                         except Exception as e:
                             LOG.info(
@@ -1187,9 +1185,9 @@ class FallbackSkill(MycroftSkill):
             for folder in missing_folders:
                 LOG.info("fallback not in ordered list, trying it now: " +
                          folder)
-                handler, context_update_handler = cls.folders[folder]
+                handler = cls.folders[folder]
                 try:
-                    context_update_handler(message)
+                    handler.__self__.handle_update_message_context(message)
                     if handler(message):
                         try:
                             message_context = \
@@ -1203,10 +1201,7 @@ class FallbackSkill(MycroftSkill):
                                   "fallback_handler": get_handler_name(
                                       handler)},
                             context=message_context))
-                        try:
-                            handler.__self__.make_active()
-                        except:
-                            pass
+                        handler.__self__.make_active()
                         cls.context = message.context
                         return True
                 except Exception as e:
@@ -1216,11 +1211,12 @@ class FallbackSkill(MycroftSkill):
 
         def priority_handler(message):
             # try fallbacks by priority
-            for _, handler, context_update_handler in sorted(
+            for _, handler in sorted(
                     cls.fallback_handlers.items(),
                     key=operator.itemgetter(0)):
                 try:
-                    context_update_handler(message)
+
+                    handler.__self__.handle_update_message_context(message)
                     if handler(message):
                         try:
                             message_context = \
@@ -1234,10 +1230,7 @@ class FallbackSkill(MycroftSkill):
                                   "fallback_handler": get_handler_name(
                                       handler)},
                             context=message_context))
-                        try:
-                            handler.__self__.make_active()
-                        except:
-                            pass
+                        handler.__self__.make_active()
                         cls.context = message.context
                         return True
                 except Exception as e:
@@ -1269,8 +1262,7 @@ class FallbackSkill(MycroftSkill):
         return handler
 
     @classmethod
-    def _register_fallback(cls, handler, priority, skill_folder=None,
-                           context_update_handler=None):
+    def _register_fallback(cls, handler, priority, skill_folder=None):
         """
         Register a function to be called as a general info fallback
         Fallback should receive message and return
@@ -1282,18 +1274,12 @@ class FallbackSkill(MycroftSkill):
         while priority in cls.fallback_handlers:
             priority += 1
 
-        def context_handler(message):
-            try:
-                context_update_handler(message)
-            except Exception as e:
-                LOG.error(e)
-
-        cls.fallback_handlers[priority] = handler, context_handler
+        cls.fallback_handlers[priority] = handler
 
         # folder name
         if skill_folder:
             skill_folder = skill_folder.split("/")[-1]
-            cls.folders[skill_folder] = handler, context_handler
+            cls.folders[skill_folder] = handler
         else:
             LOG.error("skill folder error registering fallback")
 
@@ -1305,11 +1291,10 @@ class FallbackSkill(MycroftSkill):
 
         self.instance_fallback_handlers.append(handler)
         # folder path
-        skill_folder = self._dir # skill
+        skill_folder = self._dir  # skill
         if not skill_folder:
             raise EnvironmentError("could not get skill dir")
-        self._register_fallback(handler, priority, skill_folder,
-                                self.handle_update_message_context)
+        self._register_fallback(handler, priority, skill_folder)
 
     @classmethod
     def remove_fallback(cls, handler_to_del):
@@ -1320,7 +1305,7 @@ class FallbackSkill(MycroftSkill):
                 handler_to_del: reference to handler
         """
         success = False
-        for priority, (handler, context_update_handler) in \
+        for priority, handler in \
                 cls.fallback_handlers.items():
             if handler == handler_to_del:
                 del cls.fallback_handlers[priority]
