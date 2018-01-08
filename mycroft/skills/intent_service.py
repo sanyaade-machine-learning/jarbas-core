@@ -167,12 +167,12 @@ class IntentService(object):
 
     def handle_skill_load(self, message):
         name = message.data.get("name")
-        id = str(message.data.get("id"))
-        self.skills_map[id] = name
+        skill_id = str(message.data.get("id"))
+        self.skills_map[skill_id] = name
 
     def handle_skill_shutdown(self, message):
-        id = str(message.data.get("id"))
-        self.skills_map.pop(id)
+        skill_id = str(message.data.get("id"))
+        self.skills_map.pop(skill_id)
 
     def handle_skill_manifest(self, message):
         self.emitter.emit(Message("skill.manifest.response", self.skills_map))
@@ -192,17 +192,27 @@ class IntentService(object):
 
     def get_intent(self, utterance, lang="en-us"):
         best_intent = None
-        try:
-            # normalize() changes "it's a boy" to "it is boy", etc.
-            best_intent = next(self.engine.determine_intent(
-                normalize(utterance, lang), 100,
-                include_tags=True,
-                context_manager=self.context_manager))
-            # TODO - Should Adapt handle this?
-            best_intent['utterance'] = utterance
-        except Exception as e:
-            # Do not log StopIteration messages
-            pass
+
+        if isinstance(utterance, list):
+            utterances = utterance
+        else:
+            utterances = [utterance]
+
+        for utterance in utterances:
+            try:
+                # normalize() changes "it's a boy" to "it is boy", etc.
+                best_intent = next(self.engine.determine_intent(
+                    normalize(utterance, lang), 100,
+                    include_tags=True,
+                    context_manager=self.context_manager))
+                # TODO - Should Adapt handle this?
+                best_intent['utterance'] = utterance
+            except StopIteration:
+                # don't show error in log
+                continue
+            except Exception as e:
+                LOG.exception(e)
+                continue
 
         if best_intent and best_intent.get('confidence', 0.0) > 0.0:
             return best_intent
