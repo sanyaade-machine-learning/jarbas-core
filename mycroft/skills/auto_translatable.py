@@ -73,6 +73,11 @@ class AutotranslatableFallback(FallbackSkill):
         FallbackSkill.__init__(self, name, emitter)
         self.input_lang = None
 
+        def handler(message):
+            return False
+
+        self.handler = handler
+
     def language_detect(self, utterance):
         return language_detect(utterance)
 
@@ -125,6 +130,21 @@ class AutotranslatableFallback(FallbackSkill):
         self.emitter.emit(Message("speak", data, self.get_message_context(
             message_context)))
 
+    def universal_fallback_handler(self, message):
+        # auto_Translate input
+        ut = message.data.get("utterance")
+        if ut:
+            ut_lang = self.language_detect(ut)
+            if "-" in ut_lang:
+                ut_lang = ut_lang.split("-")[0]
+            if "-" in self.input_lang:
+                self.input_lang = self.input_lang.split("-")[0]
+            if self.input_lang != ut_lang:
+                message.data["utterance"] = self.translate(ut,
+                                                           self.input_lang)
+        success = self.handler(message)
+        return success
+
     def register_fallback(self, handler, priority):
         """
             register a fallback with the list of fallback handlers
@@ -132,31 +152,16 @@ class AutotranslatableFallback(FallbackSkill):
 
             modify fallback handler for input auto-translation
         """
-        if self.input_lang:
-            def universal_translate_handler(message):
-                # auto_Translate input
-                ut = message.data.get("utterance")
-                if ut:
-                    ut_lang = self.language_detect(ut)
-                    if "-" in ut_lang:
-                        ut_lang = ut_lang.split("-")[0]
-                    if "-" in self.input_lang:
-                        self.input_lang = self.input_lang.split("-")[0]
-                    if self.input_lang != ut_lang:
-                        message.data["utterance"] = self.translate(ut,
-                                                                   self.input_lang)
-                success = handler(message)
-                return success
+        skill_folder = self._dir  # skill
+        if not skill_folder:
+            raise EnvironmentError("could not get skill dir")
 
-            self.instance_fallback_handlers.append(universal_translate_handler)
-            skill_folder = self._dir  # skill
-            if not skill_folder:
-                raise EnvironmentError("could not get skill dir")
-            self._register_fallback(universal_translate_handler, priority, skill_folder)
+        self.handler = handler
+
+        if self.input_lang:
+            self.instance_fallback_handlers.append(self.universal_fallback_handler)
+            self._register_fallback(self.universal_fallback_handler,
+                                    priority, skill_folder)
         else:
             self.instance_fallback_handlers.append(handler)
-            # folder path
-            skill_folder = self._dir  # skill
-            if not skill_folder:
-                raise EnvironmentError("could not get skill dir")
             self._register_fallback(handler, priority, skill_folder)
