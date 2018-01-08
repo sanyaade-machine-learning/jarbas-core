@@ -309,12 +309,16 @@ class SkillManager(Thread):
                                            self.ws, skill["id"],
                                            BLACKLISTED_SKILLS)
             skill["last_modified"] = modified
-
-            self.ws.emit(Message("skill.loaded",
-                                 {'folder': skill_folder,
-                                    "id": skill["id"],
-                                    "name": skill["instance"].name,
-                                    "modified": modified}))
+            if skill["instance"] is not None:
+                self.ws.emit(Message("skill.loaded",
+                                     {'folder': skill_folder,
+                                        "id": skill["id"],
+                                        "name": skill["instance"].name,
+                                        "modified": modified}))
+            else:
+                self.ws.emit(Message("skill.load.fail",
+                                     {'folder': skill_folder,
+                                      "id": skill["id"]}))
 
     def load_skill_list(self, skills_to_load):
         """ Load the specified list of skills from disk
