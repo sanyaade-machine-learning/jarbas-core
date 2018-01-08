@@ -217,7 +217,7 @@ class IntentService(object):
         if best_intent and best_intent.get('confidence', 0.0) > 0.0:
             return best_intent
         else:
-            return {}
+            return None
 
     def reset_converse(self, message):
         """Let skills know there was a problem with speech recognition"""
@@ -298,30 +298,15 @@ class IntentService(object):
                 return
 
         # no skill wants to handle utterance
-        best_intent = None
-        for utterance in utterances:
-            try:
-                # normalize() changes "it's a boy" to "it is boy", etc.
-                best_intent = next(self.engine.determine_intent(
-                    normalize(utterance, lang), 100,
-                    include_tags=True,
-                    context_manager=self.context_manager))
-                # TODO - Should Adapt handle this?
-                best_intent['utterance'] = utterance
-            except StopIteration:
-                # don't show error in log
-                continue
-            except Exception as e:
-                LOG.exception(e)
-                continue
+        intent = self.get_intent(utterances, lang)
 
-        if best_intent and best_intent.get('confidence', 0.0) > 0.0:
-            self.update_context(best_intent)
+        if intent:
+            self.update_context(intent)
             reply = message.reply(
-                best_intent.get('intent_type'), best_intent)
+                intent.get('intent_type'), intent)
             self.emitter.emit(reply)
             # update active skills
-            skill_id = int(best_intent['intent_type'].split(":")[0])
+            skill_id = int(intent['intent_type'].split(":")[0])
             self.add_active_skill(skill_id)
         else:
             self.emitter.emit(Message("intent_failure", {
