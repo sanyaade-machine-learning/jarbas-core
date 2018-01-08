@@ -155,7 +155,7 @@ class SkillManager(Thread):
         super(SkillManager, self).__init__()
         self._stop_event = Event()
         self._loaded_priority = Event()
-        self.next_download = time.time() - 1    # download ASAP
+        self.next_download = time.time() - 1  # download ASAP
         self.loaded_skills = {}
         self.msm_blocked = False
         self.ws = ws
@@ -225,8 +225,11 @@ class SkillManager(Thread):
                     self.next_download = time.time() + 60 * MINUTES
 
                     if res == 0 and speak:
-                        self.ws.emit(Message("speak", {'utterance':
-                                     mycroft.dialog.get("skills updated")}))
+                        self.ws.emit(
+                            Message("speak",
+                                    {'utterance':
+                                     mycroft.dialog.get("skills updated")
+                                     }))
                     return True
                 elif not connected():
                     LOG.error('msm failed, network connection not available')
@@ -292,8 +295,8 @@ class SkillManager(Thread):
                     LOG.warning(
                         "After shutdown of {} there are still "
                         "{} references remaining. The skill "
-                        "won't be cleaned from memory."
-                        .format(skill['instance'].name, refs))
+                        "won't be cleaned from memory.".format(
+                            skill['instance'].name, refs))
             del skill["instance"]
 
         # (Re)load the skill from disk
@@ -304,6 +307,12 @@ class SkillManager(Thread):
                                            self.ws, skill["id"],
                                            BLACKLISTED_SKILLS)
             skill["last_modified"] = modified
+
+            self.ws.emit(Message("skill.loaded",
+                                 {'folder': skill_folder,
+                                  "id": skill["id"],
+                                  "name": skill["instance"].name,
+                                  "modified": modified}))
 
     def load_skill_list(self, skills_to_load):
         """ Load the specified list of skills from disk
@@ -332,10 +341,10 @@ class SkillManager(Thread):
         while not self._stop_event.is_set():
 
             # check if skill updates are enabled
-            update = Configuration.get().get("skills", {}).get(
-                "auto_update", True)
+            update = Configuration.get().get("skills", {}).get("auto_update",
+                                                               True)
 
-            # Update skills once an hour
+            # Update skills once an hour if update is enabled
             if time.time() >= self.next_download and update:
                 self.download_skills()
 
