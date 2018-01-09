@@ -46,7 +46,7 @@ function get_config_value() {
   echo "$default"
 }
 
-use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
+use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'false')"
 if [[ ${use_virtualenvwrapper} == "true" ]] ; then
     if [ -z "$WORKON_HOME" ]; then
         VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/mycroft"}
@@ -93,13 +93,16 @@ _script=""
 function name-to-script-path() {
     case ${1} in
     "bus")             _script=${DIR}/mycroft/messagebus/service/main.py ;;
+    "micro")           _script=${DIR}/mycroft/server/microservices/main.py ;;
     "skills")          _script=${DIR}/mycroft/skills/main.py ;;
+    "server")           _script=${DIR}/mycroft/server/main.py ;;
     "audio")           _script=${DIR}/mycroft/audio/main.py ;;
     "voice")           _script=${DIR}/mycroft/client/speech/main.py ;;
     "cli")             _script=${DIR}/mycroft/client/text/main.py ;;
     "wifi")            _script=${DIR}/mycroft/client/wifisetup/main.py ;;
     "skill_container") _script=${DIR}/mycroft/skills/container.py ;;
     "audiotest")       _script=${DIR}/mycroft/util/audio_test.py ;;
+    "unittest")        _script=${DIR}/test/unittests/main.py ;;
     "audioaccuracytest") _script=${DIR}/mycroft/audio-accuracy-test/audio_accuracy_test.py ;;
     "sdkdoc")          _script=${DIR}/doc/generate_sdk_docs.py ;;
     "enclosure")       _script=${DIR}/mycroft/client/enclosure/main.py ;;
@@ -166,16 +169,16 @@ case ${_opt} in
     ;;
 
   "bus")
-    launch-background ${_opt}
+    launch-process ${_opt}
     ;;
   "audio")
-    launch-background ${_opt}
+    launch-process ${_opt}
     ;;
   "skills")
-    launch-background ${_opt}
+    launch-process ${_opt}
     ;;
   "voice")
-    launch-background ${_opt}
+    launch-process ${_opt}
     ;;
 
   "debug")
@@ -191,7 +194,7 @@ case ${_opt} in
     launch-process ${_opt}
     ;;
   "wifi")
-    launch-background ${_opt}
+    launch-process ${_opt}
     ;;
   "skill_container")
     launch-process ${_opt}
