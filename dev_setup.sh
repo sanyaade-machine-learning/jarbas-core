@@ -103,10 +103,12 @@ function get_config_value() {
         if [[ "${value}" != "null" ]] ;  then
             rm -rf $DIR/mycroft/configuration/sys.conf
             echo "$value"
+            value="null"
             return
         fi
     fi
   done
+  value="null"
   echo "$default"
 }
 
