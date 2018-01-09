@@ -21,6 +21,8 @@ from mycroft.tts import TTSFactory
 from mycroft.util import create_signal, check_for_signal
 from mycroft.util.log import LOG
 from mycroft.messagebus.message import Message
+from mycroft.metrics import report_timing, Stopwatch
+
 ws = None  # TODO:18.02 - Rename to "messagebus"
 config = None
 tts = None
@@ -64,9 +66,15 @@ def handle_speak(event):
     Configuration.init(ws)
     global _last_stop_signal
 
-    # Mild abuse of the signal system to allow other processes to detect
-    # when TTS is happening.  See mycroft.util.is_speaking()
+    # Get conversation ID
+    if event.context and 'ident' in event.context:
+        ident = event.context['ident']
+    else:
+        ident = 'unknown'
+
     with lock:
+        stopwatch = Stopwatch()
+        stopwatch.start()
         ws.emit(Message("mycroft.audio.speech.start", event.data))
         utterance = event.data['utterance']
         if event.data.get('expect_response', False):
@@ -89,7 +97,7 @@ def handle_speak(event):
                               utterance)
             for chunk in chunks:
                 try:
-                    mute_and_speak(chunk)
+                    mute_and_speak(chunk, ident)
                 except KeyboardInterrupt:
                     raise
                 except:
@@ -97,15 +105,19 @@ def handle_speak(event):
                 if _last_stop_signal > start or check_for_signal('buttonPress'):
                     break
         else:
-            mute_and_speak(utterance, mute)
+            mute_and_speak(utterance, ident, mute)
+
+        stopwatch.stop()
+    report_timing(ident, 'speech', stopwatch, {'utterance': utterance})
 
 
-def mute_and_speak(utterance, mute=False):
+def mute_and_speak(utterance, ident, mute=False):
     """
         Mute mic and start speaking the utterance using selected tts backend.
 
         Args:
-            utterance: The sentence to be spoken
+            utterance:  The sentence to be spoken
+            ident:      Ident tying the utterance to the source query
     """
     global tts_hash
     LOG.info("Speak: " + utterance)
@@ -124,7 +136,7 @@ def mute_and_speak(utterance, mute=False):
 
     try:
         if not mute:
-            tts.execute(utterance)
+            tts.execute(utterance, ident)
     except Exception as e:
         LOG.error(e)
 

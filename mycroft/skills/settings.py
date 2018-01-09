@@ -13,10 +13,41 @@
 # limitations under the License.
 #
 """
-    SkillSettings is a simple extension of the python dict which enables
-    local storage of settings.  Additionally it can interact with a backend
-    system to provide a GUI interface, described by meta-data described in
-    an optional 'settingsmeta.json' file.
+    SkillSettings is a simple extension of a Python dict which enables
+    simplified storage of settings.  Values stored into the dict will
+    automatically persist locally.  Additionally, it can interact with
+    a backend system to provide a GUI interface for some or all of the
+    settings.
+
+    The GUI for the setting is described by a file in the skill's root
+    directory called settingsmeta.json.  The "name" is associates the
+    user-interface field with the setting name in the dictionary.  For
+    example, you might have a setting['username'].  In the settingsmeta
+    you can describe the interface you want to edit that value with:
+        ...
+        "fields": [
+               {
+                   "name": "username",
+                   "type": "email",
+                   "label": "Email address to associate",
+                   "placeholder": "example@mail.com",
+                   "value": ""
+               }]
+        ...
+    When the user changes the setting via the web UI, it will be sent
+    down to all the devices and automatically placed into the
+    settings['username'].  Any local changes made to the value (e.g.
+    via a verbal interaction) will also be synched to the server to show
+    on the web interface.
+
+    NOTE: As it stands today, this functions seamlessly with a single
+    device.  With multiple devices there are a few hitches that are being
+    worked out.  The first device where a skill is installed creates the
+    setting and values are sent down to any other devices that install the
+    same skill.  However only the original device can make changes locally
+    for synching to the web.  This limitation is temporary and will be
+    removed soon.
+
 
     Usage Example:
         from mycroft.skill.settings import SkillSettings
@@ -24,10 +55,7 @@
         s = SkillSettings('./settings.json', 'ImportantSettings')
         s['meaning of life'] = 42
         s['flower pot sayings'] = 'Not again...'
-        s.store()
-
-    Metadata format:
-        TODO: see https://goo.gl/MY3i1S
+        s.store()  # This happens automagically in a MycroftSkill
 """
 
 import json

@@ -19,6 +19,7 @@ import time
 import csv
 from functools import wraps
 from inspect import getargspec
+import inspect
 
 import abc
 import re
@@ -34,7 +35,7 @@ from mycroft.configuration import Configuration
 from mycroft.dialog import DialogLoader
 from mycroft.filesystem import FileSystemAccess
 from mycroft.messagebus.message import Message
-from mycroft.metrics import report_metric
+from mycroft.metrics import report_metric, report_timing, Stopwatch
 from mycroft.skills.settings import SkillSettings
 from mycroft.util import get_language_dir
 from mycroft.util.log import LOG
@@ -44,6 +45,19 @@ from mycroft.dialog import get_all_vocab
 from past.builtins import basestring
 
 MainModule = '__init__'
+
+
+def dig_for_message():
+    """
+        Dig Through the stack for message.
+    """
+    stack = inspect.stack()
+    # Limit search to 10 frames back
+    stack = stack if len(stack) < 10 else stack[:10]
+    local_vars = [frame[0].f_locals for frame in stack]
+    for l in local_vars:
+        if 'message' in l and isinstance(l['message'], Message):
+            return l['message']
 
 
 def load_vocab_from_file(path, vocab_type, emitter):
@@ -624,33 +638,43 @@ class MycroftSkill(object):
                 self.emitter.emit(Message("mycroft.skill.handler.start",
                                           data={'handler': name},
                                   context=self.message_context))
-                if need_self:
-                    # When registring from decorator self is required
-                    if len(getargspec(handler).args) == 2:
-                        handler(self, message)
-                    elif len(getargspec(handler).args) == 1:
-                        handler(self)
-                    elif len(getargspec(handler).args) == 0:
-                        # Zero may indicate multiple decorators, trying the
-                        # usual call signatures
-                        try:
+                stopwatch = Stopwatch()
+                with stopwatch:
+                    if need_self:
+                        # When registring from decorator self is required
+                        if len(getargspec(handler).args) == 2:
                             handler(self, message)
-                        except TypeError:
+                        elif len(getargspec(handler).args) == 1:
                             handler(self)
+                        elif len(getargspec(handler).args) == 0:
+                            # Zero may indicate multiple decorators, trying the
+                            # usual call signatures
+                            try:
+                                handler(self, message)
+                            except TypeError:
+                                handler(self)
+                        else:
+                            LOG.error("Unexpected argument count:" +
+                                      str(len(getargspec(handler).args)))
+                            raise TypeError
                     else:
-                        LOG.error("Unexpected argument count:" +
-                                  str(len(getargspec(handler).args)))
-                        raise TypeError
-                else:
-                    if len(getargspec(handler).args) == 2:
-                        handler(message)
-                    elif len(getargspec(handler).args) == 1:
-                        handler()
-                    else:
-                        LOG.error("Unexpected argument count:" +
-                                  str(len(getargspec(handler).args)))
-                        raise TypeError
-                self.settings.store()  # Store settings if they've changed
+                        if len(getargspec(handler).args) == 2:
+                            handler(message)
+                        elif len(getargspec(handler).args) == 1:
+                            handler()
+                        else:
+                            LOG.error("Unexpected argument count:" +
+                                      str(len(getargspec(handler).args)))
+                            raise TypeError
+                    self.settings.store()  # Store settings if they've changed
+
+                # Send timing metrics
+                context = message.context
+                if context and 'ident' in context:
+                    report_timing(context['ident'], 'skill_handler',
+                                  stopwatch,
+                                  {'handler': handler.__name__})
+
             except Exception as e:
                 # Convert "MyFancySkill" to "My Fancy Skill" for speaking
                 name = re.sub("([a-z])([A-Z])", "\g<1> \g<2>", self.name)
@@ -884,8 +908,13 @@ class MycroftSkill(object):
                 "mute": mute,
                 "more_speech": more_speech,
                 "metadata": metadata}
-        self.emitter.emit(
-            Message("speak", data, self.get_message_context(message_context)))
+        message = dig_for_message()
+        if message:
+            self.emitter.emit(message.reply("speak", data,
+                                            self.get_message_context(message_context)))
+        else:
+            self.emitter.emit(
+                Message("speak", data, self.get_message_context(message_context)))
 
     def speak_dialog(self, key, data=None, expect_response=False,
                      mute=False, more_speech=False, metadata=None,
@@ -1245,19 +1274,27 @@ class FallbackSkill(MycroftSkill):
                             data={'handler': "fallback"},
                             context=cls.context))
 
-            if cls.override:
-                success = ordered_handler(message)
-            else:
-                success = priority_handler(message)
-            if not success:
-                ws.emit(Message('complete_intent_failure'))
-                LOG.warning('No fallback could handle intent.')
-                #  indicate completion with exception
-                ws.emit(Message('mycroft.skill.handler.complete',
-                                data={'handler': "fallback",
-                                      'exception':
-                                          "No fallback could handle intent."},
-                                context=cls.context))
+            stopwatch = Stopwatch()
+            handler_name = None
+            with stopwatch:
+                if cls.override:
+                    success = ordered_handler(message)
+                else:
+                    success = priority_handler(message)
+                if not success:
+                    ws.emit(Message('complete_intent_failure'))
+                    LOG.warning('No fallback could handle intent.')
+                    #  indicate completion with exception
+                    ws.emit(Message('mycroft.skill.handler.complete',
+                                    data={'handler': "fallback",
+                                          'exception':
+                                              "No fallback could handle intent."},
+                                    context=cls.context))
+                    # Send timing metric
+                    if message.context and message.context['ident']:
+                        ident = message.context['ident']
+                        report_timing(ident, 'fallback_handler', stopwatch,
+                                      {'handler': handler_name})
 
         return handler
 
