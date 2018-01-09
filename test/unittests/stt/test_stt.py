@@ -30,16 +30,16 @@ class TestSTT(unittest.TestCase):
                  'wit': {'credential': {'token': 'FOOBAR'}},
                  'google': {'credential': {'token': 'FOOBAR'}},
                  'bing': {'credential': {'token': 'FOOBAR'}},
-                 'ibm': {'credential': {'username': 'FOO',
-                                        "password": "BAR"}},
                  'houndify': {'credential': {'client_id': 'FOO',
                                              "client_key": "BAR"}},
+                 'google_cloud': {
+                   'credential': {
+                     'json': {}
+                   }
+                 },
+                 'ibm': {'credential': {'token': 'FOOBAR'}},
                  'kaldi': {'uri': 'https://test.com'},
-            'google_cloud': {
-                'credential': {
-                    'json': {}
-                }
-            }
+                 'mycroft': {'uri': 'https://test.com'}
                 },
             'lang': 'en-US'
         }
@@ -132,13 +132,13 @@ class TestSTT(unittest.TestCase):
     def test_google_cloud_stt(self, mock_get):
         mycroft.stt.Recognizer = mock.MagicMock
         config = {'stt': {
-            'module': 'google_cloud',
-            'google_cloud': {
-                'credential': {
-                    'json': {}
-                }
+                 'module': 'google_cloud',
+                 'google_cloud': {
+                   'credential': {
+                     'json': {}
+                   }
+                 },
             },
-        },
             "lang": "en-US"
         }
         mock_get.return_value = config
