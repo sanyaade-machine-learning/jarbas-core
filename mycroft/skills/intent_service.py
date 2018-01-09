@@ -306,7 +306,7 @@ class IntentService(object):
             Send timing metrics to the backend.
         """
         LOG.debug('Sending metric')
-        ident = context['ident'] if context else None
+        ident = context.get('ident') if context else None
         if intent:
             # Recreate skill name from skill id
             parts = intent.get('intent_type', '').split(':')
@@ -346,7 +346,8 @@ class IntentService(object):
 
             if converse:
                 # Report that converse handled the intent and return
-                ident = message.context['ident'] if message.context else None
+                ident = message.context.get('ident') if message.context \
+                        else None
                 report_timing(ident, 'intent_service', stopwatch,
                               {'intent_type': 'converse'})
                 return

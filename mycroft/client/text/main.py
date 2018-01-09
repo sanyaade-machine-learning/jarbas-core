@@ -851,7 +851,8 @@ def gui_main(stdscr):
                     ws.emit(Message("recognizer_loop:utterance",
                                     {'utterances': [line.strip()],
                                      'lang': 'en-us'},
-                                    {"source": "cli",
+                                    {'client_name': 'mycroft_cli',
+                                     "source": "cli",
                                      'destinatary': 'skills'}))
                 hist_idx = -1
                 line = ""
@@ -948,7 +949,8 @@ def simple_cli():
             ws.emit(
                 Message("recognizer_loop:utterance",
                         {'utterances': [line.strip()]},
-                        {"source": "cli", 'destinatary': 'skills'}))
+                        {'client_name': 'mycroft_simple_cli',
+                         "source": "cli", 'destinatary': 'skills'}))
     except KeyboardInterrupt, e:
         # User hit Ctrl+C to quit
         print("")
