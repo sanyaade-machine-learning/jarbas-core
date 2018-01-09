@@ -55,8 +55,8 @@ show_help() {
 	echo "not as root/sudo."
 }
 
-opt_skipmimic=false
-opt_allowroot=false
+opt_skipmimic=true
+opt_allowroot=true
 
 for var in "$@"
 do
@@ -122,11 +122,11 @@ fi
 
 mycroft_skill_folder="$(get_config_value '.skills.directory' '/opt/mycroft/skills')"
 if [[ ! -d "${mycroft_skill_folder}" ]] ; then
-  echo "ERROR: Unable to find/access ${mycroft_skill_folder}!"
-  exit 101
+  echo "WARNING: Unable to find/access ${mycroft_skill_folder}! Creating it"
+  sudo mkdir -p ${mycroft_skill_folder}
 fi
 
-use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
+use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'false')"
 
 install_deps() {
     echo "Installing packages..."
@@ -261,11 +261,12 @@ fi
 "${TOP}/scripts/install-pygtk.sh" " ${CORES}"
 
 # install opencv
-if [[ "$mycroft_platform" == "picroft" || "$mycroft_platform" == "mycroft_mark_1" ]] ; then
-    "${TOP}/scripts/install_opencv_pi.sh"
-else
-    "${TOP}/scripts/install_opencv.sh"
-fi
+#if [[ "$mycroft_platform" == "picroft" || "$mycroft_platform" ==
+#"mycroft_mark_1" ]] ; then
+#    "${TOP}/scripts/install_opencv_pi.sh"
+#else
+#    "${TOP}/scripts/install_opencv.sh"
+#fi
 
 # set permissions for common scripts
 chmod +x start-mycroft.sh
