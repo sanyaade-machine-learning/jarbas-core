@@ -101,7 +101,7 @@ function get_config_value() {
         value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
         if [[ "${value}" != "null" ]] ;  then
             rm -rf $DIR/mycroft/configuration/sys.conf
-            value="null"
+            echo "$value"
             return
         fi
     fi
