@@ -97,7 +97,7 @@ class ContextManager(object):
                               relevant_frames[i].entities]
             for entity in frame_entities:
                 entity['confidence'] = entity.get('confidence', 1.0) \
-                    / (2.0 + i)
+                                       / (2.0 + i)
             context += frame_entities
 
         result = []
@@ -130,8 +130,6 @@ class IntentService(object):
         self.config = Configuration.get().get('context', {})
         self.engine = IntentDeterminationEngine()
 
-        # Dictionary for translating a skill id to a name
-        self.skill_names = {}
         # Context related intializations
         self.context_keywords = self.config.get('keywords', [])
         self.context_max_frames = self.config.get('max_frames', 3)
@@ -144,10 +142,12 @@ class IntentService(object):
         self.emitter.on('recognizer_loop:utterance', self.handle_utterance)
         self.emitter.on('detach_intent', self.handle_detach_intent)
         self.emitter.on('detach_skill', self.handle_detach_skill)
+        self.emitter.on('mycroft.skills.loaded', self.update_skill_name_dict)
         self.emitter.on("mycroft.skills.shutdown", self.handle_skill_shutdown)
         self.emitter.on("mycroft.skills.manifest", self.handle_skill_manifest)
         self.emitter.on("mycroft.vocab.manifest", self.handle_vocab_manifest)
-        self.emitter.on("mycroft.intent.manifest", self.handle_intent_manifest)
+        self.emitter.on("mycroft.intent.manifest",
+                        self.handle_intent_manifest)
         self.emitter.on("mycroft.intent.get", self.handle_intent_get)
         # Context related handlers
         self.emitter.on('add_context', self.handle_add_context)
@@ -163,10 +163,10 @@ class IntentService(object):
                         self.handle_converse_response)
         self.emitter.on('mycroft.speech.recognition.unknown',
                         self.reset_converse)
-        self.emitter.on('mycroft.skills.loaded', self.update_skill_name_dict)
 
         def add_active_skill_handler(message):
             self.add_active_skill(message.data['skill_id'])
+
         self.emitter.on('active_skill_request', add_active_skill_handler)
         self.active_skills = []  # [skill_id , timestamp]
         self.converse_timeout = 5  # minutes to prune active_skills
@@ -176,7 +176,7 @@ class IntentService(object):
             Messagebus handler, updates dictionary of if to skill name
             conversions.
         """
-        self.skill_names[message.data['id']] = message.data['name']
+        self.skills_map[message.data['id']] = message.data['name']
 
     def get_skill_name(self, skill_id):
         """
@@ -188,7 +188,7 @@ class IntentService(object):
             Returns: (str) Skill name or the skill id if the skill
                      wasn't found in the dict.
         """
-        return self.skill_names.get(int(skill_id), skill_id)
+        return self.skills_map.get(int(skill_id), skill_id)
 
     def handle_skill_load(self, message):
         name = message.data.get("name")
@@ -200,20 +200,24 @@ class IntentService(object):
         self.skills_map.pop(skill_id)
 
     def handle_skill_manifest(self, message):
-        self.emitter.emit(Message("skill.manifest.response", self.skills_map))
+        self.emitter.emit(Message("mycroft.skills.manifest.response",
+                                  self.skills_map))
 
     def handle_intent_manifest(self, message):
-        self.emitter.emit(Message("intent.manifest.response", self.intent_map))
+        self.emitter.emit(Message("mycroft.intent.manifest.response",
+                                  self.intent_map))
 
     def handle_vocab_manifest(self, message):
-        self.emitter.emit(Message("vocab.manifest.response", self.vocab_map))
+        self.emitter.emit(Message("mycroft.vocab.manifest.response",
+                                  self.vocab_map))
 
     def handle_intent_get(self, message):
         utterance = message.data.get("utterance", "")
         lang = message.data.get("lang", "en-us")
         intent = self.get_intent(utterance, lang)
-        self.emitter.emit(Message("intent.response", {"utterance": utterance,
-                                                      "intent_data": intent}))
+        self.emitter.emit(Message("mycroft.intent.response",
+                                  {"utterance": utterance,
+                                   "intent_data": intent}))
 
     def get_intent(self, utterance, lang="en-us"):
         best_intent = None
@@ -242,7 +246,7 @@ class IntentService(object):
         if best_intent and best_intent.get('confidence', 0.0) > 0.0:
             return best_intent
         else:
-            return {}
+            return None
 
     def reset_converse(self, message):
         """Let skills know there was a problem with speech recognition"""
@@ -389,24 +393,8 @@ class IntentService(object):
 
             Returns: Intent structure, or None if no match was found.
         """
-        best_intent = None
-        for utterance in utterances:
-            try:
-                # normalize() changes "it's a boy" to "it is boy", etc.
-                best_intent = next(self.engine.determine_intent(
-                    normalize(utterance, lang), 100,
-                    include_tags=True,
-                    context_manager=self.context_manager))
-                # TODO - Should Adapt handle this?
-                best_intent['utterance'] = utterance
-            except StopIteration:
-                # don't show error in log
-                continue
-            except Exception as e:
-                LOG.exception(e)
-                continue
-
-        if best_intent and best_intent.get('confidence', 0.0) > 0.0:
+        best_intent = self.get_intent(utterances, lang)
+        if best_intent:
             self.update_context(best_intent)
             # update active skills
             skill_id = int(best_intent['intent_type'].split(":")[0])
