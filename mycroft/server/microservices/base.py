@@ -9,6 +9,7 @@ from flask import request, Response
 from flask_sslify import SSLify
 
 from mycroft.server.microservices import gen_api
+from mycroft.server.database.user import UserDatabase
 
 
 def root_dir():
@@ -26,11 +27,7 @@ sslify = SSLify(app)
 port = 5678
 
 
-with open("{}/database/users.json".format(root_dir()), "r") as f:
-    users = json.load(f)
-
-with open("{}/database/admins.json".format(root_dir()), "r") as f:
-    admins = json.load(f)
+users = UserDatabase()
 
 
 def add_response_headers(headers=None):
@@ -67,21 +64,21 @@ def donation(f):
 
 def check_auth(api_key):
     """This function is called to check if a api key is valid."""
-    if api_key not in users:
+    user = users.get_user_by_api_key(api_key)
+    if not user:
         return False
-    users[api_key]["last_active"] = time.time()
-    with open("{}/database/users.json".format(root_dir()), "w") as f:
-        f.write(json.dumps(users))
+    users.update_timestamp(api_key, time.time())
     return True
 
 
 def check_admin_auth(api_key):
-    """This function is called to check if a api key is valid."""
-    if api_key not in admins:
+    """This function is called to check if a admin api key is valid."""
+    user = users.get_user_by_api_key(api_key)
+    if not user:
         return False
-    admins[api_key]["last_active"] = time.time()
-    with open("{}/database/admins.json".format(root_dir()), "w") as f:
-        f.write(json.dumps(admins))
+    if not user.is_admin:
+        return False
+    users.update_timestamp(api_key, time.time())
     return True
 
 
@@ -133,10 +130,7 @@ def hello():
 @donation
 @requires_admin
 def revoke_api(api):
-    if api in users:
-        users.pop(api)
-        with open("{}/database/users.json".format(root_dir()), "w") as f:
-            f.write(json.dumps(users))
+    if users.delete_user(api):
         result = {"removed": True}
     else:
         result = {"removed": False, "error": "does not exist"}
@@ -145,15 +139,14 @@ def revoke_api(api):
     )
 
 
-@app.route("/new_user/<api>/<id>/<name>", methods=['PUT'])
+@app.route("/new_user/<api>/<mail>/<name>", methods=['PUT'])
 @noindex
 @donation
 @requires_admin
-def add_user(api, id, name):
-    result = {"id": id, "last_active": 0, "name": name}
-    users[api] = result
-    with open("{}/database/users.json".format(root_dir()), "w") as f:
-        f.write(json.dumps(users))
+def add_user(api, mail, name):
+    result = {"success": False}
+    if users.add_user(name, mail, api):
+        result = {"success": True}
     return nice_json(
         result
     )

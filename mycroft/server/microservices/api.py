@@ -29,11 +29,11 @@ class MycroftAPI(object):
        except ConnectionError as e:
            raise ConnectionError("Could not connect: " + str(e))
 
-    def new_user(self, key, id, name):
+    def new_user(self, key, mail, name):
         ''' add a new user, requires admin api '''
         try:
             response = requests.put(
-                self.url+"new_user/"+key+"/"+id+"/"+name,
+                self.url+"new_user/"+key+"/"+mail+"/"+name,
                 headers=self.headers, verify=False
             )
             try:

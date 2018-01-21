@@ -1,7 +1,6 @@
 from os.path import exists, dirname
 from threading import Thread
 import os
-import json
 from twisted.internet import reactor, ssl
 from autobahn.twisted.websocket import WebSocketServerProtocol, \
     WebSocketServerFactory
@@ -10,19 +9,18 @@ from mycroft.messagebus.message import Message
 from mycroft.util.log import LOG as logger
 from mycroft.configuration import Configuration
 from mycroft.util.ssl.self_signed import create_self_signed_cert
+from mycroft.server.database.user import UserDatabase
 
 author = "jarbas"
 
 NAME = Configuration.get().get("server", {}).get("name", "JarbasServer")
 
 
-# TODO move into a sql db in some other code
 def root_dir():
     """ Returns root directory for this project """
     return os.path.dirname(os.path.realpath(__file__ + '/.'))
 
-with open("{}/database/users.json".format(root_dir()), "r") as f:
-    users = json.load(f)
+users = UserDatabase()
 
 
 # protocol
@@ -34,7 +32,8 @@ class JarbasServerProtocol(WebSocketServerProtocol):
         ip = request.peer.split(":")[1]
         context = {"source": self.peer}
         self.platform = request.headers.get("platform", "unknown")
-        if api not in users:
+        user = users.get_user_by_api_key(api)
+        if not user:
             logger.info("Client provided an invalid api key")
             self.factory.emitter_send("client.connection.error",
                                       {"error": "invalid api key",

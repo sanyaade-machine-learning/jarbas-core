@@ -18,11 +18,13 @@ some functions require an admin api key
     # get an api key string
     api = ap.get_api()
 
-    # add a new user with api=generated_key, id=0, name=test
-    print ap.new_user("new_key", "0", "test")
+    # add a new user
+    mail = "fakemail@jarbasai.com"
+    name = "anon"
+    print ap.new_user(api, mail, name)
 
     # revoke an api
-    print ap.revoke_api("new_key")
+    print ap.revoke_api(api)
 
 # Determining Intents
 
