@@ -386,7 +386,7 @@ function run_pip() {
     name=$*
     if [[ -f "requirements.txt" ]]; then
       echo "  Installing requirements..."
-      if [[ "${picroft_mk1}" == "false" ]] || [[ ${use_virtualenvwrapper} == "true" ]] ; then
+      if [[ "${picroft_mk1}" == "false" ]] && [[ ${use_virtualenvwrapper} == "true" ]] ; then
         if [[ "${VIRTUAL_ENV}" =~ .mycroft$ ]] ; then
           if ! pip install -r requirements.txt ; then
             echo "ERROR: Unable to install requirements for skill '${name}'"
