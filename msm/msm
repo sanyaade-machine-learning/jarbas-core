@@ -54,8 +54,8 @@ function help() {
 
 SOURCE="${BASH_SOURCE[0]}"
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-DIR="$DIR/.."
-SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
+PARENTDIR=$(dirname "$DIR")
+SYSTEM_CONFIG="$PARENTDIR/mycroft/configuration/mycroft.conf"
 
 function get_config_value() {
   key="$1"
@@ -63,14 +63,13 @@ function get_config_value() {
   value="null"
   for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
     if [[ -r $file ]] ; then
-        echo "$file"
-        # remove comments
+        # remove comments in config for jq to work
         # assume they may be preceded by whitespace, but nothing else
         parsed="$( sed 's:^\s*//.*$::g' $file )"
-        echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
-        value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
+        echo "$parsed" >> "$PARENTDIR/mycroft/configuration/sys.conf"
+        value=$( jq -r "$key" "$PARENTDIR/mycroft/configuration/sys.conf" )
         if [[ "${value}" != "null" ]] ;  then
-            #rm -rf $DIR/mycroft/configuration/sys.conf
+            rm -rf $PARENTDIR/mycroft/configuration/sys.conf
             echo "$value"
             return
         fi
@@ -90,7 +89,7 @@ if [[ "${mycroft_platform}" == "null" ]] ; then
    fi
 fi
 
-mycroft_skill_folder="$(get_config_value '.skills.directory' 'opt/mycroft/skills')"
+mycroft_skill_folder="$(get_config_value '.skills.directory' '/opt/mycroft/skills')"
 if [[ ! -d "${mycroft_skill_folder}" ]] ; then
   echo "ERROR: Unable to find/access ${mycroft_skill_folder}!"
   exit 101
@@ -99,7 +98,7 @@ fi
 # Determine if on picroft/mk1?
 picroft_mk1="false"
 vwrap="true"
-use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'false')"
+use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
 if [[ "${mycroft_platform}" == "picroft" ]] || [[ "${mycroft_platform}" == "mycroft_mark_1" ]] ; then
   picroft_mk1="true"
 else
@@ -387,28 +386,26 @@ function run_pip() {
     name=$*
     if [[ -f "requirements.txt" ]]; then
       echo "  Installing requirements..."
-      if [[ ${use_virtualenvwrapper} == "true" ]] ; then
-        if [[ "${picroft_mk1}" == "false" ]] ; then
-            if [[ "${VIRTUAL_ENV}" =~ .mycroft$ ]] ; then
-              if ! pip install -r requirements.txt ; then
-                echo "ERROR: Unable to install requirements for skill '${name}'"
-                send_install_fail "${name}" 121
-                return 121
-              fi
-            else
-              if workon mycroft ; then
-                if ! pip install -r requirements.txt ; then
-                  echo "ERROR: Unable to install requirements for skill '${name}'"
-                  deactivate mycroft
-                  send_install_fail "${name}" 121
-                  return 121
-                fi
-              else
-                echo "ERROR: Unable to activate 'mycroft' virtualenv, requirements not installed."
-                send_install_fail "${name}" 120
-                return 120
-              fi
+      if [[ "${picroft_mk1}" == "false" ]] || [[ ${use_virtualenvwrapper} == "true" ]] ; then
+        if [[ "${VIRTUAL_ENV}" =~ .mycroft$ ]] ; then
+          if ! pip install -r requirements.txt ; then
+            echo "ERROR: Unable to install requirements for skill '${name}'"
+            send_install_fail "${name}" 121
+            return 121
+          fi
+        else
+          if workon mycroft ; then
+            if ! pip install -r requirements.txt ; then
+              echo "ERROR: Unable to install requirements for skill '${name}'"
+              deactivate mycroft
+              send_install_fail "${name}" 121
+              return 121
             fi
+          else
+            echo "ERROR: Unable to activate 'mycroft' virtualenv, requirements not installed."
+            send_install_fail "${name}" 120
+            return 120
+          fi
         fi
       else
         if ! sudo pip install -r requirements.txt ; then

@@ -24,8 +24,7 @@ function get_config_value() {
   value="null"
   for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
     if [[ -r $file ]] ; then
-        echo "$file"
-        # remove comments
+        # remove comments in config for jq to work
         # assume they may be preceded by whitespace, but nothing else
         parsed="$( sed 's:^\s*//.*$::g' $file )"
         echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
@@ -40,7 +39,8 @@ function get_config_value() {
   echo "$default"
 }
 
-use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'false')"
+use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
+
 if [[ ${use_virtualenvwrapper} == "true" ]] ; then
     if [ -z "$WORKON_HOME" ]; then
         VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/mycroft"}

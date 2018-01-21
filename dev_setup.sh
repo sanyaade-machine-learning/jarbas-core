@@ -94,8 +94,7 @@ function get_config_value() {
   value="null"
   for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
     if [[ -r $file ]] ; then
-        echo "$file"
-        # remove comments
+        # remove comments in config for jq to work
         # assume they may be preceded by whitespace, but nothing else
         parsed="$( sed 's:^\s*//.*$::g' $file )"
         echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
@@ -120,13 +119,8 @@ if [[ "${mycroft_platform}" == "null" ]] ; then
    fi
 fi
 
-mycroft_skill_folder="$(get_config_value '.skills.directory' '/opt/mycroft/skills')"
-if [[ ! -d "${mycroft_skill_folder}" ]] ; then
-  echo "WARNING: Unable to find/access ${mycroft_skill_folder}! Creating it"
-  sudo mkdir -p ${mycroft_skill_folder}
-fi
 
-use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'false')"
+use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
 
 install_deps() {
     echo "Installing packages..."
@@ -205,6 +199,7 @@ if [[ ${use_virtualenvwrapper} == "true" ]] ; then
       virtualenv -p python2.7 "${VIRTUALENV_ROOT}"
     fi
     source "${VIRTUALENV_ROOT}/bin/activate"
+    cd "${TOP}"
     easy_install pip==7.1.2 # force version of pip
     pip install --upgrade virtualenv
 
@@ -227,7 +222,6 @@ else
     # no venv, use any pip version
     easy_install pip
 fi
-
 
 # install requirements (except pocketsphinx)
 # removing the pip2 explicit usage here for consistency with the above use.
