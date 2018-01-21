@@ -41,3 +41,4 @@ flask-sslify
 yagmail
 autobahn
 twisted
+sqlalchemy
