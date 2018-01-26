@@ -200,22 +200,22 @@ class IntentService(object):
         self.skills_map.pop(skill_id)
 
     def handle_skill_manifest(self, message):
-        self.emitter.emit(Message("mycroft.skills.manifest.response",
+        self.emitter.emit(message.reply("mycroft.skills.manifest.response",
                                   self.skills_map))
 
     def handle_intent_manifest(self, message):
-        self.emitter.emit(Message("mycroft.intent.manifest.response",
+        self.emitter.emit(message.reply("mycroft.intent.manifest.response",
                                   self.intent_map))
 
     def handle_vocab_manifest(self, message):
-        self.emitter.emit(Message("mycroft.vocab.manifest.response",
+        self.emitter.emit(message.reply("mycroft.vocab.manifest.response",
                                   self.vocab_map))
 
     def handle_intent_get(self, message):
         utterance = message.data.get("utterance", "")
         lang = message.data.get("lang", "en-us")
         intent = self.get_intent(utterance, lang)
-        self.emitter.emit(Message("mycroft.intent.response",
+        self.emitter.emit(message.reply("mycroft.intent.response",
                                   {"utterance": utterance,
                                    "intent_data": intent}))
 
