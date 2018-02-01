@@ -241,7 +241,7 @@ if __name__ == '__main__':
 
     # server
     config = Configuration.get().get("server", {})
-    host = config.get("host", "127.0.0.1")
+    host = config.get("host", "0.0.0.0")
     port = config.get("port", 5678)
     max_connections = config.get("max_connections", -1)
     adress = u"wss://" + unicode(host) + u":" + unicode(port)
