@@ -48,10 +48,12 @@ skills_config = Configuration.get().get("skills")
 BLACKLISTED_SKILLS = skills_config.get("blacklisted_skills", [])
 PRIORITY_SKILLS = skills_config.get("priority_skills", [])
 AUTO_UPDATE = skills_config.get("auto_update", False)
-SKILLS_DIR = skills_config.get("directory") or join(expanduser("~"),
-                                                    '.mycroft/skills')
+SKILLS_DIR = skills_config.get("directory") or '~/.mycroft/skills'
+if "~" in SKILLS_DIR:
+    SKILLS_DIR = expanduser(SKILLS_DIR)
 if not exists(SKILLS_DIR):
     makedirs(SKILLS_DIR)
+
 
 installer_config = Configuration.get().get("SkillInstallerSkill", {})
 MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH,
