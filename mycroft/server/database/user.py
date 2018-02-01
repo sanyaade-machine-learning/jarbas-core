@@ -20,7 +20,10 @@ class User(Base):
 class UserDatabase(object):
     def __init__(self, path=None, debug=False):
         if path is None:
-            path = Configuration.get().get("server", {}).get("sql_user_db", join("sqlite:///", dirname(__file__), "users.db"))
+            path = Configuration.get().get("server", {}).get("sql_user_db",
+                                                             "sqlite:///"
+                                                             + join(
+                                                                 dirname(__file__), "users.db"))
         self.db = create_engine(path)
         self.db.echo = debug
 
@@ -44,6 +47,13 @@ class UserDatabase(object):
 
     def change_api(self, user_name, new_key):
         user = self.get_user_by_name(user_name)
+        if not user:
+            return False
+        user.api_key = new_key
+        return self.commit()
+
+    def change_name(self, new_name, key):
+        user = self.get_user_by_api_key(key)
         if not user:
             return False
         user.api_key = new_key
@@ -75,8 +85,8 @@ class UserDatabase(object):
 if __name__ == "__main__":
     db = UserDatabase(debug=True)
     name = "jarbas"
-    mail = "jarbasai@mailfence.com"
-    api = "admin_key"
+    mail = "jarbasaai@mailfence.com"
+    api = "test_key"
     db.add_user(name, mail, api)
 
 

@@ -71,10 +71,15 @@ class RemiClient(App):
         super(RemiClient, self).__init__(*args)
 
     def main(self):
-        host = "104.236.133.170"
+        import base64
+        host = "127.0.0.1"
         port = 5678
+        name = "standalone cli client"
         api = "test_key"
-        headers = {'API': api}
+        authorization = name + ":" + api
+        usernamePasswordDecoded = authorization
+        api = base64.b64encode(usernamePasswordDecoded)
+        headers = {'authorization': api}
         adress = u"wss://" + host + u":" + str(port)
         factory = JarbasClientFactory(adress, headers=headers,
                                       useragent=platform)

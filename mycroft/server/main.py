@@ -26,10 +26,14 @@ users = UserDatabase()
 # protocol
 class JarbasServerProtocol(WebSocketServerProtocol):
     def onConnect(self, request):
+        import base64
         logger.info("Client connecting: {0}".format(request.peer))
         # validate user
-        api = request.headers.get("api")
-        ip = request.peer.split(":")[1]
+        usernamePasswordEncoded = request.headers.get("authorization")
+        usernamePasswordEncoded = usernamePasswordEncoded
+        usernamePasswordDecoded = base64.b64decode(usernamePasswordEncoded)
+        name, api = usernamePasswordDecoded.split(":")
+        ip = " " # request.peer.split(":")[1]
         context = {"source": self.peer}
         self.platform = request.headers.get("platform", "unknown")
         user = users.get_user_by_api_key(api)
@@ -71,7 +75,7 @@ class JarbasServerProtocol(WebSocketServerProtocol):
     def onClose(self, wasClean, code, reason):
         self.factory.unregister_client(self, reason=u"connection closed")
         logger.info("WebSocket connection closed: {0}".format(reason))
-        ip = self.peer.split(":")[1]
+        ip = " " # self.peer.split(":")[1]
         data = {"ip": ip, "code": code, "reason": "connection closed", "wasClean": wasClean}
         context = {"source": self.peer}
         self.factory.emitter_send("client.disconnect", data, context)
@@ -83,7 +87,7 @@ class JarbasServerProtocol(WebSocketServerProtocol):
        """
         self.factory.unregister_client(self, reason=u"connection lost")
         logger.info("WebSocket connection lost: {0}".format(reason))
-        ip = self.peer.split(":")[1]
+        ip = " " # self.peer.split(":")[1]
         data = {"ip": ip, "reason": "connection lost"}
         context = {"source": self.peer}
         self.factory.emitter_send("client.disconnect", data, context)
@@ -132,7 +136,7 @@ class JarbasServerFactory(WebSocketServerFactory):
        """
         platform = platform or "unknown"
         logger.info("registering client: " + str(client.peer))
-        t, ip, sock = client.peer.split(":")
+        t, ip, sock = " ", "", "" # client.peer.split(":")
         # see if ip adress is blacklisted
         if ip in self.ip_list and self.blacklist:
             logger.warning("Blacklisted ip tried to connect: " + ip)
@@ -154,7 +158,7 @@ class JarbasServerFactory(WebSocketServerFactory):
         logger.info("deregistering client: " + str(client.peer))
         if client.peer in self.clients.keys():
             client_data = self.clients[client.peer] or {}
-            j, ip, sock_num = client.peer.split(":")
+            j, ip, sock_num = " ", "", "" # client.peer.split(":")
             context = {"user": client_data.get("names", ["unknown_user"])[0],
                        "source": client.peer}
             self.emitter.emit(
@@ -170,7 +174,7 @@ class JarbasServerFactory(WebSocketServerFactory):
        """
         logger.info("processing message from client: " + str(client.peer))
         client_data = self.clients[client.peer]
-        client_protocol, ip, sock_num = client.peer.split(":")
+        #client_protocol, ip, sock_num = client.peer.split(":")
         # TODO this would be the place to check for blacklisted
         # messages/skills/intents per user
 
@@ -182,7 +186,8 @@ class JarbasServerFactory(WebSocketServerFactory):
             message = Message.deserialize(payload)
             message.context["source"] = client.peer
             message.context["destinatary"] = "skills"
-            message.context["platform"] = client_data.get("platform",
+            if "platform" not in message.context:
+                message.context["platform"] = client_data.get("platform",
                                                           "unknonw")
             # send client message to internal mycroft bus
             self.emitter.emit(message)

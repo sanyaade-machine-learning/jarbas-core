@@ -143,10 +143,16 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
 if __name__ == '__main__':
 
     config = Configuration.get().get("client", {})
-    host = config.get("host", "104.236.133.170")
+    host = config.get("host", "127.0.0.1")
     port = config.get("port", 5678)
     api = config.get("api", "test_key")
-    headers = {'API': api}
+    name = config.get("name", "jarbas client")
+    import base64
+    authorization = name + ":" + api
+    usernamePasswordDecoded = authorization
+    api = base64.b64encode(usernamePasswordDecoded)
+    headers = {'authorization': api}
+
     adress = u"wss://" + host + u":" + str(port)
     factory = JarbasClientFactory(adress, headers=headers,
                                   useragent="JarbasClientv0.1")
