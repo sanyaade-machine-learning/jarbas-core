@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Text, String, Integer, create_engine, Boolean
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
-from . import Base
+from mycroft.server.database import Base
+from mycroft.configuration.config import Configuration
 from os.path import dirname, join
 
 
@@ -17,7 +18,12 @@ class User(Base):
 
 
 class UserDatabase(object):
-    def __init__(self, path="sqlite:///database/users.db", debug=False):
+    def __init__(self, path=None, debug=False):
+        if path is None:
+            path = Configuration.get().get("server", {}).get("sql_user_db",
+                                                             "sqlite:///"
+                                                             + join(
+                                                                 dirname(__file__), "users.db"))
         self.db = create_engine(path)
         self.db.echo = debug
 
