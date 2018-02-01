@@ -388,14 +388,14 @@ function run_pip() {
       echo "  Installing requirements..."
       if [[ "${picroft_mk1}" == "false" ]] && [[ ${use_virtualenvwrapper} == "true" ]] ; then
         if [[ "${VIRTUAL_ENV}" =~ .mycroft$ ]] ; then
-          if ! pip install -r requirements.txt ; then
+          if ! pip2 install -r requirements.txt ; then
             echo "ERROR: Unable to install requirements for skill '${name}'"
             send_install_fail "${name}" 121
             return 121
           fi
         else
           if workon mycroft ; then
-            if ! pip install -r requirements.txt ; then
+            if ! pip2 install -r requirements.txt ; then
               echo "ERROR: Unable to install requirements for skill '${name}'"
               deactivate mycroft
               send_install_fail "${name}" 121
@@ -408,7 +408,7 @@ function run_pip() {
           fi
         fi
       else
-        if ! sudo pip install -r requirements.txt ; then
+        if ! sudo pip2 install -r requirements.txt ; then
           echo "ERROR: Unable to install requirements for '${name}', it may not work"
           send_install_fail "${name}" 121
           return 121
