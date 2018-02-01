@@ -50,11 +50,11 @@ if [[ ${use_virtualenvwrapper} == "true" ]] ; then
 
     source "${VIRTUALENV_ROOT}/bin/activate"
     easy_install pip==7.1.2
-    pip install --upgrade virtualenv
-    pip install -r requirements.txt
+    pip2 install --upgrade virtualenv
+    pip2 install -r requirements.txt
 else
     sudo easy_install pip
-    sudo pip install -r requirements.txt
+    sudo pip2 install -r requirements.txt
 fi
 
 
