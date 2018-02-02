@@ -86,7 +86,7 @@ if __name__ == "__main__":
     db = UserDatabase(debug=True)
     name = "jarbas"
     mail = "jarbasaai@mailfence.com"
-    api = "test_key"
-    db.add_user(name, mail, api)
+    api = "admin_key"
+    db.add_user(name, mail, api, admin=True)
 
 

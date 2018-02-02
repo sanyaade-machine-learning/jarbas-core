@@ -73,10 +73,10 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
 
 if __name__ == '__main__':
     import base64
-    host = "127.0.0.1"
+    host = "165.227.224.64"
     port = 5678
     name = "standalone cli client"
-    api ="test_key"
+    api ="test_key666"
     authorization = name+":"+api
     usernamePasswordDecoded = authorization
     api = base64.b64encode(usernamePasswordDecoded)
