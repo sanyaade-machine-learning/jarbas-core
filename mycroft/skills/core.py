@@ -42,7 +42,7 @@ from mycroft.dialog import get_all_vocab
 
 # python 2+3 compatibility
 from past.builtins import basestring
-import inspect
+
 MainModule = '__init__'
 
 
@@ -857,7 +857,11 @@ class MycroftSkill(object):
         self.emitter.emit(Message('register_vocab', {'regex': regex_str}))
 
     def get_message_context(self, message_context=None):
-        if message_context is None:
+        message = dig_for_message()
+        message_context = message_context or {}
+        if message:
+            message_context.merge(message.context)
+        if not message_context:
             message_context = {"destinatary": "all", "source": self.name,
                                "mute": False, "more_speech": False,
                                "target": "all"}
@@ -897,12 +901,8 @@ class MycroftSkill(object):
                 "mute": mute,
                 "more_speech": more_speech,
                 "metadata": metadata}
-        message = dig_for_message()
-        if message:
-            message = message.reply("speak", data, self.get_message_context(message_context))
-        else:
-            message = Message("speak", data, self.get_message_context(message_context))
-        self.emitter.emit(message)
+        self.emitter.emit(
+            Message("speak", data, self.get_message_context(message_context)))
 
     def speak_dialog(self, key, data=None, expect_response=False,
                      mute=False, more_speech=False, metadata=None,
