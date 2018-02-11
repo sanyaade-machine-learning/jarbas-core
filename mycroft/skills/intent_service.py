@@ -307,32 +307,43 @@ class IntentService(object):
             elif context_entity['data'][0][1] in self.context_keywords:
                 self.context_manager.inject_context(context_entity)
 
+    def get_message_context(self, context=None):
+        if context is None:
+            context = {}
+        # by default set destinatary of reply to source of this message
+        context["destinatary"] = context.get("source", "all")
+        context["mute"] = context.get("mute", False)
+        context["source"] = "skills"
+        return context
+
     def send_metrics(self, intent, context, stopwatch):
         """
             Send timing metrics to the backend.
         """
         LOG.debug('Sending metric')
-        ident = context['ident'] if context else None
+        ident = context.get('ident') if context else None
         if intent:
             # Recreate skill name from skill id
             parts = intent.get('intent_type', '').split(':')
             intent_type = self.get_skill_name(parts[0])
             if len(parts) > 1:
                 intent_type = ':'.join([intent_type] + parts[1:])
-            report_timing(ident, 'intent_service', stopwatch,
-                          {'intent_type': intent_type})
-        else:
-            report_timing(ident, 'intent_service', stopwatch,
-                          {'intent_type': 'intent_failure'})
 
     def handle_utterance(self, message):
         """
             Messagebus handler for the recognizer_loop:utterance message
         """
         try:
+            # Check if this message is for us
+            if message.context is None:
+                message.context = {}
+            destinatary = message.context.get("destinatary", "skills")
+            if destinatary != "skills" and destinatary != "all":
+                return
             # Get language of the utterance
             lang = message.data.get('lang', "en-us")
             utterances = message.data.get('utterances', '')
+            message.context = self.get_message_context(message.context)
 
             # Parse the sentence
             converse = self.parse_converse(utterances, lang)
@@ -340,15 +351,20 @@ class IntentService(object):
                 # no skill wants to handle utterance
                 intent = self.parse_utterances(utterances, lang)
 
-                if intent:
-                    # Send the message on to the intent handler
-                    reply = message.reply(intent.get('intent_type'), intent)
-                else:
-                    # or if no match send sentence to fallback system
-                    reply = message.reply('intent_failure',
-                                          {'utterance': utterances[0],
-                                           'lang': lang})
-                self.emitter.emit(reply)
+            if converse:
+                # Report that converse handled the intent and return
+                ident = message.context.get('ident') if message.context \
+                        else None
+                return
+            elif intent:
+                reply = message.reply(
+                    intent.get('intent_type'), intent)
+            else:
+                reply = message.reply("intent_failure", {
+                    "utterance": utterances[0],
+                    "lang": lang})
+            self.emitter.emit(reply)
+
         except Exception as e:
             LOG.exception(e)
 
