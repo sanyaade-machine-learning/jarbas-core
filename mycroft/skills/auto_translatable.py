@@ -1,4 +1,4 @@
-from mycroft.skills.core import MycroftSkill, FallbackSkill, Message
+from mycroft.skills.core import MycroftSkill, FallbackSkill, Message, dig_for_message
 from mtranslate import translate
 import unicodedata
 from langdetect import detect as language_detect
@@ -42,7 +42,13 @@ class AutotranslatableSkill(MycroftSkill):
                """
         # translate utterance for skills that generate speech at
         # runtime, or by request
-        message_context = message_context or self.message_context
+        message = dig_for_message()
+        message_context = message_context or self.message_context or {}
+        if message:
+            if message.context:
+                for key in message.context:
+                    message_context[key] = message.context[key]
+
         utterance_lang = self.language_detect(utterance)
         if "-" in utterance_lang:
             utterance_lang = utterance_lang.split("-")[0]
@@ -107,7 +113,13 @@ class AutotranslatableFallback(FallbackSkill):
                """
         # translate utterance for skills that generate speech at
         # runtime, or by request
-        message_context = message_context or self.message_context
+        message = dig_for_message()
+        message_context = message_context or self.message_context or {}
+        if message:
+            if message.context:
+                for key in message.context:
+                    message_context[key] = message.context[key]
+
         utterance_lang = language_detect(utterance)
         if "-" in utterance_lang:
             utterance_lang = utterance_lang.split("-")[0]
