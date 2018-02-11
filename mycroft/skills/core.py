@@ -860,7 +860,9 @@ class MycroftSkill(object):
         message = dig_for_message()
         message_context = message_context or {}
         if message:
-            message_context.merge(message.context)
+            if message.context:
+                for key in message.context:
+                    message_context[key] = message.context[key]
         if not message_context:
             message_context = {"destinatary": "all", "source": self.name,
                                "mute": False, "more_speech": False,
