@@ -441,7 +441,7 @@ class EnclosureReader(Thread):
                         {'length': 12000}))
             self.ws.emit(Message("enclosure.mouth.reset"))
             time.sleep(0.5)  # give the system time to pass the message
-            subprocess.call('systemctl poweroff -i', shell=True)
+            self.ws.emit(Message("system.shutdown"))
 
         if "unit.reboot" in data:
             # Eyes to soft gray on reboot
@@ -450,35 +450,35 @@ class EnclosureReader(Thread):
             self.ws.emit(Message("enclosure.eyes.spin"))
             self.ws.emit(Message("enclosure.mouth.reset"))
             time.sleep(0.5)  # give the system time to pass the message
-            subprocess.call('systemctl reboot -i', shell=True)
+            self.ws.emit(Message("system.reboot"))
 
         if "unit.setwifi" in data:
-            self.ws.emit(Message("mycroft.wifi.start", {'lang': self.lang}))
+            self.ws.emit(Message("system.wifi.setup", {'lang': self.lang}))
 
         if "unit.factory-reset" in data:
-            self.ws.emit(Message("enclosure.eyes.spin"))
+            self.ws.emit(Message("speak", {
+                'utterance': mycroft.dialog.get("reset to factory defaults")}))
             subprocess.call(
                 'rm ~/.mycroft/identity/identity2.json',
                 shell=True)
-            self.ws.emit(Message("mycroft.wifi.reset"))
-            self.ws.emit(Message("mycroft.disable.ssh"))
-            self.ws.emit(Message("speak", {
-                'utterance': mycroft.dialog.get("reset to factory defaults")}))
+            self.ws.emit(Message("system.wifi.reset"))
+            self.ws.emit(Message("system.ssh.disable"))
             wait_while_speaking()
             self.ws.emit(Message("enclosure.mouth.reset"))
             self.ws.emit(Message("enclosure.eyes.spin"))
             self.ws.emit(Message("enclosure.mouth.reset"))
-            subprocess.call('systemctl reboot -i', shell=True)
+            time.sleep(5)  # give the system time to process all messages
+            self.ws.emit(Message("system.reboot"))
 
         if "unit.enable-ssh" in data:
             # This is handled by the wifi client
-            self.ws.emit(Message("mycroft.enable.ssh"))
+            self.ws.emit(Message("system.ssh.enable"))
             self.ws.emit(Message("speak", {
                 'utterance': mycroft.dialog.get("ssh enabled")}))
 
         if "unit.disable-ssh" in data:
             # This is handled by the wifi client
-            self.ws.emit(Message("mycroft.disable.ssh"))
+            self.ws.emit(Message("system.ssh.disable"))
             self.ws.emit(Message("speak", {
                 'utterance': mycroft.dialog.get("ssh disabled")}))
 

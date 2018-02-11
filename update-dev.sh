@@ -49,7 +49,7 @@ if [[ ${use_virtualenvwrapper} == "true" ]] ; then
     fi
 
     source "${VIRTUALENV_ROOT}/bin/activate"
-    easy_install pip==7.1.2
+    easy_install pip==9.0.1
     pip2 install --upgrade virtualenv
     pip2 install -r requirements.txt
 else
