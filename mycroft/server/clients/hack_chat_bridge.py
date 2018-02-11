@@ -9,6 +9,7 @@ import sys
 from threading import Thread
 import hclib
 import logging
+from time import sleep
 
 logger = logging.getLogger("Standalone_Mycroft_Client")
 logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -42,7 +43,7 @@ class JarbasClientProtocol(WebSocketClientProtocol):
             # Sends a greeting the person joining the channel.
             #
             connector.send("Hello {}".format(user))
-        if data["type"] == "message":
+        elif data["type"] == "message":
             utterance = data["text"]
             msg = {"data": {"utterances": [utterance], "lang": "en-us"},
                    "type": "recognizer_loop:utterance",
@@ -51,6 +52,8 @@ class JarbasClientProtocol(WebSocketClientProtocol):
                                "hack_chat_nick": user, "user": user}}
             msg = json.dumps(msg)
             self.sendMessage(msg, False)
+        else:
+            print data
 
     def onConnect(self, response):
         logger.info("Server connected: {0}".format(response.peer))
@@ -64,7 +67,6 @@ class JarbasClientProtocol(WebSocketClientProtocol):
     def onMessage(self, payload, isBinary):
         if not isBinary:
             msg = json.loads(payload)
-            print msg
             user = msg.get("context", {}).get("hack_chat_nick", "")
             if user not in self.online_users:
                 logger.info("invalid hack chat user: " + user)
