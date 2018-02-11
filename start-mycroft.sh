@@ -94,7 +94,8 @@ function name-to-script-path() {
     "bus")             _script=${DIR}/mycroft/messagebus/service/main.py ;;
     "micro")           _script=${DIR}/mycroft/server/microservices/main.py ;;
     "skills")          _script=${DIR}/mycroft/skills/main.py ;;
-    "server")           _script=${DIR}/mycroft/server/main.py ;;
+    "hackchat")        _script=${DIR}/mycroft/server/clients/hack_chat_bridge.py ;;
+    "server")          _script=${DIR}/mycroft/server/main.py ;;
     "audio")           _script=${DIR}/mycroft/audio/main.py ;;
     "voice")           _script=${DIR}/mycroft/client/speech/main.py ;;
     "cli")             _script=${DIR}/mycroft/client/text/main.py ;;

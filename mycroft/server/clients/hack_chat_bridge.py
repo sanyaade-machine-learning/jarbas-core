@@ -5,15 +5,12 @@ from autobahn.twisted.websocket import WebSocketClientFactory, \
 from twisted.internet.protocol import ReconnectingClientFactory
 
 import json
-import sys
 from threading import Thread
 import hclib
-import logging
 from time import sleep
+import random
+from mycroft.util.log import LOG as logger
 
-logger = logging.getLogger("Standalone_Mycroft_Client")
-logger.addHandler(logging.StreamHandler(sys.stdout))
-logger.setLevel("INFO")
 
 platform = "JarbasHackChatClientv0.1"
 username = "Jarbas"
@@ -24,6 +21,39 @@ class JarbasClientProtocol(WebSocketClientProtocol):
     hackchat = None
     online_users = []
     connector = None
+    waiting_messages = []
+    extra_delay = 0
+    last_sent = ""
+
+    def send_queued_message(self):
+        while True:
+            if len(self.waiting_messages):
+                message = ""
+                for idx, utterance in enumerate(self.waiting_messages):
+                    if utterance:
+                        message += utterance + "\n"
+                    self.waiting_messages[idx] = ""
+                    if len(message) >= 180:
+                        words = message.split(" ")
+                        new = ""
+                        for idx, word in enumerate(words):
+                            if len(new) < 180:
+                                new += word + " "
+                                words[idx] = ""
+                        self.waiting_messages[idx] = " ".join(words)
+                        message = new
+                        break
+
+                if self.extra_delay:
+                    sleep(self.extra_delay)
+                logger.info("Sent: " + message)
+                self.connector.send(message)
+                self.last_sent = message
+                sleep(random.choice([1,1.2,1.5,1.7,2,2.2,3,2.6]))
+                self.waiting_messages = [ut for ut in self.waiting_messages
+                                         if ut]
+            else:
+                sleep(1)
 
     def start_hack_chat(self):
         self.hackchat = hclib.HackChat(self.on_hack_message, username,
@@ -34,17 +64,27 @@ class JarbasClientProtocol(WebSocketClientProtocol):
         # The second parameter (<data>) is the data received.
         self.connector = connector
         self.online_users = connector.onlineUsers
-        user = data["nick"]
-        if user == username:
+        user = data.get("nick", "")
+        if user and user == username:
             # dont answer self
             return
+        # Checks if we are being limited
+        if data["type"] == "warn":
+            logger.warning(data["warning"])
+            self.extra_delay = 5
+            # resend failed
+            self.waiting_messages.insert(0, self.last_sent)
         # Checks if someone joined the channel.
-        if data["type"] == "online add":
+        elif data["type"] == "online add":
             # Sends a greeting the person joining the channel.
             #
             connector.send("Hello {}".format(user))
         elif data["type"] == "message":
             utterance = data["text"]
+            if utterance == "stop":
+                self.waiting_messages = []
+                connector.send("ok, stopped")
+                return
             msg = {"data": {"utterances": [utterance], "lang": "en-us"},
                    "type": "recognizer_loop:utterance",
                    "context": {"source": self.peer, "destinatary":
@@ -64,6 +104,10 @@ class JarbasClientProtocol(WebSocketClientProtocol):
         self.chat_thread.setDaemon(True)
         self.chat_thread.start()
 
+        self.message_thread = Thread(target=self.send_queued_message)
+        self.message_thread.setDaemon(True)
+        self.message_thread.start()
+
     def onMessage(self, payload, isBinary):
         if not isBinary:
             msg = json.loads(payload)
@@ -76,18 +120,23 @@ class JarbasClientProtocol(WebSocketClientProtocol):
                 utterance = msg["data"]["utterance"]
             elif msg.get("type", "") == "server.complete_intent_failure":
                 utterance = "i can't answer that yet"
+
             if utterance:
                 utterance = "@{} , ".format(user) + utterance
-                logger.info("Sent: " + utterance)
-                self.connector.send(utterance)
+                self.waiting_messages.append(utterance)
+                logger.info("Queued: " + utterance)
         else:
             pass
 
     def onClose(self, wasClean, code, reason):
         logger.info("WebSocket connection closed: {0}".format(reason))
-        self.hackchat.leave()
-        self.input_loop.join()
+        if self.hackchat is not None:
+            self.hackchat.leave()
+        self.message_thread.join()
         self.chat_thread.join()
+        self.hackchat = None
+        self.online_users = []
+        self.connector = None
 
 
 class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
