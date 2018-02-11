@@ -42,8 +42,21 @@ from mycroft.dialog import get_all_vocab
 
 # python 2+3 compatibility
 from past.builtins import basestring
-
+import inspect
 MainModule = '__init__'
+
+
+def dig_for_message():
+    """
+        Dig Through the stack for message.
+    """
+    stack = inspect.stack()
+    # Limit search to 10 frames back
+    stack = stack if len(stack) < 10 else stack[:10]
+    local_vars = [frame[0].f_locals for frame in stack]
+    for l in local_vars:
+        if 'message' in l and isinstance(l['message'], Message):
+            return l['message']
 
 
 def load_vocab_from_file(path, vocab_type, emitter):
@@ -884,8 +897,12 @@ class MycroftSkill(object):
                 "mute": mute,
                 "more_speech": more_speech,
                 "metadata": metadata}
-        self.emitter.emit(
-            Message("speak", data, self.get_message_context(message_context)))
+        message = dig_for_message()
+        if message:
+            message = message.reply("speak", data, self.get_message_context(message_context))
+        else:
+            message = Message("speak", data, self.get_message_context(message_context))
+        self.emitter.emit(message)
 
     def speak_dialog(self, key, data=None, expect_response=False,
                      mute=False, more_speech=False, metadata=None,
