@@ -342,22 +342,16 @@ class IntentService(object):
                     # no skill wants to handle utterance
                     intent = self.parse_utterances(utterances, lang)
 
-            if converse:
-                # Report that converse handled the intent and return
-                ident = message.context['ident'] if message.context else None
-                report_timing(ident, 'intent_service', stopwatch,
-                              {'intent_type': 'converse'})
-                return
-            elif intent:
-                # Send the message on to the intent handler
-                reply = message.reply(intent.get('intent_type'), intent)
-            else:
-                # or if no match send sentence to fallback system
-                reply = message.reply('intent_failure',
-                                      {'utterance': utterances[0],
-                                       'lang': lang})
-            self.emitter.emit(reply)
-            self.send_metrics(intent, message.context, stopwatch)
+                    if intent:
+                        # Send the message on to the intent handler
+                        reply = message.reply(intent.get('intent_type'), intent)
+                    else:
+                        # or if no match send sentence to fallback system
+                        reply = message.reply('intent_failure',
+                                              {'utterance': utterances[0],
+                                               'lang': lang})
+                    self.emitter.emit(reply)
+                    self.send_metrics(intent, message.context, stopwatch)
         except Exception as e:
             LOG.exception(e)
 
