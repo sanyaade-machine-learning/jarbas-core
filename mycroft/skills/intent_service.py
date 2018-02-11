@@ -21,7 +21,7 @@ from mycroft.messagebus.message import Message
 from mycroft.skills.core import open_intent_envelope
 from mycroft.util.log import LOG
 from mycroft.util.parse import normalize
-from mycroft.metrics import report_timing, Stopwatch
+from mycroft.metrics import report_timing
 # python 2+3 compatibility
 from past.builtins import basestring
 from future.builtins import range
@@ -334,24 +334,21 @@ class IntentService(object):
             lang = message.data.get('lang', "en-us")
             utterances = message.data.get('utterances', '')
 
-            stopwatch = Stopwatch()
-            with stopwatch:
-                # Parse the sentence
-                converse = self.parse_converse(utterances, lang)
-                if not converse:
-                    # no skill wants to handle utterance
-                    intent = self.parse_utterances(utterances, lang)
+            # Parse the sentence
+            converse = self.parse_converse(utterances, lang)
+            if not converse:
+                # no skill wants to handle utterance
+                intent = self.parse_utterances(utterances, lang)
 
-                    if intent:
-                        # Send the message on to the intent handler
-                        reply = message.reply(intent.get('intent_type'), intent)
-                    else:
-                        # or if no match send sentence to fallback system
-                        reply = message.reply('intent_failure',
-                                              {'utterance': utterances[0],
-                                               'lang': lang})
-                    self.emitter.emit(reply)
-                    self.send_metrics(intent, message.context, stopwatch)
+                if intent:
+                    # Send the message on to the intent handler
+                    reply = message.reply(intent.get('intent_type'), intent)
+                else:
+                    # or if no match send sentence to fallback system
+                    reply = message.reply('intent_failure',
+                                          {'utterance': utterances[0],
+                                           'lang': lang})
+                self.emitter.emit(reply)
         except Exception as e:
             LOG.exception(e)
 
