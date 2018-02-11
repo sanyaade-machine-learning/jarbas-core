@@ -20,6 +20,10 @@ from mycroft.util.log import LOG
 from mycroft.util.setup_base import get_version
 
 
+def report_timing(name, data):
+    pass
+
+
 def report_metric(name, data):
     """
     Report a general metric to the Mycroft servers
