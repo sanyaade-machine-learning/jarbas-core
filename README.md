@@ -55,6 +55,8 @@ turn anything with an internet connection into a [mycroft endpoint](https://gith
 - theres a standalone [voice input client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/server/clients/standalone_voice_client.py)
 - standalone/web [remi client](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/server/clients/standalone_remi_client.py) (webpage)
 - [local remi](https://github.com/JarbasAl/jarbas-core/blob/server/mycroft/client/remi/main.py) client (connects to a local instance)
+- [hack chat bridge]() , this connects mycroft server to [hackchat](https://hack.chat/?JarbasAI)
+
 
 # new bus messages
 

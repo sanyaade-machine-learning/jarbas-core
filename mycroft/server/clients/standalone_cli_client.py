@@ -34,6 +34,8 @@ class JarbasClientProtocol(WebSocketClientProtocol):
             if msg.get("type", "") == "speak":
                 utterance = msg["data"]["utterance"]
                 logger.info("Output: " + utterance)
+            if msg.get("type", "") == "server.complete_intent_failure":
+                logger.error("Output: complete_intent_failure")
         else:
             pass
 
@@ -76,7 +78,7 @@ if __name__ == '__main__':
     host = "165.227.224.64"
     port = 5678
     name = "standalone cli client"
-    api ="test_key666"
+    api ="test_key"
     authorization = name+":"+api
     usernamePasswordDecoded = authorization
     api = base64.b64encode(usernamePasswordDecoded)

@@ -15,6 +15,8 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel("INFO")
 
 platform = "JarbasHackChatClientv0.1"
+username = "Jarbas"
+hack_chat_channel = "JarbasAI"
 
 
 class JarbasClientProtocol(WebSocketClientProtocol):
@@ -23,22 +25,25 @@ class JarbasClientProtocol(WebSocketClientProtocol):
     connector = None
 
     def start_hack_chat(self):
-        self.hackchat = hclib.HackChat(self.on_hack_message, "Jarbas",
-                                       "Jarbasai")
+        self.hackchat = hclib.HackChat(self.on_hack_message, username,
+                                       hack_chat_channel)
 
     # Make a callback function with two parameters.
     def on_hack_message(self, connector, data):
         # The second parameter (<data>) is the data received.
         self.connector = connector
         self.online_users = connector.onlineUsers
+        user = data["nick"]
+        if user == username:
+            # dont answer self
+            return
         # Checks if someone joined the channel.
         if data["type"] == "online add":
             # Sends a greeting the person joining the channel.
             #
-            connector.send("Hello {}".format(data["nick"]))
+            connector.send("Hello {}".format(user))
         if data["type"] == "message":
             utterance = data["text"]
-            user = data["nick"]
             msg = {"data": {"utterances": [utterance], "lang": "en-us"},
                    "type": "recognizer_loop:utterance",
                    "context": {"source": self.peer, "destinatary":
@@ -67,7 +72,7 @@ class JarbasClientProtocol(WebSocketClientProtocol):
             utterance = ""
             if msg.get("type", "") == "speak":
                 utterance = msg["data"]["utterance"]
-            elif msg.get("type", "") == "complete_intent_failure":
+            elif msg.get("type", "") == "server.complete_intent_failure":
                 utterance = "i can't answer that yet"
             if utterance:
                 utterance = "@{} , ".format(user) + utterance
