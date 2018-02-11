@@ -39,7 +39,7 @@ from mycroft.skills.settings import SkillSettings
 from mycroft.util import get_language_dir
 from mycroft.util.log import LOG
 from mycroft.dialog import get_all_vocab
-
+import inspect
 # python 2+3 compatibility
 from past.builtins import basestring
 
