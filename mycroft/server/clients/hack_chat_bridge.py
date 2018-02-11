@@ -40,7 +40,8 @@ class JarbasClientProtocol(WebSocketClientProtocol):
                             if len(new) < 180:
                                 new += word + " "
                                 words[idx] = ""
-                        self.waiting_messages[idx] = " ".join(words)
+                        words = [w for w in words if w]
+                        self.waiting_messages.insert(0, " ".join(words))
                         message = new
                         break
 
