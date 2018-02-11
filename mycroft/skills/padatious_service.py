@@ -113,5 +113,5 @@ class PadatiousService(FallbackSkill):
 
         self.service.add_active_skill(int(data.name.split(':')[0]))
 
-        self.emitter.emit(Message(data.name, data=data.matches))
+        self.emitter.emit(message.reply(data.name, data=data.matches))
         return True
