@@ -1250,7 +1250,7 @@ class FallbackSkill(MycroftSkill):
             else:
                 success = priority_handler(message)
             if not success:
-                ws.emit(Message('complete_intent_failure'))
+                ws.emit(message.reply('complete_intent_failure'))
                 LOG.warning('No fallback could handle intent.')
                 #  indicate completion with exception
                 ws.emit(Message('mycroft.skill.handler.complete',
