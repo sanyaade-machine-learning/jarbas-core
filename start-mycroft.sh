@@ -166,6 +166,7 @@ case ${_opt} in
     launch-background micro
     launch-background skills
     launch-background server
+    launch-background hack
     ;;
 
   "server")
@@ -181,6 +182,11 @@ case ${_opt} in
   "skills")
     launch-process ${_opt}
     ;;
+
+  "hack")
+    launch-process ${_opt}
+    ;;
+
 
   "cli")
     launch-process ${_opt}
