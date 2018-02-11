@@ -7,6 +7,7 @@ from twisted.internet.protocol import ReconnectingClientFactory
 import json
 from threading import Thread
 import hclib
+import sys
 from time import sleep
 import random
 from mycroft.util.log import LOG as logger
@@ -138,6 +139,7 @@ class JarbasClientProtocol(WebSocketClientProtocol):
         self.hackchat = None
         self.online_users = []
         self.connector = None
+        sys.exit()
 
 
 class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
