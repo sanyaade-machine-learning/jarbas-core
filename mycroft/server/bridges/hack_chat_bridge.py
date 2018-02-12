@@ -91,7 +91,8 @@ class JarbasClientProtocol(WebSocketClientProtocol):
                    "type": "recognizer_loop:utterance",
                    "context": {"source": self.peer, "destinatary":
                        "https_server", "platform": platform,
-                               "hack_chat_nick": user, "user": user}}
+                               "hack_chat_nick": user, "user": user,
+                               "target": "hackchat"}}
             msg = json.dumps(msg)
             self.sendMessage(msg, False)
         else:

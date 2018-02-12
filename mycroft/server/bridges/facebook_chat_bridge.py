@@ -37,7 +37,8 @@ class EchoBot(Client):
                    "type": "recognizer_loop:utterance",
                    "context": {"source": self.protocol.peer, "destinatary":
                        "https_server", "platform": platform, "user":
-                       author_id, "fb_chat_id": author_id}}
+                       author_id, "fb_chat_id": author_id, "target":
+                       "fbchat"}}
             msg = json.dumps(msg)
             self.protocol.clients[author_id] = {"type": thread_type}
             self.protocol.sendMessage(msg, False)
