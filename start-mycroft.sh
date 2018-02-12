@@ -94,7 +94,8 @@ function name-to-script-path() {
     "bus")             _script=${DIR}/mycroft/messagebus/service/main.py ;;
     "micro")           _script=${DIR}/mycroft/server/microservices/main.py ;;
     "skills")          _script=${DIR}/mycroft/skills/main.py ;;
-    "hack")        _script=${DIR}/mycroft/server/clients/hack_chat_bridge.py ;;
+    "hack")        _script=${DIR}/mycroft/server/bridges/hack_chat_bridge.py ;;
+    "fb")        _script=${DIR}/mycroft/server/bridges/facebook_chat_bridge.py ;;
     "server")          _script=${DIR}/mycroft/server/main.py ;;
     "audio")           _script=${DIR}/mycroft/audio/main.py ;;
     "voice")           _script=${DIR}/mycroft/client/speech/main.py ;;
@@ -167,10 +168,15 @@ case ${_opt} in
     launch-background skills
     launch-background server
     launch-background hack
+    launch-background fb
     ;;
 
   "server")
     launch-process server
+    ;;
+
+  "fb")
+    launch-process fb
     ;;
 
   "bus")
