@@ -138,6 +138,22 @@ class MycroftSTT(STT):
             return self.api.stt(audio.get_flac_data(), self.lang, 1)[0]
 
 
+class DeepSpeechServerSTT(STT):
+    """
+        STT interface for the deepspeech-server:
+        https://github.com/MainRo/deepspeech-server
+    """
+    def __init__(self):
+        super(DeepSpeechServerSTT, self).__init__()
+
+    def execute(self, audio, language=None):
+        language = language or self.lang
+        if not language.startswith("en"):
+            raise ValueError("Deepspeech is currently english only")
+        response = post(self.config.get("uri"), data=audio.get_wav_data())
+        return response.text
+
+
 class KaldiSTT(STT):
     def __init__(self):
         super(KaldiSTT, self).__init__()
@@ -201,7 +217,8 @@ class STTFactory(object):
         "kaldi": KaldiSTT,
         "pocketsphinx": PocketSphinxSTT,
         "houndify": HoundifySTT,
-        "bing": BingSTT
+        "bing": BingSTT,
+        "deepspeech_server": DeepSpeechServerSTT
     }
 
     @staticmethod

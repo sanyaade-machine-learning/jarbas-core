@@ -359,13 +359,6 @@ function install() {
       fi
     fi
 
-    # If the skill has a requirements.txt, pip install them
-    run_pip "${name}"
-    rc=$?
-    if [[ ${rc} -gt 0 ]] ; then
-       return ${rc}
-    fi
-
     # If the skill has a requirements.sh, then run that using bash
     if [[ -f "requirements.sh" ]]; then
       echo "  Setting up native environment..."
@@ -374,6 +367,13 @@ function install() {
         send_install_fail "${name}" 122
         return 122
       fi
+    fi
+
+    # If the skill has a requirements.txt, pip install them
+    run_pip "${name}"
+    rc=$?
+    if [[ ${rc} -gt 0 ]] ; then
+       return ${rc}
     fi
 
     echo "Installed: ${name}"
@@ -441,6 +441,7 @@ function install_from_url_list() {
           exit_code=${rc}
         fi
       fi
+      echo ${name} >> ${mycroft_skill_folder}/.msm.tmp
     fi
   done
 
@@ -494,6 +495,7 @@ function update() {
         git fetch
         git reset --hard origin/master
         rm -f *.pyc
+        run_pip "${d}"
       else
         echo "Ignoring ${d}, skill has been modified."
       fi
@@ -546,7 +548,7 @@ function print_info() {
         if [[ "${skill}" ==  *$'\n'* ]]; then
             # The str matches multiple skill repos, don't install
             # due to ambiguity.
-            echo "Multiple matches for '${str}', be more specfic."
+            echo "Multiple matches for '${str}', be more specific."
             echo "------------------------------------------------------------"
             echo "$skill" | sed 's/.*://g' | sort
             echo "------------------------------------------------------------"
@@ -703,6 +705,9 @@ case ${OPT} in
          exit ${exit_code}
       fi
 
+      # Create .msm file to provide timestamp for last msm default
+      rm ${mycroft_skill_folder}/.msm
+      printf "" > ${mycroft_skill_folder}/.msm.tmp
       # These skills are automatically installed on all mycroft-core
       # installations.
       install_from_url_list "https://raw.githubusercontent.com/MycroftAI/mycroft-skills/master/DEFAULT-SKILLS"
@@ -722,6 +727,7 @@ case ${OPT} in
          send_end_update
          exit_code=$?
       fi
+      mv ${mycroft_skill_folder}/.msm.tmp ${mycroft_skill_folder}/.msm
    ;;
   "search")
       if [[ $# -gt 0 ]] ; then
