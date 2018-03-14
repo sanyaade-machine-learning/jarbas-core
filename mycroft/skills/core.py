@@ -31,6 +31,7 @@ from os.path import join, abspath, dirname, splitext, basename, exists, \
     realpath
 from threading import Event
 
+from mycroft import dialog
 from mycroft.api import DeviceApi
 from mycroft.client.enclosure.api import EnclosureAPI
 from mycroft.configuration import Configuration
@@ -275,14 +276,14 @@ class MycroftSkill(object):
             self.emitter = emitter
             self.enclosure = EnclosureAPI(emitter, self.name)
             self.__register_stop()
-            self.emitter.on('enable_intent', self.handle_enable_intent)
-            self.emitter.on('disable_intent', self.handle_disable_intent)
+            self.add_event('enable_intent', self.handle_enable_intent)
+            self.add_event('disable_intent', self.handle_disable_intent)
 
     def __register_stop(self):
         self.stop_time = time.time()
         self.stop_threshold = self.config_core.get("skills").get(
             'stop_threshold')
-        self.add_event('mycroft.stop', self.__handle_stop, False)
+        self.add_event('mycroft.stop', self.__handle_stop)
 
     def detach(self):
         for (name, intent) in self.registered_intents:
@@ -586,75 +587,48 @@ class MycroftSkill(object):
             text = f.read().replace('{{', '{').replace('}}', '}')
             return text.format(**data or {}).split('\n')
 
-    def add_event(self, name, handler, need_self=False,
-                  handler_info=None, once=False):
+    def add_event(self, name, handler, handler_info=None, once=False):
         """
             Create event handler for executing intent
 
             Args:
                 name:           IntentParser name
                 handler:        method to call
-                need_self:      optional parameter, when called from a
-                                decorated intent handler the function will
-                                need the self variable passed as well.
-                once:           optional parameter, Event handler will be
-                                removed after it has been run once.
                 handler_info:   base message when reporting skill event handler
                                 status on messagebus.
+                once:           optional parameter, Event handler will be
+                                removed after it has been run once.
         """
 
         def wrapper(message):
-            data = {'name': get_handler_name(handler)}
+            skill_data = {'name': get_handler_name(handler)}
+            stopwatch = Stopwatch()
             try:
+                message = unmunge_message(message, self.skill_id)
+                # Indicate that the skill handler is starting
                 if handler_info:
                     # Indicate that the skill handler is starting if requested
                     msg_type = handler_info + '.start'
-                    self.emitter.emit(Message(msg_type, data,
-                                              context=message.context))
+                    self.emitter.emit(message.reply(msg_type, skill_data))
 
-                stopwatch = Stopwatch()
                 with stopwatch:
-                    if need_self:
-                        # When registring from decorator self is required
-                        if len(getargspec(handler).args) == 2:
-                            handler(self, unmunge_message(message,
-                                                          self.skill_id))
-                        elif len(getargspec(handler).args) == 1:
-                            handler(self)
-                        elif len(getargspec(handler).args) == 0:
-                            # Zero may indicate multiple decorators, trying the
-                            # usual call signatures
-                            try:
-                                handler(self, unmunge_message(message,
-                                                              self.skill_id))
-                            except TypeError:
-                                handler(self)
-                        else:
-                            LOG.error("Unexpected argument count:" +
-                                      str(len(getargspec(handler).args)))
-                            raise TypeError
+                    is_bound = bool(getattr(handler, 'im_self', None))
+                    num_args = len(getargspec(handler).args) - is_bound
+                    if num_args == 0:
+                        handler()
                     else:
-                        if len(getargspec(handler).args) == 2:
-                            handler(unmunge_message(message, self.skill_id))
-                        elif len(getargspec(handler).args) == 1:
-                            handler()
-                        else:
-                            LOG.error("Unexpected argument count:" +
-                                      str(len(getargspec(handler).args)))
-                            raise TypeError
+                        handler(message)
                     self.settings.store()  # Store settings if they've changed
 
             except Exception as e:
                 # Convert "MyFancySkill" to "My Fancy Skill" for speaking
-                handler_name = re.sub("([a-z])([A-Z])", "\g<1> \g<2>",
-                                      self.name)
-                # TODO: Localize
-                self.speak("An error occurred while processing a request in " +
-                           handler_name)
-                LOG.error("An error occurred while processing a request in " +
-                          self.name, exc_info=True)
+                handler_name = re.sub(r"([a-z])([A-Z])", r"\1 \2", self.name)
+                msg_data = {'skill': handler_name}
+                msg = dialog.get('skill.error', self.lang, msg_data)
+                self.speak(msg)
+                LOG.exception(msg)
                 # append exception information in message
-                data['exception'] = e.message
+                skill_data['exception'] = e.message
             finally:
                 if once:
                     self.remove_event(name)
@@ -662,8 +636,11 @@ class MycroftSkill(object):
                 # Indicate that the skill handler has completed
                 if handler_info:
                     msg_type = handler_info + '.complete'
-                    self.emitter.emit(Message(msg_type, data,
-                                  context=message.context))
+                    self.emitter.emit(message.reply(msg_type, skill_data))
+#    except HTTPError as e:
+    #        LOG.error("HTTPError fetching remote configuration: %s" %
+    #                  e.response.status_code)
+    #        self.load_local(cache)
 
                 # Send timing metrics
                 context = message.context
@@ -726,8 +703,7 @@ class MycroftSkill(object):
         munge_intent_parser(intent_parser, name, self.skill_id)
         self.emitter.emit(Message("register_intent", intent_parser.__dict__))
         self.registered_intents.append((name, intent_parser))
-        self.add_event(intent_parser.name, handler, need_self,
-                       'mycroft.skill.handler')
+        self.add_event(intent_parser.name, handler, 'mycroft.skill.handler')
 
     def register_intent_file(self, intent_file, handler, need_self=False):
         """
@@ -761,7 +737,7 @@ class MycroftSkill(object):
             "file_name": join(self.vocab_dir, intent_file),
             "name": name
         }))
-        self.add_event(name, handler, need_self, 'mycroft.skill.handler')
+        self.add_event(name, handler, 'mycroft.skill.handler')
 
     def register_entity_file(self, entity_file):
         """
@@ -790,35 +766,66 @@ class MycroftSkill(object):
         }))
 
     def handle_enable_intent(self, message):
+        """
+        Listener to enable a registered intent if it belongs to this skill
+        """
         intent_name = message.data["intent_name"]
-        self.enable_intent(intent_name)
+        for (name, intent) in self.registered_intents:
+            if name == intent_name:
+                return self.enable_intent(intent_name)
 
     def handle_disable_intent(self, message):
+        """
+        Listener to disable a registered intent if it belongs to this skill
+        """
         intent_name = message.data["intent_name"]
-        self.disable_intent(intent_name)
+        for (name, intent) in self.registered_intents:
+            if name == intent_name:
+                return self.disable_intent(intent_name)
 
     def disable_intent(self, intent_name):
-        """Disable a registered intent"""
-        for (name, intent) in self.registered_intents:
-            if name == intent_name:
-                LOG.debug('Disabling intent ' + intent_name)
-                name = str(self.skill_id) + ':' + intent_name
-                self.emitter.emit(
-                    Message("detach_intent", {"intent_name": name}))
-                break
+        """
+        Disable a registered intent if it belongs to this skill
+
+        Args:
+                intent_name: name of the intent to be disabled
+
+        Returns:
+                bool: True if disabled, False if it wasn't registered
+        """
+        names = [intent_tuple[0] for intent_tuple in self.registered_intents]
+        if intent_name in names:
+            LOG.debug('Disabling intent ' + intent_name)
+            name = str(self.skill_id) + ':' + intent_name
+            self.emitter.emit(
+                Message("detach_intent", {"intent_name": name}))
+            return True
+        LOG.error('Could not disable ' + intent_name +
+                  ', it hasn\'t been registered.')
+        return False
 
     def enable_intent(self, intent_name):
-        """Reenable a registered intent"""
-        for (name, intent) in self.registered_intents:
-            if name == intent_name:
-                self.registered_intents.remove((name, intent))
-                intent.name = name
-                self.register_intent(intent, None)
-                LOG.debug('Enabling intent ' + intent_name)
-                return
+        """
+        (Re)Enable a registered intentif it belongs to this skill
 
-    def handle_update_message_context(self, message):
-        self.message_context = self.get_message_context(message.context)
+        Args:
+                intent_name: name of the intent to be enabled
+
+        Returns:
+                bool: True if enabled, False if it wasn't registered
+        """
+        names = [intent[0] for intent in self.registered_intents]
+        intents = [intent[1] for intent in self.registered_intents]
+        if intent_name in names:
+            intent = intents[names.index( intent_name)]
+            self.registered_intents.remove((intent_name, intent))
+            intent.name = intent_name
+            self.register_intent(intent, None)
+            LOG.debug('Enabling intent ' + intent_name)
+            return True
+        LOG.error('Could not enable ' + intent_name + ', it hasn\'t been '
+                                                      'registered.')
+        return False
 
     def set_context(self, context, word=''):
         """
@@ -996,7 +1003,7 @@ class MycroftSkill(object):
         # removing events
         for e, f in self.events:
             self.emitter.remove(e, f)
-        self.events = None  # Remove reference to wrappers
+        self.events = []  # Remove reference to wrappers
 
         self.emitter.emit(
             Message("detach_skill", {"skill_id": str(self.skill_id) + ":"}))
