@@ -77,8 +77,6 @@ def get_services(services_folder):
                     continue
                 try:
                     services.append(create_service_descriptor(name))
-                except (KeyboardInterrupt, SystemExit):
-                    raise
                 except Exception:
                     LOG.error('Failed to create service from ' + name,
                               exc_info=True)
@@ -87,8 +85,6 @@ def get_services(services_folder):
             continue
         try:
             services.append(create_service_descriptor(location))
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception:
             LOG.error('Failed to create service from ' + name,
                       exc_info=True)
@@ -116,18 +112,16 @@ def load_services(config, ws, path=None):
         try:
             service_module = imp.load_module(descriptor["name"] + MAINMODULE,
                                              *descriptor["info"])
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception:
             LOG.error('Failed to import module ' + descriptor['name'],
                       exc_info=True)
+            continue
+
         if (hasattr(service_module, 'autodetect') and
                 callable(service_module.autodetect)):
             try:
                 s = service_module.autodetect(config, ws)
                 service += s
-            except (KeyboardInterrupt, SystemExit):
-                raise
             except Exception:
                 LOG.error('Failed to autodetect...',
                           exc_info=True)
@@ -135,8 +129,6 @@ def load_services(config, ws, path=None):
             try:
                 s = service_module.load_service(config, ws)
                 service += s
-            except (KeyboardInterrupt, SystemExit):
-                raise
             except Exception:
                 LOG.error('Failed to load service...',
                           exc_info=True)
@@ -290,8 +282,6 @@ class AudioService(object):
         try:
             if self.pulse_quiet:
                 self.pulse_quiet()
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception as exc:
             LOG.error(exc)
 
@@ -474,8 +464,6 @@ def main():
             if 'mycroft.audio.service' not in _message.get('type'):
                 return
             message = json.dumps(_message)
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception as e:
             LOG.exception(e)
         LOG.debug(message)
