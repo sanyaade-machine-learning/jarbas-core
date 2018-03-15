@@ -478,9 +478,9 @@ class MycroftSkill(object):
         """
         global _intent_list, _intent_file_list
         for intent_parser, handler in _intent_list:
-            self.register_intent(intent_parser, handler, need_self=True)
+            self.register_intent(intent_parser, handler)
         for intent_file, handler in _intent_file_list:
-            self.register_intent_file(intent_file, handler, need_self=True)
+            self.register_intent_file(intent_file, handler)
         _intent_list = []
         _intent_file_list = []
 
@@ -637,12 +637,7 @@ class MycroftSkill(object):
                 if handler_info:
                     msg_type = handler_info + '.complete'
                     self.emitter.emit(message.reply(msg_type, skill_data))
-#    except HTTPError as e:
-    #        LOG.error("HTTPError fetching remote configuration: %s" %
-    #                  e.response.status_code)
-    #        self.load_local(cache)
 
-                # Send timing metrics
                 context = message.context
                 if context and 'ident' in context:
                     report_timing(context['ident'], 'skill_handler', stopwatch,
@@ -655,7 +650,10 @@ class MycroftSkill(object):
             else:
                 self.emitter.on(name, wrapper)
                 self.emitter.on(name, self.handle_update_message_context)
-            self.events.append((name, wrapper))
+
+    def handle_update_message_context(self, message):
+        self.message_context = message.reply(message.type,{},
+            context=self.message_context).context
 
     def remove_event(self, name):
         """
@@ -1192,21 +1190,13 @@ class FallbackSkill(MycroftSkill):
                         LOG.info("Trying ordered fallback: " + folder)
                         handler = cls.folders[f]
                         try:
-                            handler.__self__.handle_update_message_context(
-                                message)
                             if handler(message):
-                                try:
-                                    message_context = \
-                                    handler.__self__.message_context
-                                except:
-                                    message_context = cls.context
                                 #  indicate completion
-                                ws.emit(Message(
+                                ws.emit(message.reply(
                                     'mycroft.skill.handler.complete',
                                     data={'handler': "fallback",
                                           "fallback_handler": get_handler_name(
-                                              handler)},
-                                    context=message_context))
+                                              handler)}))
                                 handler.__self__.make_active()
                                 return True
                         except Exception as e:
@@ -1220,20 +1210,13 @@ class FallbackSkill(MycroftSkill):
                          folder)
                 handler = cls.folders[folder]
                 try:
-                    handler.__self__.handle_update_message_context(message)
                     if handler(message):
-                        try:
-                            message_context = \
-                                handler.__self__.message_context
-                        except:
-                            message_context = cls.context
                         #  indicate completion
-                        ws.emit(Message(
+                        ws.emit(message.reply(
                             'mycroft.skill.handler.complete',
                             data={'handler': "fallback",
                                   "fallback_handler": get_handler_name(
-                                      handler)},
-                            context=message_context))
+                                      handler)}))
                         handler.__self__.make_active()
                         cls.context = message.context
                         return True
@@ -1318,7 +1301,8 @@ class FallbackSkill(MycroftSkill):
         cls.fallback_handlers[priority] = handler
 
         # folder name
-        if skill_folder:
+        if skill_folder is None:
+            skill_folder = handler.__self__._dir
             skill_folder = skill_folder.split("/")[-1]
             cls.folders[skill_folder] = handler
         else:
@@ -1331,11 +1315,7 @@ class FallbackSkill(MycroftSkill):
         """
 
         self.instance_fallback_handlers.append(handler)
-        # folder path
-        skill_folder = self._dir  # skill
-        if not skill_folder:
-            raise EnvironmentError("could not get skill dir")
-        self._register_fallback(handler, priority, skill_folder)
+        self._register_fallback(handler, priority)
 
     @classmethod
     def remove_fallback(cls, handler_to_del):

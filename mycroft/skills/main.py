@@ -84,7 +84,7 @@ def direct_update_needed():
         for d in default_skills:
             if d not in skills:
                 LOG.info('{} has been removed, direct update needed'.format(d))
-                return True
+                return skills_config.get("auto_update", False)
     return False
 
 
@@ -435,7 +435,7 @@ class SkillManager(Thread):
         # occur before MSM has run)
         self.load_skill_list(PRIORITY_SKILLS)
         self._loaded_priority.set()
-
+        first_load = True
         # Scan the file folder that contains Skills.  If a Skill is updated,
         # unload the existing version from memory and reload from the disk.
         while not self._stop_event.is_set():
@@ -458,6 +458,11 @@ class SkillManager(Thread):
 
                 for skill_folder in list:
                     self._load_or_reload_skill(skill_folder)
+                if first_load:
+                    self.ws.emit(Message("mycroft.skills.initialized",
+                                     {"number": len(list)}))
+                    first_load = False
+
 
             # remember the date of the last modified skill
             modified_dates = map(lambda x: x.get("last_modified"),

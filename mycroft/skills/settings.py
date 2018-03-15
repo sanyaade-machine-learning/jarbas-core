@@ -121,6 +121,7 @@ class SkillSettings(dict):
         # different scenarios that may arises with settingsmeta
         self.load_skill_settings_from_file()  # loads existing settings.json
         settings_meta = self._load_settings_meta()
+        return
         if not settings_meta:
             return
 
