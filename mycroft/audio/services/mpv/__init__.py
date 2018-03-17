@@ -23,6 +23,8 @@ class MPVService(AudioBackend):
         self.player = MPV(ytdl=True)
         self.player._set_property('video', 'no')
         self.name = name
+        self.tracks = []
+        self.index = 0
 
     def track_start(self, data, other):
         if self._track_start_callback:
@@ -32,37 +34,44 @@ class MPVService(AudioBackend):
         return ['file', 'http', 'https']
 
     def clear_list(self):
-        self.player.playlist_clear()
+        self.tracks = []
 
     def add_list(self, tracks):
-        for track in tracks:
-            self.player.playlist_append(track)
+        self.tracks += tracks
+        LOG.info("Track list is " + str(self.tracks))
 
     def play(self):
         LOG.info('MpvService Play')
-        filename = self.player.playlist_filenames[0]
-        self.player.playlist_remove(0)
-        self.player.loadfile(filename, 'append-play')
+        if len(self.tracks):
+            self.player.stop()
+            self.player.play(self.tracks[self.index])
 
     def stop(self):
         LOG.info('MpvService Stop')
         self.clear_list()
-        self.player.quit()
-        self.player.terminate()
+        self.player.command("stop")
 
     def pause(self):
         LOG.info('MpvService Pause')
-        self.player._set_property("cycle", "pause")
+        self.player._set_property("pause", True)
 
     def resume(self):
         LOG.info('MpvService Resume')
-        self.player._set_property("cycle", "pause")
+        self.player._set_property("pause", False)
 
     def next(self):
-        self.player.playlist_next()
+        LOG.info('MpvService Next')
+        self.index = self.index + 1
+        if self.index > len(self.tracks):
+            self.index = 0
+        self.play()
 
     def previous(self):
-        self.player.playlist_prev()
+        LOG.info('MpvService Previous')
+        self.index = self.index - 1
+        if self.index < 0:
+            self.index = 0
+        self.play()
 
     def lower_volume(self):
         pass
@@ -71,9 +80,11 @@ class MPVService(AudioBackend):
         pass
 
     def track_info(self):
-        ret = {"track": self.player.playlist_filenames[0]}
-
+        ret = {"track": self.player._get_property("media-title")}
         return ret
+
+    def shutdown(self):
+        self.player.terminate()
 
 
 def load_service(base_config, emitter):

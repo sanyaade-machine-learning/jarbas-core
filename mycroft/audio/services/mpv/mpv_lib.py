@@ -697,6 +697,14 @@ class MPV(object):
         """Mapped mpv playlist_prev command, see man mpv(1)."""
         self.command('playlist_prev', mode)
 
+    def key_press(self, keyname):
+        """Mapped mpv key_press command, see man mpv(1)."""
+        self.command('key_press', keyname)
+
+    def stop(self):
+        """Mapped mpv stop command, see man mpv(1)."""
+        self.command('stop')
+
     @staticmethod
     def _encode_options(options):
         return ','.join('{}={}'.format(str(key), str(val)) for key, val in options.items())
