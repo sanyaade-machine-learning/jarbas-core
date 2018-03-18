@@ -17,7 +17,8 @@ from mycroft.util.log import LOG
 try:
     from py_mplayer import MplayerCtrl
 except ImportError:
-    LOG.error("install py_mplayer with pip install git+https://github.com/JarbasAl/py_mplayer")
+    LOG.error("install py_mplayer with "
+              "pip install git+https://github.com/JarbasAl/py_mplayer")
     raise
 
 
@@ -121,4 +122,3 @@ def load_service(base_config, emitter):
                 if backends[b]['type'] == 'mplayer']
     instances = [MPlayerService(s[1], emitter, s[0]) for s in services]
     return instances
-
