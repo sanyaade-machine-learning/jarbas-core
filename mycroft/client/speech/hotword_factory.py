@@ -16,6 +16,7 @@ import tempfile
 import time
 
 import sys
+import struct
 from tempfile import NamedTemporaryFile
 
 import os
@@ -256,11 +257,59 @@ class SnowboyHotWord(HotWordEngine):
         return wake_word == 1
 
 
+class PorcupineHotWord(HotWordEngine):
+    def __init__(self, key_phrase="hey mycroft", config=None, lang="en-us"):
+        super(PorcupineHotWord, self).__init__(key_phrase, config, lang)
+        # Hotword module imports
+        bindings = self.config.get("bindings_file_path",
+                                   "~/Porcupine/binding/python")
+        sys.path.append(expanduser(bindings))
+        from porcupine import Porcupine
+
+        # Hotword module config
+        module = self.config.get("module")
+        if module != "porcupine":
+            LOG.warning(module + " module does not match with Hotword class "
+                                 "porcupine")
+        # Hotword params
+        platform = Configuration.get().get("platform", "linux")
+        if platform in ["picroft", "mark_1", "raspberry"]:
+            lib = "~/Porcupine/lib/raspberry-pi/libpv_porcupine.so"
+        else:
+            lib = "~/Porcupine/lib/linux/x86_64/libpv_porcupine.so"
+        self.library_path = expanduser(self.config.get("library_path", lib))
+        self.model_file_path = expanduser(self.config.get(
+            "model_file_path", "~/Porcupine/lib/common/porcupine_params.pv"))
+        self.keyword_file_path = expanduser(self.config.get(
+            "keyword_file_path", ""))
+        self.sensitivity = self.config.get("sensitivity", 0.5)
+        self.input_device_index = self.config.get("input_device_index")
+
+        self.porcupine = Porcupine(
+                library_path=self.library_path,
+                model_file_path=self.model_file_path,
+                keyword_file_path=self.keyword_file_path,
+                sensitivity=self.sensitivity)
+
+        self.lang = str(lang).lower()
+        self.key_phrase = str(key_phrase).lower()
+
+    def found_wake_word(self, frame_data):
+        frame_data = struct.unpack_from("h" * self.porcupine.frame_length,
+                                        frame_data)
+        return self.porcupine.process(frame_data)
+
+    def shutdown(self):
+        if self.porcupine is not None:
+            self.porcupine.delete()
+
+
 class HotWordFactory(object):
     CLASSES = {
         "pocketsphinx": PocketsphinxHotWord,
         "precise": PreciseHotword,
-        "snowboy": SnowboyHotWord
+        "snowboy": SnowboyHotWord,
+        "porcupine": PorcupineHotWord
     }
 
     @staticmethod
