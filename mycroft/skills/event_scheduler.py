@@ -14,13 +14,34 @@
 #
 import json
 import time
-from Queue import Queue
 from threading import Thread
 
 from os.path import isfile
 
 from mycroft.messagebus.message import Message
 from mycroft.util.log import LOG
+import sys
+if sys.version_info[0] < 3:
+    from Queue import Queue
+else:
+    from queue import Queue
+
+
+def repeat_time(sched_time, repeat):
+    """Next scheduled time for repeating event. Asserts that the
+    time is not in the past.
+
+    Args:
+        sched_time (float): Scheduled unix time for the event
+        repeat (float):     Repeat period in seconds
+
+    Returns: (float) time for next event
+    """
+    next_time = sched_time + repeat
+    if next_time < time.time():
+        # Schedule at an offset to assure no doubles
+        next_time = time.time() + repeat
+    return next_time
 
 
 class EventScheduler(Thread):
@@ -133,7 +154,8 @@ class EventScheduler(Thread):
                 self.emitter.emit(Message(event, data))
                 # if this is a repeated event add a new trigger time
                 if repeat:
-                    remaining.append((sched_time + repeat, repeat, data))
+                    next_time = repeat_time(sched_time, repeat)
+                    remaining.append((next_time, repeat, data))
             # update list of events
             self.events[event] = remaining
 

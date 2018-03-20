@@ -103,7 +103,6 @@ LIST_CACHE=''
 
 function get_skill_list() {
   if ! [[ ${LIST_CACHE} ]] ; then
-    echo "1" >> ~/count.txt
     if hash curl ; then
       # retrieve using curl
       LIST_CACHE=$( curl -s "https://raw.githubusercontent.com/MycroftAI/mycroft-skills/master/.gitmodules" )
@@ -143,16 +142,16 @@ function send_start_remove () {
     fi
 }
 function send_install_success () {
-    python -m mycroft.messagebus.send msm.install.succeeded '{"skill": "${1}" }'
+    python -m mycroft.messagebus.send msm.install.succeeded "{\"skill\": \"${1}\" }"
 }
 function send_install_fail () {
-    python -m mycroft.messagebus.send msm.install.failed '{"skill": "${1}", "error" : ${2} }'
+    python -m mycroft.messagebus.send msm.install.failed "{\"skill\": \"${1}\", \"error\" : ${2} }"
 }
 function send_remove_success () {
-    python -m mycroft.messagebus.send msm.remove.succeeded '{"skill": "${1}" }'
+    python -m mycroft.messagebus.send msm.remove.succeeded "{\"skill\": \"${1}\" }"
 }
 function send_remove_fail () {
-    python -m mycroft.messagebus.send msm.remove.failed '{"skill": "${1}", "error" : ${2} }'
+    python -m mycroft.messagebus.send msm.remove.failed "{\"skill\": \"${1}\", \"error\" : ${2} }"
 }
 function send_end_install () {
     if [[ "${install_started}" == "true" ]] ; then
@@ -337,13 +336,6 @@ function install() {
       fi
     fi
 
-    # If the skill has a requirements.txt, pip install them
-    run_pip "${name}"
-    rc=$?
-    if [[ ${rc} -gt 0 ]] ; then
-       return ${rc}
-    fi
-
     # If the skill has a requirements.sh, then run that using bash
     if [[ -f "requirements.sh" ]]; then
       echo "  Setting up native environment..."
@@ -352,6 +344,13 @@ function install() {
         send_install_fail "${name}" 122
         return 122
       fi
+    fi
+
+    # If the skill has a requirements.txt, pip install them
+    run_pip "${name}"
+    rc=$?
+    if [[ ${rc} -gt 0 ]] ; then
+       return ${rc}
     fi
 
     echo "Installed: ${name}"
@@ -419,6 +418,7 @@ function install_from_url_list() {
           exit_code=${rc}
         fi
       fi
+      echo ${name} >> ${mycroft_skill_folder}/.msm.tmp
     fi
   done
 
@@ -439,60 +439,119 @@ function search() {
   done < <(grep -i "${search_string}" <<< "${search_list}")
 }
 
+function should_update_git() {
+  local branch=$(git symbolic-ref --short HEAD)
+  if [ "$branch" != "master" ]; then
+    return 1
+  fi
+
+  local changed_files=$(git status --porcelain --untracked-files=no)
+  if [ -n "$changed_files" ]; then
+    return 1
+  fi
+
+  local upstream=${1:-'@{u}'}
+  local local=$(git rev-parse @)
+  local remote=$(git rev-parse "$upstream")
+  local base=$(git merge-base @ "$upstream")
+  if [ "$local" != "$remote" ] &&  # New commits
+     [ "$remote" = "$base" ]  # Has not diverged
+  then
+    return 1
+  fi
+
+  url=$(git config remote.origin.url)
+  if [[ $url =~ ^git@ ]]; then  # Using ssh remote (prompts for authentication)
+    return 1
+  fi
+
+  return 0
+}
+
+function ignore_pyc() {
+  # Force ignoring the generated .pyc files
+  if ! grep -q '.pyc'$ .git/info/exclude; then
+    echo "*.pyc" >> .git/info/exclude
+  fi
+}
+
+function pip_hack() {
+  # TODO: Remove this for 18.02
+  # HACK: Re-run PIP, because Mycroft-core removed some of its required,
+  #       which broke previously-installed packages on a Picroft/Mark1
+  #       that was satisfied by packages that previously came along with
+  #       mycroft-core.
+  if [ ! -f /tmp/mycroft_has_re-PIPed ] ; then
+     run_pip "$1"
+     echo "Re-running PIP on requirements.txt"
+  fi
+}
+
+function update_skill() {
+  local folder=$1
+
+  cd "$folder"
+  ignore_pyc
+  if ! should_update_git; then
+    echo "Skipped $d."
+    return
+  fi
+
+  requirements_hash() {
+    [ ! -f requirements.txt ] || git rev-parse HEAD:requirements.txt
+    [ ! -f requirements.sh ] || git rev-parse HEAD:requirements.sh
+  }
+
+  before_head=$(git rev-parse HEAD)
+  before=$(requirements_hash)
+
+  output=$(git fetch && git reset --hard origin/master)
+
+  after=$(requirements_hash)
+  after_head=$(git rev-parse HEAD)
+
+  if [ "$before_head" != "$after_head" ]; then
+    echo "$output"
+    echo "Updated $folder."
+  else
+    echo "Checked $folder."
+  fi
+
+  if [ "$before" != "$after" ]; then
+    echo "Updating dependencies..."
+    run_pip "$folder"
+  fi
+
+  pip_hack "$folder"
+}
+
 function update() {
+  workon mycroft &>/dev/null || true
+  
   echo "Updating installed skills..."
   cd "${mycroft_skill_folder}"
+  
+  send_start_update & 
+  pids=("$!")
 
   # Loop through all of the current Skill folders
   for d in $(find "${mycroft_skill_folder}" -mindepth 1 -maxdepth 1 -type d |grep -v '.git'$ ); do
     # Go in to all folders that are git checkouts
-    if git -C "$d" rev-parse --git-dir > /dev/null 2>&1; then
-      cd "${d}"
-      UPSTREAM=${1:-'@{u}'}
-      LOCAL=$(git rev-parse @)
-      REMOTE=$(git rev-parse "$UPSTREAM")
-      BASE=$(git merge-base @ "$UPSTREAM")
-
-      # Force ignoring the generated .pyc files
-      if ! grep -q '.pyc'$ .git/info/exclude; then
-        echo "*.pyc" >> .git/info/exclude
-      fi
-
-      BRANCH="$(git symbolic-ref HEAD 2>/dev/null)"
-      BRANCH="${BRANCH##refs/heads/}"
-
-      # Only update checkouts that have not been modified at all
-      if [[ (-z $(git status --porcelain --untracked-files=no)) &&  # No Modified files
-            !($LOCAL != $REMOTE && $REMOTE = $BASE) &&  # No new commits
-            "$BRANCH" = "master" ]]  # On master branch
-      then
-        echo "Updating ${d}..."
-        echo -n "  "
-        send_start_update
-        git fetch
-        git reset --hard origin/master
-        rm -f *.pyc
-      else
-        echo "Ignoring ${d}, skill has been modified."
-      fi
-
-      # TODO: Remove this for 18.02
-      # HACK: Re-run PIP, because Mycroft-core removed some of its required,
-      #       which broke previously-installed packages on a Picroft/Mark1
-      #       that was satisfied by packages that previously came along with
-      #       mycroft-core.
-      if [ ! -f /tmp/mycroft_has_re-PIPed ] ; then
-         run_pip "${d}"
-         echo "Re-running PIP on requirements.txt"
-      fi
+    git_dir=$(git -C "$d" rev-parse --git-dir 2>&1)
+    if [ "$git_dir" = ".git" ]; then
+      update_skill "$d" &
+      pids+=("$!")
     fi
   done
+  wait $pids
 
   # TODO: Remove this for 18.02
   # HACK: Only do the re-PIP once per boot
   if [ ! -f /tmp/mycroft_has_re-PIPed ] ; then
      echo "1" > /tmp/mycroft_has_re-PIPed
   fi
+  
+  send_end_update
 }
 
 function print_info() {
@@ -524,7 +583,7 @@ function print_info() {
         if [[ "${skill}" ==  *$'\n'* ]]; then
             # The str matches multiple skill repos, don't install
             # due to ambiguity.
-            echo "Multiple matches for '${str}', be more specfic."
+            echo "Multiple matches for '${str}', be more specific."
             echo "------------------------------------------------------------"
             echo "$skill" | sed 's/.*://g' | sort
             echo "------------------------------------------------------------"
@@ -638,15 +697,25 @@ case ${OPT} in
           exit ${exit_code}
       fi
 
-      submodules=$(echo "${LIST_CACHE}" | grep 'submodule "' | sed 's/\[submodule "//g'| sed 's/"\]//g' | sort)
-      while read -r submod
-      do
-          if [[ -d "$mycroft_skill_folder/$submod" ]] ; then
-              printf "$submod ${RED}[${GREEN}installed${RED}]${NOCOLOR}\n\r"
+      # Get name and path
+      submods=($(echo "${LIST_CACHE}" | grep 'submodule "' | sed 's/\[submodule "//g'| sed 's/"\]//g'))
+      paths=($(echo "${LIST_CACHE}" | grep 'path =' | sed 's/\path = //g'| sed 's/"\]//g'))
+      # Determine which have been installed
+      results=()
+      for ((i=0;i<${#submods[@]};++i)); do
+          if [[ -d "$mycroft_skill_folder/${paths[i]}" ]] ; then
+              results+=("${submods[i]} ${RED}[${GREEN}installed${RED}]${NOCOLOR}\n\r")
           else
-              printf "$submod\n\r"
+              results+=("${submods[i]}\n\r")
           fi
-      done <<< "$submodules"
+      done
+      # Sort the result alphabetically
+      readarray -t sorted < <(for a in "${results[@]}"; do echo "$a"; done | sort)
+      # Print the output
+      for ((i=0;i<${#sorted[@]};++i)); do
+        printf "${sorted[i]}"
+      done
+
       exit_code=$?
       ;;
   "update")
@@ -658,7 +727,6 @@ case ${OPT} in
       fi
 
       update
-      send_end_update
       exit_code=$?
       ;;
   "default")
@@ -671,6 +739,9 @@ case ${OPT} in
          exit ${exit_code}
       fi
 
+      # Create .msm file to provide timestamp for last msm default
+      rm ${mycroft_skill_folder}/.msm
+      printf "" > ${mycroft_skill_folder}/.msm.tmp
       # These skills are automatically installed on all mycroft-core
       # installations.
       install_from_url_list "https://raw.githubusercontent.com/MycroftAI/mycroft-skills/master/DEFAULT-SKILLS"
@@ -687,9 +758,9 @@ case ${OPT} in
       # exit code 20 == skills already installed, which is OK here
       if [[ ${exit_code} -eq 0 || ${exit_code} -eq 20 ]] ; then
          update
-         send_end_update
          exit_code=$?
       fi
+      mv ${mycroft_skill_folder}/.msm.tmp ${mycroft_skill_folder}/.msm
    ;;
   "search")
       if [[ $# -gt 0 ]] ; then

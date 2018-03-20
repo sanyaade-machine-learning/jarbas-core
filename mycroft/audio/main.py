@@ -78,8 +78,6 @@ def get_services(services_folder):
                     continue
                 try:
                     services.append(create_service_descriptor(name))
-                except (KeyboardInterrupt, SystemExit):
-                    raise
                 except Exception:
                     LOG.error('Failed to create service from ' + name,
                               exc_info=True)
@@ -88,8 +86,6 @@ def get_services(services_folder):
             continue
         try:
             services.append(create_service_descriptor(location))
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception:
             LOG.error('Failed to create service from ' + name,
                       exc_info=True)
@@ -101,7 +97,7 @@ def load_services(config, ws, path=None):
         Search though the service directory and load any services.
 
         Args:
-            config: configuration dicrt for the audio backends.
+            config: configuration dict for the audio backends.
             ws: websocket object for communication.
 
         Returns:
@@ -117,18 +113,16 @@ def load_services(config, ws, path=None):
         try:
             service_module = imp.load_module(descriptor["name"] + MAINMODULE,
                                              *descriptor["info"])
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception:
             LOG.error('Failed to import module ' + descriptor['name'],
                       exc_info=True)
+            continue
+
         if (hasattr(service_module, 'autodetect') and
                 callable(service_module.autodetect)):
             try:
                 s = service_module.autodetect(config, ws)
                 service += s
-            except (KeyboardInterrupt, SystemExit):
-                raise
             except Exception:
                 LOG.error('Failed to autodetect...',
                           exc_info=True)
@@ -136,8 +130,6 @@ def load_services(config, ws, path=None):
             try:
                 s = service_module.load_service(config, ws)
                 service += s
-            except (KeyboardInterrupt, SystemExit):
-                raise
             except Exception:
                 LOG.error('Failed to load service...',
                           exc_info=True)
@@ -180,6 +172,11 @@ class AudioService(object):
 
         self.service = load_services(self.config, self.ws)
         LOG.info(self.service)
+        # Register end of track callback
+        for s in self.service:
+            s.set_track_start_callback(self.track_start)
+
+        # Find default backend
         default_name = self.config.get('default-backend', '')
         LOG.info('Finding default backend...')
         for s in self.service:
@@ -206,6 +203,14 @@ class AudioService(object):
         self.ws.on('recognizer_loop:audio_output_end', self._restore_volume)
         self.ws.on('recognizer_loop:record_end', self._restore_volume)
         self.ws.on('mycroft.stop', self._stop)
+
+    def track_start(self, track):
+        """
+            Callback method called from the services to indicate start of
+            playback of a track.
+        """
+        self.ws.emit(Message('mycroft.audio.playing_track',
+                             data={'track': track}))
 
     def _pause(self, message=None):
         """
@@ -248,7 +253,7 @@ class AudioService(object):
                 message: message bus message, not used but required
         """
         if self.current:
-            self.current.prev()
+            self.current.previous()
 
     def _stop(self, message=None):
         """
@@ -277,8 +282,6 @@ class AudioService(object):
         try:
             if self.pulse_quiet:
                 self.pulse_quiet()
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception as exc:
             LOG.error(exc)
 
@@ -460,8 +463,6 @@ def main():
             if 'mycroft.audio.service' not in _message.get('type'):
                 return
             message = json.dumps(_message)
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception as e:
             LOG.exception(e)
         LOG.debug(message)
@@ -471,8 +472,8 @@ def main():
     AudioService(ws)  # Connect audio service instance to message bus
     try:
         ws.run_forever()
-    except KeyboardInterrupt as exc:
-        LOG.exception(exc)
+    except KeyboardInterrupt as e:
+        LOG.exception(e)
         speech.shutdown()
         sys.exit()
 
