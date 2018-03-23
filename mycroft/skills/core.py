@@ -275,6 +275,7 @@ class MycroftSkill(object):
         if emitter:
             self.emitter = emitter
             self.enclosure = EnclosureAPI(emitter, self.name)
+            self.add_event("converse.deactivate", self._deactivate_skill)
             self.__register_stop()
             self.add_event('enable_intent', self.handle_enable_intent)
             self.add_event('disable_intent', self.handle_disable_intent)
@@ -307,17 +308,29 @@ class MycroftSkill(object):
         """
         return None
 
+    def _deactivate_skill(self, message):
+        skill_id = message.data.get("skill_id")
+        if skill_id == self.skill_id:
+            self.on_deactivate()
+
+    def on_deactivate(self):
+        """
+        Invoked when the skill is removed from active skill list
+        """
+        pass
+
     def converse(self, utterances, lang="en-us"):
         """
-            Handle conversation. This method can be used to override the normal
-            intent handler after the skill has been invoked once.
+            Handle conversation. This method can be used to override the
+            normal intent handler during the 5 minutes after the skill has
+            been invoked.
 
-            To enable this override thise converse method and return True to
+            To enable this override this converse method and return True to
             indicate that the utterance has been handled.
 
             Args:
                 utterances (list): The utterances from the user
-                lang:       language the utterance is in
+                lang       (str): language the utterance is in
 
             Returns:    True if an utterance was handled, otherwise False
         """
