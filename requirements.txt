@@ -35,9 +35,12 @@ fann2==1.0.7
 # Also update in mycroft/skills/padatious_service.py
 padatious==0.3.7
 
-#auto translatable skills
-mtranslate
-langdetect
+# jarbas utils
+mycroft_jarbas_utils
+
+# audio backends
+py_mplayer
+git+https://github.com/JarbasAl/python-mpv
 
 #tools
 pronouncing==0.1.5
