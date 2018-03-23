@@ -480,8 +480,9 @@ class MycroftSkill(object):
             this enables converse method to be called even without skill being
             used in last 5 minutes
         """
-        self.emitter.emit(message.reply('active_skill_request',
-                                  {"skill_id": self.skill_id}))
+        self.emitter.emit(Message('active_skill_request',
+                                  {"skill_id": self.skill_id},
+                                  context=self.get_message_context()))
 
     def _register_decorated(self):
         """

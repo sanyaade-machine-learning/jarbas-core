@@ -52,8 +52,9 @@ DEBUG = Configuration.get().get("debug", False)
 skills_config = Configuration.get().get("skills")
 BLACKLISTED_SKILLS = skills_config.get("blacklisted_skills", [])
 PRIORITY_SKILLS = skills_config.get("priority_skills", [])
-SKILLS_DIR = skills_config.get("directory") or join(expanduser("~"),
-                                                    '.mycroft/jarbas_skills')
+SKILLS_DIR = skills_config.get("directory") or '~/.mycroft/jarbas_skills'
+if "~" in SKILLS_DIR:
+    SKILLS_DIR = expanduser(SKILLS_DIR)
 if not exists(SKILLS_DIR):
     makedirs(SKILLS_DIR)
 
@@ -72,19 +73,23 @@ def direct_update_needed():
     dot_msm = join(SKILLS_DIR, '.msm')
     hours = skills_config.get('startup_update_required_time', 12)
     LOG.info('TIME LIMIT {}'.format(hours))
-    # if .msm file is missing or older than 1 hour update skills
-    if (not exists(dot_msm) or
-            os.path.getmtime(dot_msm) < time.time() - 60 * MINUTES * hours):
-        return True
-    else:  # verify that all default skills are installed
-        with open(dot_msm) as f:
-            default_skills = [line.strip() for line in f if line != '']
-        skills = os.listdir(SKILLS_DIR)
-        LOG.info(default_skills)
-        for d in default_skills:
-            if d not in skills:
-                LOG.info('{} has been removed, direct update needed'.format(d))
-                return skills_config.get("auto_update", False)
+    # check if skill updates are enabled
+    update = Configuration.get().get("skills", {}).get("auto_update",
+                                                       True)
+    if update:
+        # if .msm file is missing or older than 1 hour update skills
+        if (not exists(dot_msm) or
+                os.path.getmtime(dot_msm) < time.time() - 60 * MINUTES * hours):
+            return True
+        else:  # verify that all default skills are installed
+            with open(dot_msm) as f:
+                default_skills = [line.strip() for line in f if line != '']
+            skills = os.listdir(SKILLS_DIR)
+            LOG.info(default_skills)
+            for d in default_skills:
+                if d not in skills:
+                    LOG.info('{} has been removed, direct update needed'.format(d))
+                    return skills_config.get("auto_update", False)
     return False
 
 
