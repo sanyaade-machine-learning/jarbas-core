@@ -33,6 +33,7 @@ from threading import Event
 
 from mycroft import dialog
 from mycroft.api import DeviceApi
+from mycroft.audio import wait_while_speaking
 from mycroft.client.enclosure.api import EnclosureAPI
 from mycroft.configuration import Configuration
 from mycroft.dialog import DialogLoader
@@ -41,7 +42,7 @@ from mycroft.messagebus.message import Message
 from mycroft.metrics import report_metric, report_timing, Stopwatch
 from mycroft.skills.settings import SkillSettings
 from mycroft.skills.skill_data import (load_vocabulary, load_regex, to_letters,
-                                       munge_intent_parser)
+                                       munge_regex, munge_intent_parser)
 from mycroft.util import resolve_resource_file
 from mycroft.util import get_language_dir
 from mycroft.util.log import LOG
@@ -77,9 +78,11 @@ def unmunge_message(message, skill_id):
         Message without clear keywords
     """
     if isinstance(message, Message) and isinstance(message.data, dict):
+        skill_id = to_letters(skill_id)
         for key in message.data:
-            new_key = key.replace(to_letters(skill_id), '')
-            message.data[new_key] = message.data.pop(key)
+            if key[:len(skill_id)] == skill_id:
+                new_key = key[len(skill_id):]
+                message.data[new_key] = message.data.pop(key)
 
     return message
 
@@ -171,21 +174,16 @@ def get_handler_name(handler):
     return name
 
 
-# Lists used when adding skill handlers using decorators
-_intent_list = []
-_intent_file_list = []
-
-
 def intent_handler(intent_parser):
     """ Decorator for adding a method as an intent handler. """
 
     def real_decorator(func):
-        @wraps(func)
-        def handler_method(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        _intent_list.append((intent_parser, func))
-        return handler_method
+        # Store the intent_parser inside the function
+        # This will be used later to call register_intent
+        if not hasattr(func, 'intents'):
+            func.intents = []
+        func.intents.append(intent_parser)
+        return func
 
     return real_decorator
 
@@ -194,12 +192,12 @@ def intent_file_handler(intent_file):
     """ Decorator for adding a method as an intent file handler. """
 
     def real_decorator(func):
-        @wraps(func)
-        def handler_method(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        _intent_file_list.append((intent_file, func))
-        return handler_method
+        # Store the intent_file inside the function
+        # This will be used later to call register_intent_file
+        if not hasattr(func, 'intent_files'):
+            func.intent_files = []
+        func.intent_files.append(intent_file)
+        return func
 
     return real_decorator
 
@@ -417,6 +415,7 @@ class MycroftSkill(object):
         on_fail_fn = on_fail if callable(on_fail) else on_fail_default
 
         self.speak(get_announcement(), expect_response=True)
+        wait_while_speaking()
         num_fails = 0
         while True:
             response = self.__get_response()
@@ -481,21 +480,26 @@ class MycroftSkill(object):
             this enables converse method to be called even without skill being
             used in last 5 minutes
         """
-        self.emitter.emit(Message('active_skill_request',
-                                  {"skill_id": self.skill_id},
-                          context=self.message_context))
+        self.emitter.emit(message.reply('active_skill_request',
+                                  {"skill_id": self.skill_id}))
 
     def _register_decorated(self):
         """
         Register all intent handlers that have been decorated with an intent.
+
+        Looks for all functions that have been marked by a decorator
+        and read the intent data from them
         """
-        global _intent_list, _intent_file_list
-        for intent_parser, handler in _intent_list:
-            self.register_intent(intent_parser, handler)
-        for intent_file, handler in _intent_file_list:
-            self.register_intent_file(intent_file, handler)
-        _intent_list = []
-        _intent_file_list = []
+        for attr_name in dir(self):
+            method = getattr(self, attr_name)
+
+            if hasattr(method, 'intents'):
+                for intent in getattr(method, 'intents'):
+                    self.register_intent(intent, method)
+
+            if hasattr(method, 'intent_files'):
+                for intent_file in getattr(method, 'intent_files'):
+                    self.register_intent_file(intent_file, method)
 
     def translate(self, text, data=None):
         """
@@ -872,12 +876,17 @@ class MycroftSkill(object):
                 entity_type:    Intent handler entity to tie the word to
         """
         self.emitter.emit(Message('register_vocab', {
-            'start': entity, 'end': entity_type
+            'start': entity, 'end': to_letters(self.skill_id) + entity_type
         }))
 
     def register_regex(self, regex_str):
-        re.compile(regex_str)  # validate regex
-        self.emitter.emit(Message('register_vocab', {'regex': regex_str}))
+        """ Register a new regex.
+            Args:
+                regex_str: Regex string
+        """
+        regex = munge_regex(regex_str, self.skill_id)
+        re.compile(regex)  # validate regex
+        self.emitter.emit(Message('register_vocab', {'regex': regex}))
 
     def get_message_context(self, message_context=None):
         if message_context is None:
@@ -1023,10 +1032,6 @@ class MycroftSkill(object):
         except:
             LOG.error("Failed to stop skill: {}".format(self.name),
                       exc_info=True)
-        self.emitter.emit(Message("skill.shutdown",
-                                  {'folder': self._dir.split("/")[-1],
-                                   "id": self.skill_id,
-                                   "name": self.name}))
 
     def _unique_name(self, name):
         """
@@ -1154,8 +1159,7 @@ class MycroftSkill(object):
                                   context=self.message_context))
 
         start_wait = time.time()
-        while finished_callback[0] is False \
-                and time.time() - start_wait < 3.0:
+        while finished_callback[0] is False and time.time() - start_wait < 3.0:
             time.sleep(0.1)
         if time.time() - start_wait > 3.0:
             raise Exception("Event Status Messagebus Timeout")
@@ -1327,7 +1331,13 @@ class FallbackSkill(MycroftSkill):
             and with the list of handlers registered by this instance
         """
 
-        self.instance_fallback_handlers.append(handler)
+        def wrapper(*args, **kwargs):
+            if handler(*args, **kwargs):
+                self.make_active()
+                return True
+            return False
+
+        self.instance_fallback_handlers.append(wrapper)
         self._register_fallback(handler, priority)
 
     @classmethod
