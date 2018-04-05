@@ -18,10 +18,7 @@ import time
 
 from mycroft.util.log import LOG
 from mycroft.util.setup_base import get_version
-
-
-def report_timing(name, data):
-    pass
+from copy import copy
 
 
 def report_metric(name, data):
@@ -32,21 +29,47 @@ def report_metric(name, data):
         name (str): Name of metric. Must use only letters and hyphens
         data (dict): JSON dictionary to report. Must be valid JSON
     """
-    # if Configuration().get()['opt_in']:
-    #    DeviceApi()    def report_metric(self, name, data):
-        # return self.request({
-        #    "method": "POST",
-        #    "path": "/" + self.identity.uuid + "/metric/" + name,
-        #    "json": data
-        # })
-        return None.report_metric(name, data)
-    pass
+    #try:
+    #    if Configuration().get()['opt_in']:
+    #        DeviceApi().report_metric(name, data)
+    #except (requests.HTTPError, requests.exceptions.ConnectionError) as e:
+    #    LOG.error('Metric couldn\'t be uploaded, due to a network error ({})'
+    #              .format(e))
+    LOG.debug("Supressed metric report: " + str(name) + str(data))
+
+
+def report_timing(ident, system, timing, additional_data=None):
+    """
+        Create standardized message for reporting timing.
+
+        ident (str):            identifier of user interaction
+        system (str):           system the that's generated the report
+        timing (stopwatch):     Stopwatch object with recorded timing
+        additional_data (dict): dictionary with related data
+    """
+    additional_data = additional_data or {}
+    report = copy(additional_data)
+    report['id'] = ident
+    report['system'] = system
+    report['start_time'] = timing.timestamp
+    report['time'] = timing.time
+
+    #report_metric('timing', report)
+    LOG.debug("Supressed timing report: " + str(report))
+
 
 class Stopwatch(object):
+    """
+        Simple time measuring class.
+    """
     def __init__(self):
         self.timestamp = None
+        self.time = None
 
     def start(self):
+        """
+            Start a time measurement
+        """
         self.timestamp = time.time()
 
     def lap(self):
@@ -56,10 +79,32 @@ class Stopwatch(object):
         return cur_time - start_time
 
     def stop(self):
+        """
+            Stop a running time measurement. returns the measured time
+        """
         cur_time = time.time()
         start_time = self.timestamp
-        self.timestamp = None
-        return cur_time - start_time
+        self.time = cur_time - start_time
+        return self.time
+
+    def __enter__(self):
+        """
+            Start stopwatch when entering with-block.
+        """
+        self.start()
+
+    def __exit__(self, tpe, value, tb):
+        """
+            Stop stopwatch when exiting with-block.
+        """
+        self.stop()
+
+    def __str__(self):
+        cur_time = time.time()
+        if self.timestamp:
+            return str(self.time or cur_time - self.timestamp)
+        else:
+            return 'Not started'
 
 
 class MetricsAggregator(object):
