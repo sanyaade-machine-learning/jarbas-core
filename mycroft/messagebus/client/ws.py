@@ -15,8 +15,10 @@
 import json
 import time
 import ssl
+import monotonic
 from multiprocessing.pool import ThreadPool
 
+from threading import Event
 from pyee import EventEmitter
 from websocket import WebSocketApp
 
@@ -43,6 +45,8 @@ class WebsocketClient(object):
         self.client = self.create_client()
         self.pool = ThreadPool(10)
         self.retry = 5
+        self.connected_event = Event()
+        self.started_running = False
 
     @staticmethod
     def build_url(host, port, route, ssl):
@@ -57,6 +61,7 @@ class WebsocketClient(object):
 
     def on_open(self, ws):
         LOG.info("Connected")
+        self.connected_event.set()
         self.emitter.emit("open")
         # Restore reconnect timer to 5 seconds on sucessful connect
         self.retry = 5
@@ -83,13 +88,53 @@ class WebsocketClient(object):
             self.emitter.emit, (parsed_message.type, parsed_message))
 
     def emit(self, message):
-        if (not self.client or not self.client.sock or
-                not self.client.sock.connected):
-            return
+        if not self.connected_event.wait(10):
+            if not self.started_running:
+                raise ValueError('You must execute run_forever() '
+                                 'before emitting messages')
+            self.connected_event.wait()
+
         if hasattr(message, 'serialize'):
             self.client.send(message.serialize())
         else:
             self.client.send(json.dumps(message.__dict__))
+
+    def wait_for_response(self, message, reply_type=None, timeout=None):
+        """Send a message and wait for a response.
+
+        Args:
+            message (Message): message to send
+            reply_type (str): the message type of the expected reply.
+                              Defaults to "<message.type>.response".
+            timeout: seconds to wait before timeout, defaults to 3
+        Returns:
+            The received message or None if the response timed out
+        """
+        response = []
+
+        def handler(message):
+            """Receive response data."""
+            response.append(message)
+
+        # Setup response handler
+        self.once(reply_type or message.type + '.response', handler)
+        # Send request
+        self.emit(message)
+        # Wait for response
+        start_time = monotonic.monotonic()
+        while len(response) == 0:
+            time.sleep(0.2)
+            if monotonic.monotonic() - start_time > (timeout or 3.0):
+                try:
+                    self.remove(reply_type, handler)
+                except (ValueError, KeyError):
+                    # ValueError occurs on pyee 1.0.1 removing handlers
+                    # registered with once.
+                    # KeyError may theoretically occur if the event occurs as
+                    # the handler is removbed
+                    pass
+                return None
+        return response[0]
 
     def on(self, event_name, func):
         self.emitter.on(event_name, func)
@@ -112,12 +157,14 @@ class WebsocketClient(object):
         self.emitter.remove_all_listeners(event_name)
 
     def run_forever(self):
+        self.started_running = True
         self.client.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE,
                    "check_hostname": False,
                    "ssl_version": ssl.PROTOCOL_TLSv1})
 
     def close(self):
         self.client.close()
+        self.connected_event.clear()
 
 
 def echo():

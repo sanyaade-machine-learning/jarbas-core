@@ -20,12 +20,14 @@ import mock
 from adapt.intent import IntentBuilder
 from os.path import join, dirname, abspath
 from re import error
+from datetime import datetime
 
 from mycroft.configuration import Configuration
 from mycroft.messagebus.message import Message
-from mycroft.skills.core import load_regex_from_file, load_regex, \
-    load_vocab_from_file, load_vocabulary, MycroftSkill, \
-    load_skill, create_skill_descriptor, open_intent_envelope
+from mycroft.skills.skill_data import load_regex_from_file, load_regex, \
+    load_vocab_from_file, load_vocabulary
+from mycroft.skills.core import MycroftSkill, load_skill, \
+    create_skill_descriptor, open_intent_envelope
 
 
 class MockEmitter(object):
@@ -67,17 +69,17 @@ class MycroftSkillTest(unittest.TestCase):
 
     def check_regex_from_file(self, filename, result_list=None):
         result_list = result_list or []
-        load_regex_from_file(join(self.regex_path, filename), self.emitter)
+        load_regex_from_file(join(self.regex_path, filename), self.emitter, 0)
         self.check_emitter(result_list)
 
     def check_vocab(self, path, result_list=None):
         result_list = result_list or []
-        load_vocabulary(path, self.emitter)
+        load_vocabulary(path, self.emitter, 0)
         self.check_emitter(result_list)
 
     def check_regex(self, path, result_list=None):
         result_list = result_list or []
-        load_regex(path, self.emitter)
+        load_regex(path, self.emitter, 0)
         self.check_emitter(result_list)
 
     def check_emitter(self, result_list):
@@ -89,12 +91,12 @@ class MycroftSkillTest(unittest.TestCase):
 
     def test_load_regex_from_file_single(self):
         self.check_regex_from_file('valid/single.rx',
-                                   [{'regex': '(?P<SingleTest>.*)'}])
+                                   [{'regex': '(?P<ASingleTest>.*)'}])
 
     def test_load_regex_from_file_multiple(self):
         self.check_regex_from_file('valid/multiple.rx',
-                                   [{'regex': '(?P<MultipleTest1>.*)'},
-                                    {'regex': '(?P<MultipleTest2>.*)'}])
+                                   [{'regex': '(?P<AMultipleTest1>.*)'},
+                                    {'regex': '(?P<AMultipleTest2>.*)'}])
 
     def test_load_regex_from_file_none(self):
         self.check_regex_from_file('invalid/none.rx')
@@ -114,9 +116,9 @@ class MycroftSkillTest(unittest.TestCase):
 
     def test_load_regex_full(self):
         self.check_regex(join(self.regex_path, 'valid'),
-                         [{'regex': '(?P<MultipleTest1>.*)'},
-                          {'regex': '(?P<MultipleTest2>.*)'},
-                          {'regex': '(?P<SingleTest>.*)'}])
+                         [{'regex': '(?P<AMultipleTest1>.*)'},
+                          {'regex': '(?P<AMultipleTest2>.*)'},
+                          {'regex': '(?P<ASingleTest>.*)'}])
 
     def test_load_regex_empty(self):
         self.check_regex(join(dirname(__file__),
@@ -164,17 +166,17 @@ class MycroftSkillTest(unittest.TestCase):
 
     def test_load_vocab_full(self):
         self.check_vocab(join(self.vocab_path, 'valid'),
-                         [{'start': 'test', 'end': 'single'},
-                          {'start': 'water', 'end': 'singlealias'},
-                          {'start': 'watering', 'end': 'singlealias',
+                         [{'start': 'test', 'end': 'Asingle'},
+                          {'start': 'water', 'end': 'Asinglealias'},
+                          {'start': 'watering', 'end': 'Asinglealias',
                            'alias_of': 'water'},
-                          {'start': 'animal', 'end': 'multiple'},
-                          {'start': 'animals', 'end': 'multiple'},
-                          {'start': 'chair', 'end': 'multiplealias'},
-                          {'start': 'chairs', 'end': 'multiplealias',
+                          {'start': 'animal', 'end': 'Amultiple'},
+                          {'start': 'animals', 'end': 'Amultiple'},
+                          {'start': 'chair', 'end': 'Amultiplealias'},
+                          {'start': 'chairs', 'end': 'Amultiplealias',
                            'alias_of': 'chair'},
-                          {'start': 'table', 'end': 'multiplealias'},
-                          {'start': 'tables', 'end': 'multiplealias',
+                          {'start': 'table', 'end': 'Amultiplealias'},
+                          {'start': 'tables', 'end': 'Amultiplealias',
                            'alias_of': 'table'}])
 
     def test_load_vocab_empty(self):
@@ -203,9 +205,22 @@ class MycroftSkillTest(unittest.TestCase):
         self.assertEquals(s.skill_id, 847)
         self.assertEquals(s.name, 'LoadTestSkill')
 
+    def check_detach_intent(self):
+        self.assertTrue(len(self.emitter.get_types()) > 0)
+        for msg_type in self.emitter.get_types():
+            self.assertEquals(msg_type, 'detach_intent')
+        self.emitter.reset()
+
     def check_register_intent(self, result_list):
         for type in self.emitter.get_types():
             self.assertEquals(type, 'register_intent')
+        self.assertEquals(sorted(self.emitter.get_results()),
+                          sorted(result_list))
+        self.emitter.reset()
+
+    def check_register_vocabulary(self, result_list):
+        for type in self.emitter.get_types():
+            self.assertEquals(type, 'register_vocab')
         self.assertEquals(sorted(self.emitter.get_results()),
                           sorted(result_list))
         self.emitter.reset()
@@ -218,7 +233,7 @@ class MycroftSkillTest(unittest.TestCase):
         expected = [{'at_least_one': [],
                      'name': '0:a',
                      'optional': [],
-                     'requires': [('Keyword', 'Keyword')]}]
+                     'requires': [('AKeyword', 'AKeyword')]}]
         self.check_register_intent(expected)
 
         # Test register IntentBuilder object
@@ -228,7 +243,7 @@ class MycroftSkillTest(unittest.TestCase):
         expected = [{'at_least_one': [],
                      'name': '0:a',
                      'optional': [],
-                     'requires': [('Keyword', 'Keyword')]}]
+                     'requires': [('AKeyword', 'AKeyword')]}]
 
         self.check_register_intent(expected)
 
@@ -237,6 +252,41 @@ class MycroftSkillTest(unittest.TestCase):
             s = TestSkill3()
             s.bind(self.emitter)
             s.initialize()
+
+    def test_enable_disable_intent(self):
+        """Test disable/enable intent."""
+        # Setup basic test
+        s = TestSkill1()
+        s.bind(self.emitter)
+        s.initialize()
+        expected = [{'at_least_one': [],
+                     'name': '0:a',
+                     'optional': [],
+                     'requires': [('AKeyword', 'AKeyword')]}]
+        self.check_register_intent(expected)
+
+        # Test disable/enable cycle
+        s.disable_intent('a')
+        self.check_detach_intent()
+        s.enable_intent('a')
+        self.check_register_intent(expected)
+
+    def test_register_vocab(self):
+        """Test disable/enable intent."""
+        # Setup basic test
+        s = TestSkill1()
+        s.bind(self.emitter)
+        s.initialize()
+
+        # Normal vocaubulary
+        self.emitter.reset()
+        expected = [{'start': 'hello', 'end': 'AHelloKeyword'}]
+        s.register_vocabulary('hello', 'HelloKeyword')
+        self.check_register_vocabulary(expected)
+        # Regex
+        s.register_regex('weird (?P<Weird>.+) stuff')
+        expected = [{'regex': 'weird (?P<AWeird>.+) stuff'}]
+        self.check_register_vocabulary(expected)
 
     def check_register_object_file(self, types_list, result_list):
         self.assertEquals(sorted(self.emitter.get_types()),
@@ -289,7 +339,7 @@ class MycroftSkillTest(unittest.TestCase):
         expected = [{'at_least_one': [],
                      'name': '0:a',
                      'optional': [],
-                     'requires': [('Keyword', 'Keyword')]},
+                     'requires': [('AKeyword', 'AKeyword')]},
                     {
                      'file_name': join(dirname(__file__), 'intent_file',
                                        'test.intent'),
@@ -319,17 +369,17 @@ class MycroftSkillTest(unittest.TestCase):
         s.bind(self.emitter)
         # No context content
         s.set_context('TurtlePower')
-        expected = [{'context': 'TurtlePower', 'word': ''}]
+        expected = [{'context': 'ATurtlePower', 'word': ''}]
         check_set_context(expected)
 
         # context with content
         s.set_context('Technodrome', 'Shredder')
-        expected = [{'context': 'Technodrome', 'word': 'Shredder'}]
+        expected = [{'context': 'ATechnodrome', 'word': 'Shredder'}]
         check_set_context(expected)
 
         # UTF-8 context
         s.set_context(u'Smörgåsbord€15')
-        expected = [{'context': u'Smörgåsbord€15', 'word': ''}]
+        expected = [{'context': u'ASmörgåsbord€15', 'word': ''}]
         check_set_context(expected)
 
         self.emitter.reset()
@@ -399,15 +449,108 @@ class MycroftSkillTest(unittest.TestCase):
         self.assertEqual(s.location_pretty, None)
         self.assertEqual(s.location_timezone, None)
 
+    @mock.patch.object(Configuration, 'get')
+    def test_add_event(self, mock_config_get):
+        test_config = {
+            'skills': {
+            }
+        }
+        mock_config_get.return_value = test_config
+        emitter = mock.MagicMock()
+        s = TestSkill1()
+        s.bind(emitter)
+        s.add_event('handler1', s.handler)
+        # Check that the handler was registered with the emitter
+        self.assertEqual(emitter.on.call_args[0][0], 'handler1')
+        # Check that the handler was stored in the skill
+        self.assertTrue('handler1' in zip(*s.events)[0])
+
+    @mock.patch.object(Configuration, 'get')
+    def test_remove_event(self, mock_config_get):
+        test_config = {
+            'skills': {
+            }
+        }
+        mock_config_get.return_value = test_config
+        emitter = mock.MagicMock()
+        s = TestSkill1()
+        s.bind(emitter)
+        s.add_event('handler1', s.handler)
+        self.assertTrue('handler1' in zip(*s.events)[0])
+        # Remove event handler
+        s.remove_event('handler1')
+        # make sure it's not in the event list anymore
+        self.assertTrue('handler1' not in zip(*s.events)[0])
+        # Check that the handler was registered with the emitter
+        self.assertEqual(emitter.remove.call_args[0][0], 'handler1')
+
+    @mock.patch.object(Configuration, 'get')
+    def test_add_scheduled_event(self, mock_config_get):
+        test_config = {
+            'skills': {
+            }
+        }
+        mock_config_get.return_value = test_config
+        emitter = mock.MagicMock()
+        s = TestSkill1()
+        s.bind(emitter)
+        s.schedule_event(s.handler, datetime.now(), name='sched_handler1')
+        # Check that the handler was registered with the emitter
+        self.assertEqual(emitter.once.call_args[0][0], '0:sched_handler1')
+        self.assertTrue('0:sched_handler1' in zip(*s.events)[0])
+
+    @mock.patch.object(Configuration, 'get')
+    def test_remove_scheduled_event(self, mock_config_get):
+        test_config = {
+            'skills': {
+            }
+        }
+        mock_config_get.return_value = test_config
+        emitter = mock.MagicMock()
+        s = TestSkill1()
+        s.bind(emitter)
+        s.schedule_event(s.handler, datetime.now(), name='sched_handler1')
+        # Check that the handler was registered with the emitter
+        self.assertTrue('0:sched_handler1' in zip(*s.events)[0])
+        s.cancel_scheduled_event('sched_handler1')
+        # Check that the handler was removed
+        self.assertEqual(emitter.remove.call_args[0][0], '0:sched_handler1')
+        self.assertTrue('0:sched_handler1' not in zip(*s.events)[0])
+
+    @mock.patch.object(Configuration, 'get')
+    def test_run_scheduled_event(self, mock_config_get):
+        test_config = {
+            'skills': {
+            }
+        }
+        mock_config_get.return_value = test_config
+        emitter = mock.MagicMock()
+        s = TestSkill1()
+        with mock.patch.object(s, '_settings',
+                               create=True, value=mock.MagicMock()):
+            s.bind(emitter)
+            s.schedule_event(s.handler, datetime.now(), name='sched_handler1')
+            # Check that the handler was registered with the emitter
+            emitter.once.call_args[0][1](Message('message'))
+            # Check that the handler was run
+            self.assertTrue(s.handler_run)
+            # Check that the handler was removed from the list of registred
+            # handler
+            self.assertTrue('0:sched_handler1' not in zip(*s.events)[0])
+
 
 class TestSkill1(MycroftSkill):
+    def __init__(self):
+        super(TestSkill1, self).__init__()
+        self.handler_run = False
+
     """ Test skill for normal intent builder syntax """
     def initialize(self):
         i = IntentBuilder('a').require('Keyword').build()
         self.register_intent(i, self.handler)
 
     def handler(self, message):
-        pass
+        self.handler_run = True
 
     def stop(self):
         pass

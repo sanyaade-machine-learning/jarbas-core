@@ -12,21 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import gc
 import json
+import os
 import subprocess
 import sys
 import time
-import monotonic
 from threading import Timer, Thread, Event, Lock
-import gc
 
-import os
-from os.path import exists, join
+import monotonic
 
-import mycroft.dialog
 import mycroft.lock
-from mycroft import MYCROFT_ROOT_PATH
-from mycroft.api import is_paired
+from mycroft import MYCROFT_ROOT_PATH, dialog
+from mycroft.api import is_paired, BackendDown
 from mycroft.configuration import Configuration
 from mycroft.messagebus.client.ws import WebsocketClient
 from mycroft.messagebus.message import Message
@@ -66,6 +64,30 @@ MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH,
                                             'msm', 'msm'))
 
 MINUTES = 60  # number of seconds in a minute (syntatic sugar)
+
+
+def direct_update_needed():
+    """Determine need for an update
+    Direct update is needed if the .msm file doesn't exist, if it's older than
+    12 hours (or as configured) or if any of the default skills are missing.
+    """
+    dot_msm = join(SKILLS_DIR, '.msm')
+    hours = skills_config.get('startup_update_required_time', 12)
+    LOG.info('TIME LIMIT {}'.format(hours))
+    # if .msm file is missing or older than 1 hour update skills
+    if (not exists(dot_msm) or
+            os.path.getmtime(dot_msm) < time.time() - 60 * MINUTES * hours):
+        return True
+    else:  # verify that all default skills are installed
+        with open(dot_msm) as f:
+            default_skills = [line.strip() for line in f if line != '']
+        skills = os.listdir(SKILLS_DIR)
+        LOG.info(default_skills)
+        for d in default_skills:
+            if d not in skills:
+                LOG.info('{} has been removed, direct update needed'.format(d))
+                return True
+    return False
 
 
 def connect():
@@ -116,24 +138,28 @@ def check_connection():
         if is_paired():
             # Skip the sync message when unpaired because the prompt to go to
             # home.mycrof.ai will be displayed by the pairing skill
-            enclosure.mouth_text(mycroft.dialog.get("message_synching.clock"))
+            enclosure.mouth_text(dialog.get("message_synching.clock"))
+
         # Force a sync of the local clock with the internet
-        ws.emit(Message("system.ntp.sync"))
-        time.sleep(15)   # TODO: Generate/listen for a message response...
+        config = Configuration.get()
+        platform = config['enclosure'].get("platform", "unknown")
+        if platform in ['mycroft_mark_1', 'picroft']:
+            ws.emit(Message("system.ntp.sync"))
+            time.sleep(15)  # TODO: Generate/listen for a message response...
 
         # Check if the time skewed significantly.  If so, reboot
         skew = abs((monotonic.monotonic() - start_ticks) -
                    (time.time() - start_clock))
-        if skew > 60*60:
+        if skew > 60 * 60:
             # Time moved by over an hour in the NTP sync. Force a reboot to
             # prevent weird things from occcurring due to the 'time warp'.
             #
             ws.emit(Message("speak", {'utterance':
-                    mycroft.dialog.get("time.changed.reboot")}))
+                    dialog.get("time.changed.reboot")}))
             wait_while_speaking()
 
             # provide visual indicators of the reboot
-            enclosure.mouth_text(mycroft.dialog.get("message_rebooting"))
+            enclosure.mouth_text(dialog.get("message_rebooting"))
             enclosure.eyes_color(70, 65, 69)  # soft gray
             enclosure.eyes_spin()
 
@@ -143,25 +169,28 @@ def check_connection():
             # reboot
             ws.emit(Message("system.reboot"))
             return
+        else:
+            ws.emit(Message("enclosure.mouth.reset"))
+            time.sleep(0.5)
 
         ws.emit(Message('mycroft.internet.connected'))
         # check for pairing, if not automatically start pairing
-        if not is_paired():
-            # begin the process
-            payload = {
-                'utterances': ["pair my device"],
-                'lang': "en-us"
-            }
-            ws.emit(Message("recognizer_loop:utterance", payload))
-        else:
-            if is_paired():
-                # Skip the  message when unpaired because the prompt to go
-                # to home.mycrof.ai will be displayed by the pairing skill
-                enclosure.mouth_text(mycroft.dialog.get("message_updating"))
+        try:
+            if not is_paired(ignore_errors=False):
+                payload = {
+                    'utterances': ["pair my device"],
+                    'lang': "en-us"
+                }
+                ws.emit(Message("recognizer_loop:utterance", payload))
+            else:
+                from mycroft.api import DeviceApi
+                api = DeviceApi()
+                api.update_version()
+        except BackendDown:
+            data = {'utterance': dialog.get("backend.down")}
+            ws.emit(Message("speak", data))
+            ws.emit(Message("backend.down"))
 
-            from mycroft.api import DeviceApi
-            api = DeviceApi()
-            api.update_version()
     else:
         thread = Timer(1, check_connection)
         thread.daemon = True
@@ -173,9 +202,11 @@ def _get_last_modified_date(path):
         Get last modified date excluding compiled python files, hidden
         directories and the settings.json file.
 
-        Arg:
+        Args:
             path:   skill directory to check
-        Returns:    time of last change
+
+        Returns:
+            int: time of last change
     """
     last_date = 0
     root_dir, subdirs, files = next(os.walk(path))
@@ -204,10 +235,14 @@ class SkillManager(Thread):
         super(SkillManager, self).__init__()
         self._stop_event = Event()
         self._loaded_priority = Event()
-        self.next_download = time.time() - 1    # download ASAP
+
         self.loaded_skills = {}
         self.msm_blocked = False
         self.ws = ws
+        self.enclosure = EnclosureAPI(ws)
+
+        # Schedule install/update of default skill
+        self.next_download = None
 
         # Conversation management
         ws.on('skill.converse.request', self.handle_converse_request)
@@ -216,7 +251,7 @@ class SkillManager(Thread):
         ws.on('mycroft.internet.connected', self.schedule_update_skills)
 
         # Update upon request
-        ws.on('skillmanager.update', self.schedule_update_skills)
+        ws.on('skillmanager.update', self.schedule_now)
         ws.on('skillmanager.list', self.send_skill_list)
 
         # Register handlers for external MSM signals
@@ -233,7 +268,20 @@ class SkillManager(Thread):
 
     def schedule_update_skills(self, message=None):
         """ Schedule a skill update to take place directly. """
-        # Update skills at next opportunity
+        if direct_update_needed():
+            # Update skills at next opportunity
+            LOG.info('Skills will be updated directly')
+            self.schedule_now()
+            # Skip the  message when unpaired because the prompt to go
+            # to home.mycrof.ai will be displayed by the pairing skill
+            if not is_paired():
+                self.enclosure.mouth_text(
+                    dialog.get("message_updating"))
+        else:
+            LOG.info('Skills will be updated at a later time')
+            self.next_download = time.time() + 60 * MINUTES
+
+    def schedule_now(self, message=None):
         self.next_download = time.time() - 1
 
     def block_msm(self, message=None):
@@ -279,13 +327,13 @@ class SkillManager(Thread):
 
                     if res == 0 and speak:
                         self.ws.emit(Message("speak", {'utterance':
-                                     mycroft.dialog.get("skills updated")}))
+                                     dialog.get("skills updated")}))
                     return True
                 elif not connected():
                     LOG.error('msm failed, network connection not available')
                     if speak:
                         self.ws.emit(Message("speak", {
-                            'utterance': mycroft.dialog.get(
+                            'utterance': dialog.get(
                                 "not connected to the internet")}))
                     self.next_download = time.time() + 5 * MINUTES
                     return False
@@ -295,7 +343,7 @@ class SkillManager(Thread):
                             res, output))
                     if speak:
                         self.ws.emit(Message("speak", {
-                            'utterance': mycroft.dialog.get(
+                            'utterance': dialog.get(
                                 "sorry I couldn't install default skills")}))
                     self.next_download = time.time() + 5 * MINUTES
                     return False
@@ -308,6 +356,8 @@ class SkillManager(Thread):
         """
             Check if unloaded skill or changed skill needs reloading
             and perform loading if necessary.
+
+            Returns True if the skill was loaded/reloaded
         """
         if skill_folder not in self.loaded_skills:
             self.loaded_skills[skill_folder] = {
@@ -318,7 +368,7 @@ class SkillManager(Thread):
 
         # check if folder is a skill (must have __init__.py)
         if not MainModule + ".py" in os.listdir(skill["path"]):
-            return
+            return False
 
         # getting the newest modified date of skill
         modified = _get_last_modified_date(skill["path"])
@@ -326,17 +376,21 @@ class SkillManager(Thread):
 
         # checking if skill is loaded and hasn't been modified on disk
         if skill.get("loaded") and modified <= last_mod:
-            return  # Nothing to do!
+            return False  # Nothing to do!
 
         # check if skill was modified
         elif skill.get("instance") and modified > last_mod:
             # check if skill has been blocked from reloading
             if not skill["instance"].reload_skill:
-                return
+                return False
 
             LOG.debug("Reloading Skill: " + skill_folder)
             # removing listeners and stopping threads
-            skill["instance"].shutdown()
+            try:
+                skill["instance"].shutdown()
+            except Exception:
+                LOG.exception("An error occured while shutting down {}"
+                              .format(skill["instance"].name))
 
             if DEBUG:
                 gc.collect()  # Collect garbage to remove false references
@@ -367,10 +421,12 @@ class SkillManager(Thread):
                                       'id': skill['id'],
                                       'name': skill['instance'].name,
                                       'modified': modified}))
+                return True
             else:
                 self.ws.emit(Message('mycroft.skills.loading_failure',
                                      {'folder': skill_folder,
                                       'id': skill['id']}))
+        return False
 
     def load_skill_list(self, skills_to_load):
         """ Load the specified list of skills from disk
@@ -394,21 +450,37 @@ class SkillManager(Thread):
         self.load_skill_list(PRIORITY_SKILLS)
         self._loaded_priority.set()
 
+        has_loaded = False
+
         # Scan the file folder that contains Skills.  If a Skill is updated,
         # unload the existing version from memory and reload from the disk.
         while not self._stop_event.is_set():
-            # Update skills once an hour
-            if time.time() >= self.next_download:
+
+            # check if skill updates are enabled
+            update = Configuration.get().get("skills", {}).get("auto_update",
+                                                               True)
+
+            # Update skills once an hour if update is enabled
+            if (self.next_download and time.time() >= self.next_download and
+                    update):
                 self.download_skills()
 
             # Look for recently changed skill(s) needing a reload
-            if exists(SKILLS_DIR):
+            if (exists(SKILLS_DIR) and
+                    (self.next_download or not update)):
                 # checking skills dir and getting all skills there
                 list = filter(lambda x: os.path.isdir(
                     os.path.join(SKILLS_DIR, x)), os.listdir(SKILLS_DIR))
 
+                still_loading = False
                 for skill_folder in list:
-                    self._load_or_reload_skill(skill_folder)
+                    still_loading = (
+                            self._load_or_reload_skill(skill_folder) or
+                            still_loading
+                    )
+                if not has_loaded and not still_loading:
+                    has_loaded = True
+                    self.ws.emit(Message('mycroft.skills.initialized'))
 
             # remember the date of the last modified skill
             modified_dates = map(lambda x: x.get("last_modified"),

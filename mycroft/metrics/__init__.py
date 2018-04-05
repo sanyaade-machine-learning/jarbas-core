@@ -33,7 +33,13 @@ def report_metric(name, data):
         data (dict): JSON dictionary to report. Must be valid JSON
     """
     # if Configuration().get()['opt_in']:
-    #    DeviceApi().report_metric(name, data)
+    #    DeviceApi()    def report_metric(self, name, data):
+        # return self.request({
+        #    "method": "POST",
+        #    "path": "/" + self.identity.uuid + "/metric/" + name,
+        #    "json": data
+        # })
+        return None.report_metric(name, data)
     pass
 
 class Stopwatch(object):

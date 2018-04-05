@@ -27,6 +27,23 @@ else:
     from queue import Queue
 
 
+def repeat_time(sched_time, repeat):
+    """Next scheduled time for repeating event. Asserts that the
+    time is not in the past.
+
+    Args:
+        sched_time (float): Scheduled unix time for the event
+        repeat (float):     Repeat period in seconds
+
+    Returns: (float) time for next event
+    """
+    next_time = sched_time + repeat
+    if next_time < time.time():
+        # Schedule at an offset to assure no doubles
+        next_time = time.time() + repeat
+    return next_time
+
+
 class EventScheduler(Thread):
     def __init__(self, emitter, schedule_file='/opt/mycroft/schedule.json'):
         """
@@ -84,9 +101,15 @@ class EventScheduler(Thread):
             event, sched_time, repeat, data = self.add.get(timeout=1)
             # get current list of scheduled times for event, [] if missing
             event_list = self.events.get(event, [])
-            # add received event and time
-            event_list.append((sched_time, repeat, data))
-            self.events[event] = event_list
+
+            # Don't schedule if the event is repeating and already scheduled
+            if repeat and event in self.events:
+                LOG.debug('Repeating event {} is already scheduled, discarding'
+                          .format(event))
+            else:
+                # add received event and time
+                event_list.append((sched_time, repeat, data))
+                self.events[event] = event_list
 
     def remove_events(self):
         """
@@ -137,7 +160,8 @@ class EventScheduler(Thread):
                 self.emitter.emit(Message(event, data))
                 # if this is a repeated event add a new trigger time
                 if repeat:
-                    remaining.append((sched_time + repeat, repeat, data))
+                    next_time = repeat_time(sched_time, repeat)
+                    remaining.append((next_time, repeat, data))
             # update list of events
             self.events[event] = remaining
 
