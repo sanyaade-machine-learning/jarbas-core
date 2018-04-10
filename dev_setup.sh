@@ -55,8 +55,8 @@ show_help() {
 	echo "not as root/sudo."
 }
 
-opt_skipmimic=true
-opt_allowroot=true
+opt_skipmimic=true # do not install mimic by default
+opt_allowroot=true # if you are using this fork you are supposed to know what you are doing
 
 for var in "$@"
 do
@@ -162,11 +162,13 @@ git config commit.template .gitmessage
 
 TOP=$(cd $(dirname $0) && pwd -L)
 
+
+# this uses a "jarbas" virtual env instead of "mycroft"
 if [[ ${use_virtualenvwrapper} == "true" ]] ; then
     if [ -z "$WORKON_HOME" ]; then
-        VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/mycroft"}
+        VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/jarbas"}
     else
-        VIRTUALENV_ROOT="$WORKON_HOME/mycroft"
+        VIRTUALENV_ROOT="$WORKON_HOME/jarbas"
     fi
 fi
 
@@ -278,3 +280,4 @@ md5sum requirements.txt dev_setup.sh > .installed
 
 # make sure this package is found in import
 sudo ln -sf ${DIR}/mycroft /usr/local/lib/python2.7/dist-packages/mycroft
+export PYTHONPATH="${PYTHONPATH}:${DIR}/mycroft"

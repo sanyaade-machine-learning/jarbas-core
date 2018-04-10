@@ -43,9 +43,9 @@ use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'tr
 
 if [[ ${use_virtualenvwrapper} == "true" ]] ; then
     if [ -z "$WORKON_HOME" ]; then
-        VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/mycroft"}
+        VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/jarbas"}
     else
-        VIRTUALENV_ROOT="$WORKON_HOME/mycroft"
+        VIRTUALENV_ROOT="$WORKON_HOME/jarbas"
     fi
 
     source "${VIRTUALENV_ROOT}/bin/activate"
@@ -57,5 +57,6 @@ else
     sudo pip install -r requirements.txt
 fi
 
-sudo ln -sf ${DIR}/mycroft /usr/local/lib/python2.7/dist-packages/mycroft
+sudo ln -sf ${DIR}/mycroft /usr/local/lib/python2.7/site-packages/mycroft
+export PYTHONPATH="${PYTHONPATH}:${DIR}/mycroft"
 

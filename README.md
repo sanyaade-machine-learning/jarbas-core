@@ -1,32 +1,56 @@
 jarbas - dev fork
 
 these changes are being made into PRs for mycroft-core and will be
-unlisted once merged
+unlisted once merged, this readme should always be considered half outdated
+
+## usage
+
+to install
+
+    git clone https://github.com/JarbasAl/jarbas-core
+    cd jarbas-core
+    ./dev_setup.sh
+
+to start
+
+    cd jarbas-core
+    ./jarbas.sh start
+
+to stop
+
+    cd jarbas-core
+    ./jarbas.sh stop
+
+to update dev env
+
+    cd jarbas-core
+    ./update.dev.sh
+
+to update jarbas-core
+
+    cd jarbas-core
+    git pull
 
 
-# wakewords
+## wakewords
 
 - [multiple wake words](https://github.com/MycroftAI/mycroft-core/pull/1233)
 - optionally play a sound per wake word
 - optionally start listening
 - optionally considered as utterance
 
-# STT support
+## STT support
 
 - [pocketsphinx](https://github.com/MycroftAI/mycroft-core/pull/1184) default stt
 - pocketsphinx es-es language model included
 - pocketsphinx en-us language model included
-- [houndify stt](https://github.com/MycroftAI/mycroft-core/pull/1229)
-- [bing stt](https://github.com/MycroftAI/mycroft-core/pull/1229)
 
-# TTS support
+## TTS support
 
-- [bing tts](https://github.com/MycroftAI/mycroft-core/pull/1260)
 - [polly tts](https://github.com/MycroftAI/mycroft-core/pull/1262)
-- [watson tts](https://github.com/MycroftAI/mycroft-core/pull/1261)
 - beep speak tts (r2d2 sounds)
 
-# privacy enhancements
+## privacy enhancements
 
 - blacklist pairing skill
 - blacklist configuration skill
@@ -39,24 +63,20 @@ unlisted once merged
 - disable mycroft ai remote skill settings
 - privacy compromising options removed from config (server, opt in, ww upload, mycroft stt)
 - secure websocket by default
-- disable [auto skills update](https://github.com/MycroftAI/mycroft-core/pull/1342) to avoid [malware distribution](https://jarbasai.github.io//posts/2017/10/skills_malware/)
 - send emails from your own account, instead of using mycroft's api
 
-# dev tools
-- [messagebus api](https://github.com/MycroftAI/mycroft-core/pull/1013)
-- include [auto_translatable skill class](https://github.com/JarbasAl/auto_translatable_skills)
-- util to [get phonemes](https://github.com/MycroftAI/mycroft-core/pull/1174)
+## dev tools
+- include [mycroft_jarbas_utils](https://github.com/JarbasAl/mycroft_jarbas_utils)
 
-# internals
-- no virtual env by default
+## internals
+- virtual env named "jarbas" instead of "mycroft"
 - [abstract enclosure](https://github.com/MycroftAI/mycroft-core/pull/1306)
 - [speak message metadata](https://github.com/MycroftAI/mycroft-core/pull/1069), mute, more_speech and context options
 - message context and [source/destinatary tracking](https://github.com/MycroftAI/mycroft-core/pull/796/)
 - [centralized api](https://github.com/MycroftAI/mycroft-core/pull/1061/files) section in config
 - [fallback order override](https://github.com/MycroftAI/mycroft-core/pull/987) option in config
 - [enable/disable/status TTS](https://github.com/MycroftAI/mycroft-core/pull/556) signal
-- [enable/disable intent signal](https://github.com/MycroftAI/mycroft-core/pull/860)
-- add symlink to python packages so git cloned mycroft can be imported globally
+- changed start scripts (uses screen)
 - skills dir configurable in config file
 - use virtualenv option in config file
 
