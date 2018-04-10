@@ -99,3 +99,35 @@ to update jarbas-core
 * [Mycroft Forum](https://community.mycroft.ai)
 * [Mycroft Blog](https://mycroft.ai/blog)
 
+
+## FAQ
+
+workon jarbas does not work, workon command not found:
+
+    Add this to your .bashrc :
+
+        # load virtualenvwrapper for python (after custom PATHs)
+        venvwrap="virtualenvwrapper.sh"
+        /usr/bin/which -a $venvwrap
+        if [ $? -eq 0 ]; then
+            venvwrap=`/usr/bin/which $venvwrap`
+            source $venvwrap
+        fi
+
+    Then use:
+
+        source .bashrc
+
+    to reflect the changes.
+
+    Additionally, if the terminal still sometimes cant find workon, use source .bash_profile to reset and find it again.
+
+    If this fails use "/usr/bin/which -s $venvwrap" instead of "/usr/bin/which -a $venvwrap"
+
+
+services fail to import mycroft, seems you are not using the provided scripts, before launching mycroft do
+
+
+    export PYTHONPATH="${PYTHONPATH}:path/to/jarbas-core/mycroft"
+
+    # optionally add this to your .bashrc
