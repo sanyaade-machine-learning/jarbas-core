@@ -49,20 +49,24 @@ start_ticks = monotonic.monotonic()
 start_clock = time.time()
 
 DEBUG = Configuration.get().get("debug", False)
-skills_config = Configuration.get().get("skills")
-BLACKLISTED_SKILLS = skills_config.get("blacklisted_skills", [])
+skills_config = Configuration.get().get("skills", {})
 PRIORITY_SKILLS = skills_config.get("priority_skills", [])
-SKILLS_DIR = skills_config.get("directory") or '~/.mycroft/jarbas_skills'
-if "~" in SKILLS_DIR:
-    SKILLS_DIR = expanduser(SKILLS_DIR)
-if not exists(SKILLS_DIR):
-    makedirs(SKILLS_DIR)
-
 installer_config = Configuration.get().get("SkillInstallerSkill", {})
-MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH,
-                                            'msm', 'msm'))
+MSM_BIN = installer_config.get("path", join(MYCROFT_ROOT_PATH, 'msm', 'msm'))
 
-MINUTES = 60  # number of seconds in a minute (syntatic sugar)
+MINUTES = 60  # number of seconds in a minute (syntactic sugar)
+
+
+def get_skills_dir():
+    skills_dir = Configuration.get().get("skills", {}).get("directory", '~/.mycroft/jarbas_skills')
+    if "~" in skills_dir:
+        skills_dir = expanduser(skills_dir)
+    if not exists(skills_dir):
+        makedirs(skills_dir)
+    return skills_dir
+
+def get_blacklisted_skills():
+    return Configuration.get().get("skills", {}).get("blacklisted_skills", [])
 
 
 def direct_update_needed():
@@ -70,7 +74,8 @@ def direct_update_needed():
     Direct update is needed if the .msm file doesn't exist, if it's older than
     12 hours (or as configured) or if any of the default skills are missing.
     """
-    dot_msm = join(SKILLS_DIR, '.msm')
+    skills_dir = get_skills_dir()
+    dot_msm = join(skills_dir, '.msm')
     hours = skills_config.get('startup_update_required_time', 12)
     LOG.info('TIME LIMIT {}'.format(hours))
     # check if skill updates are enabled
@@ -84,7 +89,7 @@ def direct_update_needed():
         else:  # verify that all default skills are installed
             with open(dot_msm) as f:
                 default_skills = [line.strip() for line in f if line != '']
-            skills = os.listdir(SKILLS_DIR)
+            skills = os.listdir(skills_dir)
             LOG.info(default_skills)
             for d in default_skills:
                 if d not in skills:
@@ -350,17 +355,20 @@ class SkillManager(Thread):
         """
             Check if unloaded skill or changed skill needs reloading
             and perform loading if necessary.
+
+            Returns True if the skill was loaded/reloaded
         """
+        skils_dir = get_skills_dir()
         if skill_folder not in self.loaded_skills:
             self.loaded_skills[skill_folder] = {
-                "id": hash(os.path.join(SKILLS_DIR, skill_folder))
+                "id": hash(os.path.join(skils_dir, skill_folder))
             }
         skill = self.loaded_skills.get(skill_folder)
-        skill["path"] = os.path.join(SKILLS_DIR, skill_folder)
+        skill["path"] = os.path.join(skils_dir, skill_folder)
 
         # check if folder is a skill (must have __init__.py)
         if not MainModule + ".py" in os.listdir(skill["path"]):
-            return
+            return False
 
         # getting the newest modified date of skill
         modified = _get_last_modified_date(skill["path"])
@@ -368,13 +376,13 @@ class SkillManager(Thread):
 
         # checking if skill is loaded and hasn't been modified on disk
         if skill.get("loaded") and modified <= last_mod:
-            return  # Nothing to do!
+            return False  # Nothing to do!
 
         # check if skill was modified
         elif skill.get("instance") and modified > last_mod:
             # check if skill has been blocked from reloading
             if not skill["instance"].reload_skill:
-                return
+                return False
 
             LOG.debug("Reloading Skill: " + skill_folder)
             # removing listeners and stopping threads
@@ -389,11 +397,10 @@ class SkillManager(Thread):
                 # Remove two local references that are known
                 refs = sys.getrefcount(skill["instance"]) - 2
                 if refs > 0:
-                    LOG.warning(
-                        "After shutdown of {} there are still "
-                        "{} references remaining. The skill "
-                        "won't be cleaned from memory.".format(
-                            skill['instance'].name, refs))
+                    msg = ("After shutdown of {} there are still "
+                           "{} references remaining. The skill "
+                           "won't be cleaned from memory.")
+                    LOG.warning(msg.format(skill['instance'].name, refs))
             del skill["instance"]
             self.ws.emit(Message("mycroft.skills.shutdown",
                                  {"folder": skill_folder,
@@ -405,7 +412,7 @@ class SkillManager(Thread):
             desc = create_skill_descriptor(skill["path"])
             skill["instance"] = load_skill(desc,
                                            self.ws, skill["id"],
-                                           BLACKLISTED_SKILLS)
+                                           get_blacklisted_skills())
             skill["last_modified"] = modified
             if skill['instance'] is not None:
                 self.ws.emit(Message('mycroft.skills.loaded',
@@ -413,11 +420,12 @@ class SkillManager(Thread):
                                       'id': skill['id'],
                                       'name': skill['instance'].name,
                                       'modified': modified}))
+                return True
             else:
                 self.ws.emit(Message('mycroft.skills.loading_failure',
                                      {'folder': skill_folder,
                                       'id': skill['id']}))
-
+        return False
 
     def load_skill_list(self, skills_to_load):
         """ Load the specified list of skills from disk
@@ -425,11 +433,12 @@ class SkillManager(Thread):
             Args:
                 skills_to_load (list): list of skill directory names to load
         """
-        if exists(SKILLS_DIR):
+        skills_dir = get_skills_dir()
+        if exists(skills_dir):
             # checking skills dir and getting all priority skills there
             skill_list = [folder for folder in filter(
-                lambda x: os.path.isdir(os.path.join(SKILLS_DIR, x)),
-                os.listdir(SKILLS_DIR)) if folder in skills_to_load]
+                lambda x: os.path.isdir(os.path.join(skills_dir, x)),
+                os.listdir(skills_dir)) if folder in skills_to_load]
             for skill_folder in skill_list:
                 self._load_or_reload_skill(skill_folder)
 
@@ -444,7 +453,7 @@ class SkillManager(Thread):
         # Scan the file folder that contains Skills.  If a Skill is updated,
         # unload the existing version from memory and reload from the disk.
         while not self._stop_event.is_set():
-
+            skills_dir = get_skills_dir()
             # check if skill updates are enabled
             update = Configuration.get().get("skills", {}).get("auto_update",
                                                                True)
@@ -455,11 +464,11 @@ class SkillManager(Thread):
                 self.download_skills()
 
             # Look for recently changed skill(s) needing a reload
-            if (exists(SKILLS_DIR) and
+            if (exists(skills_dir) and
                     (self.next_download or not update)):
                 # checking skills dir and getting all skills there
                 list = filter(lambda x: os.path.isdir(
-                    os.path.join(SKILLS_DIR, x)), os.listdir(SKILLS_DIR))
+                    os.path.join(skills_dir, x)), os.listdir(skills_dir))
 
                 for skill_folder in list:
                     self._load_or_reload_skill(skill_folder)
@@ -475,13 +484,6 @@ class SkillManager(Thread):
 
             # Pause briefly before beginning next scan
             time.sleep(2)
-
-        # Do a clean shutdown of all skills
-        for skill in self.loaded_skills:
-            try:
-                self.loaded_skills[skill]['instance'].shutdown()
-            except BaseException:
-                pass
 
     def send_skill_list(self, message=None):
         """
@@ -501,6 +503,15 @@ class SkillManager(Thread):
     def stop(self):
         """ Tell the manager to shutdown """
         self._stop_event.set()
+
+        # Do a clean shutdown of all skills
+        for name, skill_info in self.loaded_skills.items():
+            instance = skill_info.get('instance')
+            if instance:
+                try:
+                    instance._shutdown()
+                except Exception:
+                    LOG.exception('Shutting down skill: ' + name)
 
     def handle_converse_request(self, message):
         """ Check if the targeted skill id can handle conversation
