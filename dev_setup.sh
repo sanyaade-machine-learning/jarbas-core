@@ -129,7 +129,7 @@ install_deps() {
     fi
 
     if found_exe apt-get; then
-        $SUDO apt-get install -y git python python-dev python-setuptools python-virtualenv python-gobject-dev virtualenvwrapper libtool libffi-dev libssl-dev autoconf automake bison swig libglib2.0-dev s3cmd portaudio19-dev mpg123 screen flac curl libicu-dev pkg-config automake libjpeg-dev libfann-dev build-essential jq vlc mplayer mpv
+        $SUDO apt-get install -y git python python-dev python-setuptools python-virtualenv python-gobject-2-dev virtualenvwrapper libtool libffi-dev libssl-dev autoconf automake bison swig libglib2.0-dev s3cmd portaudio19-dev mpg123 screen flac curl libicu-dev pkg-config automake libjpeg-dev libfann-dev build-essential jq vlc mplayer mpv
     elif found_exe pacman; then
         $SUDO pacman -S --needed --noconfirm git python2 python2-pip python2-setuptools python2-virtualenv python2-gobject python-virtualenvwrapper libtool libffi openssl autoconf bison swig glib2 s3cmd portaudio mpg123 screen flac curl pkg-config icu automake libjpeg-turbo base-devel jq
         pacman -Qs "^libfann$" &> /dev/null || (
