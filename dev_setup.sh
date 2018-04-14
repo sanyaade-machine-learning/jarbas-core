@@ -279,5 +279,4 @@ md5sum requirements.txt dev_setup.sh > .installed
 
 
 # make sure this package is found in import
-sudo ln -sf ${DIR}/mycroft /usr/local/lib/python2.7/dist-packages/mycroft
 export PYTHONPATH="${PYTHONPATH}:${DIR}/mycroft"
