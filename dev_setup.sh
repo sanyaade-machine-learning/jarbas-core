@@ -217,8 +217,8 @@ if [[ ${use_virtualenvwrapper} == "true" ]] ; then
         echo "import sys; new=sys.path[sys.__plen:]; del sys.path[sys.__plen:]; p=getattr(sys,'__egginsert',0); sys.path[p:p]=new; sys.__egginsert = p+len(new)" >> "$VENV_PATH_FILE" || return 1
     fi
 
-    if ! grep -q "mycroft-core" $VENV_PATH_FILE; then
-       echo "Adding mycroft-core to virtualenv path"
+    if ! grep -q "jarbas-core" $VENV_PATH_FILE; then
+       echo "Adding jarbas-core to virtualenv path"
        sed -i.tmp '1 a\
     '"$TOP"'
     ' "${VENV_PATH_FILE}"
@@ -272,11 +272,10 @@ fi
 #fi
 
 # set permissions for common scripts
-chmod +x start-mycroft.sh
-chmod +x stop-mycroft.sh
+chmod +x jarbas.sh
+chmod +x start.sh
+chmod +x dev_setup.sh
 
 md5sum requirements.txt dev_setup.sh > .installed
 
 
-# make sure this package is found in import
-export PYTHONPATH="${PYTHONPATH}:${DIR}/mycroft"
