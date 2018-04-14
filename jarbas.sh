@@ -12,7 +12,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 SCRIPTS="$DIR/scripts"
 
 SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
-USER_CONFIG="$HOME/mycroft/configuration/mycroft.conf"
+USER_CONFIG="$HOME/.mycroft/mycroft.conf"
 function get_config_value() {
   key="$1"
   default="$2"
