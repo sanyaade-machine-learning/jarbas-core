@@ -22,23 +22,25 @@ while [ -h "$SOURCE" ]; do
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 PARENTDIR=$(dirname "$DIR")
-SYSTEM_CONFIG="$PARENTDIR/mycroft/configuration/mycroft.conf"
-USER_CONFIG="$HOME/mycroft/configuration/mycroft.conf"
+DEFAULT_CONFIG="$PARENTDIR/mycroft/configuration/mycroft.conf"
+SYSTEM_CONFIG="/etc/mycroft/mycroft.conf"
+USER_CONFIG="$HOME/.mycroft/mycroft.conf"
 function get_config_value() {
   key="$1"
   default="$2"
   value="null"
-  for file in $USER_CONFIG /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
+  for file in $USER_CONFIG $SYSTEM_CONFIG $DEFAULT_CONFIG;   do
     if [[ -r $file ]] ; then
         # remove comments in config for jq to work
         # assume they may be preceded by whitespace, but nothing else
         parsed="$( sed 's:^\s*//.*$::g' $file )"
         echo "$parsed" >> "$PARENTDIR/mycroft/configuration/sys.conf"
         value=$( jq -r "$key" "$PARENTDIR/mycroft/configuration/sys.conf" )
+        rm -rf "$PARENTDIR/mycroft/configuration/sys.conf"
         if [[ "${value}" != "null" ]] ;  then
-            rm -rf $PARENTDIR/mycroft/configuration/sys.conf
             echo "$value"
             return
+
         fi
     fi
   done

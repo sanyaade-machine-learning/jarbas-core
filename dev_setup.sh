@@ -86,23 +86,25 @@ found_exe() {
 
 SOURCE="${BASH_SOURCE[0]}"
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
+DEFAULT_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
+SYSTEM_CONFIG="/etc/mycroft/mycroft.conf"
 USER_CONFIG="$HOME/.mycroft/mycroft.conf"
 function get_config_value() {
   key="$1"
   default="$2"
   value="null"
-  for file in $USER_CONFIG /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
+  for file in $USER_CONFIG $SYSTEM_CONFIG $DEFAULT_CONFIG;   do
     if [[ -r $file ]] ; then
         # remove comments in config for jq to work
         # assume they may be preceded by whitespace, but nothing else
         parsed="$( sed 's:^\s*//.*$::g' $file )"
         echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
         value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
+        rm -rf "$DIR/mycroft/configuration/sys.conf"
         if [[ "${value}" != "null" ]] ;  then
-            rm -rf $DIR/mycroft/configuration/sys.conf
             echo "$value"
             return
+
         fi
     fi
   done
@@ -121,7 +123,6 @@ fi
 
 
 use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
-
 install_deps() {
     echo "Installing packages..."
     if found_exe sudo; then
@@ -199,6 +200,7 @@ fi
 cd "${TOP}"
 if [[ ${use_virtualenvwrapper} == "true" ]] ; then
 # create virtualenv, consistent with virtualenv-wrapper conventions
+    echo "creating venv"
     if [ ! -d "${VIRTUALENV_ROOT}" ]; then
        mkdir -p $(dirname "${VIRTUALENV_ROOT}")
       virtualenv -p python2.7 "${VIRTUALENV_ROOT}"
@@ -224,6 +226,7 @@ if [[ ${use_virtualenvwrapper} == "true" ]] ; then
     ' "${VENV_PATH_FILE}"
     fi
 else
+    echo "no venv"
     # no venv, use any pip version
     easy_install pip
 fi

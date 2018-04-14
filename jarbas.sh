@@ -11,23 +11,25 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 SCRIPTS="$DIR/scripts"
 
-SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
+DEFAULT_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
+SYSTEM_CONFIG="/etc/mycroft/mycroft.conf"
 USER_CONFIG="$HOME/.mycroft/mycroft.conf"
 function get_config_value() {
   key="$1"
   default="$2"
   value="null"
-  for file in $USER_CONFIG /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
+  for file in $USER_CONFIG $SYSTEM_CONFIG $DEFAULT_CONFIG;   do
     if [[ -r $file ]] ; then
         # remove comments in config for jq to work
         # assume they may be preceded by whitespace, but nothing else
         parsed="$( sed 's:^\s*//.*$::g' $file )"
         echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
         value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
+        rm -rf "$DIR/mycroft/configuration/sys.conf"
         if [[ "${value}" != "null" ]] ;  then
-            rm -rf $DIR/mycroft/configuration/sys.conf
             echo "$value"
             return
+
         fi
     fi
   done
@@ -48,6 +50,7 @@ if [[ ${use_virtualenvwrapper} == "true" ]] ; then
 else
     echo "not using venv"
     export PYTHONPATH="${PYTHONPATH}:${DIR}/mycroft"
+
 fi
 
 function screen-config {
