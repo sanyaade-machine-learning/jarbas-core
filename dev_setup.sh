@@ -87,12 +87,12 @@ found_exe() {
 SOURCE="${BASH_SOURCE[0]}"
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
-
+USER_CONFIG="$HOME/mycroft/configuration/mycroft.conf"
 function get_config_value() {
   key="$1"
   default="$2"
   value="null"
-  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
+  for file in $USER_CONFIG /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
     if [[ -r $file ]] ; then
         # remove comments in config for jq to work
         # assume they may be preceded by whitespace, but nothing else

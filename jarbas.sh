@@ -11,6 +11,45 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 SCRIPTS="$DIR/scripts"
 
+SYSTEM_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
+USER_CONFIG="$HOME/mycroft/configuration/mycroft.conf"
+function get_config_value() {
+  key="$1"
+  default="$2"
+  value="null"
+  for file in $USER_CONFIG /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
+    if [[ -r $file ]] ; then
+        # remove comments in config for jq to work
+        # assume they may be preceded by whitespace, but nothing else
+        parsed="$( sed 's:^\s*//.*$::g' $file )"
+        echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
+        value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
+        if [[ "${value}" != "null" ]] ;  then
+            rm -rf $DIR/mycroft/configuration/sys.conf
+            echo "$value"
+            return
+        fi
+    fi
+  done
+  echo "$default"
+}
+
+use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
+
+if [[ ${use_virtualenvwrapper} == "true" ]] ; then
+    echo "using venv"
+    if [ -z "$WORKON_HOME" ]; then
+        VIRTUALENV_ROOT=${VIRTUALENV_ROOT:-"${HOME}/.virtualenvs/jarbas"}
+    else
+        VIRTUALENV_ROOT="$WORKON_HOME/jarbas"
+    fi
+
+    source "${VIRTUALENV_ROOT}/bin/activate"
+else
+    echo "not using venv"
+    export PYTHONPATH="${PYTHONPATH}:${DIR}/mycroft"
+fi
+
 function screen-config {
   echo "
     # Generated
