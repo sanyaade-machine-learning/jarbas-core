@@ -41,6 +41,8 @@ function get_config_value() {
   echo "$default"
 }
 
+git pull
+
 use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
 
 if [[ ${use_virtualenvwrapper} == "true" ]] ; then
