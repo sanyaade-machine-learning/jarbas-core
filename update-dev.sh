@@ -61,6 +61,8 @@ else
     sudo pip install -r requirements.txt
 fi
 
-sudo ln -sf ${DIR}/mycroft /usr/local/lib/python2.7/site-packages/mycroft
+
 export PYTHONPATH="${PYTHONPATH}:${DIR}/mycroft"
+
+bash $DIR/jarbas.sh restart
 
