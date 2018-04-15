@@ -160,7 +160,7 @@ def check_connection():
         # Check if the time skewed significantly.  If so, reboot
         skew = abs((monotonic.monotonic() - start_ticks) -
                    (time.time() - start_clock))
-        if skew > 60*60:
+        if skew > 60 * 60:
             # Time moved by over an hour in the NTP sync. Force a reboot to
             # prevent weird things from occcurring due to the 'time warp'.
             #
@@ -263,6 +263,10 @@ class SkillManager(Thread):
         # Update upon request
         ws.on('skillmanager.update', self.schedule_now)
         ws.on('skillmanager.list', self.send_skill_list)
+        ws.on('skillmanager.deactivate', self.deactivate_skill)
+        ws.on('skillmanager.keep', self.deactivate_except)
+        ws.on('skillmanager.activate', self.activate_skill)
+        ws.on('skillmanager.reload', self.reload_skill)
 
         # Register handlers for external MSM signals
         ws.on('msm.updating', self.block_msm)
@@ -389,7 +393,8 @@ class SkillManager(Thread):
         # check if skill was modified
         elif skill.get("instance") and modified > last_mod:
             # check if skill has been blocked from reloading
-            if not skill["instance"].reload_skill:
+            if (not skill["instance"].reload_skill or
+                    not skill.get('active', True)):
                 return False
 
             LOG.debug("Reloading Skill: " + skill_folder)
@@ -457,7 +462,9 @@ class SkillManager(Thread):
         # occur before MSM has run)
         self.load_skill_list(PRIORITY_SKILLS)
         self._loaded_priority.set()
-        first_load = True
+
+        has_loaded = False
+
         # Scan the file folder that contains Skills.  If a Skill is updated,
         # unload the existing version from memory and reload from the disk.
         while not self._stop_event.is_set():
@@ -478,17 +485,15 @@ class SkillManager(Thread):
                 list = filter(lambda x: os.path.isdir(
                     os.path.join(skills_dir, x)), os.listdir(skills_dir))
 
+                still_loading = False
                 for skill_folder in list:
-                    self._load_or_reload_skill(skill_folder)
-                if first_load:
-                    self.ws.emit(Message("mycroft.skills.initialized",
-                                     {"number": len(list)}))
-                    first_load = False
-
-
-            # remember the date of the last modified skill
-            modified_dates = map(lambda x: x.get("last_modified"),
-                                 self.loaded_skills.values())
+                    still_loading = (
+                            self._load_or_reload_skill(skill_folder) or
+                            still_loading
+                    )
+                if not has_loaded and not still_loading:
+                    has_loaded = True
+                    self.ws.emit(Message('mycroft.skills.initialized'))
 
             # Pause briefly before beginning next scan
             time.sleep(2)
@@ -498,10 +503,62 @@ class SkillManager(Thread):
             Send list of loaded skills.
         """
         try:
-            self.ws.emit(Message('mycroft.skills.list',
-                                 data={'skills': self.loaded_skills.keys()}))
+            info = {}
+            for s in self.loaded_skills:
+                info[s] = {
+                    'active': self.loaded_skills[s].get('active', True),
+                    'id': self.loaded_skills[s]['id']
+                }
+            self.ws.emit(Message('mycroft.skills.list', data=info))
         except Exception as e:
             LOG.exception(e)
+
+    def __deactivate_skill(self, skill):
+        """ Deactivate a skill. """
+        try:
+            self.loaded_skills[skill]['active'] = False
+            self.loaded_skills[skill]['instance']._shutdown()
+        except Exception as e:
+            LOG.error('Couldn\'t deactivate skill, {}'.format(repr(e)))
+
+    def deactivate_skill(self, message):
+        """ Deactivate a skill. """
+        try:
+            skill = message.data['skill']
+            if skill in self.loaded_skills:
+                self.__deactivate_skill(skill)
+        except Exception as e:
+            LOG.error('Couldn\'t deactivate skill, {}'.format(repr(e)))
+
+    def deactivate_except(self, message):
+        """ Deactivate all skills except the provided. """
+        try:
+            skill_to_keep = message.data['skill']
+            if skill_to_keep in self.loaded_skills:
+                for skill in self.loaded_skills:
+                    if skill != skill_to_keep:
+                        self.__deactivate_skill(skill)
+        except Exception as e:
+            LOG.error('Couldn\'t deactivate skill, {}'.format(repr(e)))
+
+    def activate_skill(self, message):
+        """ Activate a deactivated skill. """
+        try:
+            skill = message.data['skill']
+            if not self.loaded_skills[skill].get('active', True):
+                self.loaded_skills[skill]['loaded'] = False
+                self.loaded_skills[skill]['active'] = True
+        except Exception as e:
+            LOG.error('Couldn\'t activate skill, {}'.format(repr(e)))
+
+    def reload_skill(self, message):
+        """ reload a skill """
+        try:
+            skill = message.data['skill']
+            self.loaded_skills[skill]['loaded'] = False
+            self.loaded_skills[skill]['active'] = True
+        except Exception as e:
+            LOG.error('Couldn\'t reload skill, {}'.format(repr(e)))
 
     def wait_loaded_priority(self):
         """ Block until all priority skills have loaded """
