@@ -17,11 +17,12 @@ from tornado import autoreload, web, ioloop
 from mycroft.configuration import Configuration
 from mycroft.lock import Lock  # creates/supports PID locking file
 from mycroft.messagebus.service.ws import WebsocketEventHandler
-from mycroft.util import validate_param
 from mycroft.util.log import LOG
 from mycroft.messagebus.service.self_signed import create_self_signed_cert
 from os.path import dirname, join
 
+from mycroft.util import validate_param, reset_sigint_handler, create_daemon, \
+    wait_for_exit_signal
 
 settings = {
     'debug': True
@@ -30,6 +31,7 @@ settings = {
 
 def main():
     import tornado.options
+    reset_sigint_handler()
     lock = Lock("service")
     tornado.options.parse_command_line()
 
@@ -85,7 +87,9 @@ def main():
     else:
         LOG.info("ws connection started")
         application.listen(port, host)
-    ioloop.IOLoop.instance().start()
+    create_daemon(ioloop.IOLoop.instance().start)
+
+    wait_for_exit_signal()
 
 
 if __name__ == "__main__":

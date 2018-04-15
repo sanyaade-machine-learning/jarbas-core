@@ -16,6 +16,7 @@
 
 # import requests
 # from requests import HTTPError
+from requests import RequestException
 
 from mycroft.configuration import Configuration
 # from mycroft.configuration.config import DEFAULT_CONFIG, SYSTEM_CONFIG, \
@@ -27,8 +28,18 @@ from mycroft.configuration import Configuration
 _paired_cache = False
 
 
+class BackendDown(RequestException):
+    pass
+
+
+class InternetDown(RequestException):
+    pass
+
+
 class Api(object):
     """ Generic object to wrap web APIs """
+    params_to_etag = {}
+    etag_to_response = {}
 
     def __init__(self, path):
         self.path = path
@@ -315,8 +326,8 @@ class DeviceApi(Api):
 class STTApi(Api):
     """ Web API wrapper for performing Speech to Text (STT) """
 
-    def __init__(self):
-        super(STTApi, self).__init__("stt")
+    def __init__(self, path):
+        super(STTApi, self).__init__(path)
 
     def stt(self, audio, language, limit):
         """ Web API wrapper for performing Speech to Text (STT)
@@ -352,7 +363,7 @@ def has_been_paired():
     return True
 
 
-def is_paired():
+def is_paired(ignore_errors=True):
     """ Determine if this device is actively paired with a web backend
 
     Determines if the installation of Mycroft has been paired by the user

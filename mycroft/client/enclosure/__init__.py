@@ -577,13 +577,6 @@ class Mark1Enclosure(Enclosure):
         self.reader = EnclosureReader(self.serial, self.ws, self.lang)
         self.writer = EnclosureWriter(self.serial, self.ws)
 
-        # initiates the web sockets on display manager
-        # NOTE: this is a temporary place to initiate display manager sockets
-        initiate_display_manager_ws()
-
-    def on_ws_open(self, event=None):
-        # Mark 1 auto-detection:
-        #
         # Prepare to receive message when the Arduino responds to the
         # following "system.version"
         self.ws.on("enclosure.started", self.on_arduino_responded)
@@ -599,6 +592,10 @@ class Mark1Enclosure(Enclosure):
 
         # Notifications from mycroft-core
         self.ws.on("enclosure.notify.no_internet", self.on_no_internet)
+
+        # initiates the web sockets on display manager
+        # NOTE: this is a temporary place to initiate display manager sockets
+        initiate_display_manager_ws()
 
     def on_arduino_responded(self, event=None):
         from mycroft.client.enclosure.arduino import EnclosureArduino

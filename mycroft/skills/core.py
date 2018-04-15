@@ -215,10 +215,11 @@ class MycroftSkill(object):
         self.name = name or self.__class__.__name__
         # Get directory of skill
         self._dir = dirname(abspath(sys.modules[self.__module__].__file__))
+        self.settings = SkillSettings(self._dir, self.name)
 
         self.bind(emitter)
         self.config_core = Configuration.get()
-        self.config = self.config_core.get(self.name)
+        self.config = self.config_core.get(self.name) or {}
         self.dialog_renderer = None
         self.vocab_dir = None
         self.root_dir = None
@@ -227,6 +228,7 @@ class MycroftSkill(object):
         self.log = LOG.create_logger(self.name)
         self.reload_skill = True  # allow reloading
         self.events = []
+        self.scheduled_repeats = []
         self.skill_id = 0
         self.APIS_config = self.config_core.get("APIS", {})
         self.API = self.APIS_config.get(self.name)
@@ -259,15 +261,6 @@ class MycroftSkill(object):
     def lang(self):
         return self.config_core.get('lang')
 
-    @property
-    def settings(self):
-        """ Load settings if not already loaded. """
-        try:
-            return self._settings
-        except:
-            self._settings = SkillSettings(self._dir, self.name)
-            return self._settings
-
     def bind(self, emitter):
         """ Register emitter with skill. """
         if emitter:
@@ -275,8 +268,15 @@ class MycroftSkill(object):
             self.enclosure = EnclosureAPI(emitter, self.name)
             self.add_event("converse.deactivate", self._deactivate_skill)
             self.__register_stop()
-            self.add_event('enable_intent', self.handle_enable_intent)
-            self.add_event('disable_intent', self.handle_disable_intent)
+            self.add_event('mycroft.skill.enable_intent',
+                           self.handle_enable_intent)
+            self.add_event('mycroft.skill.disable_intent',
+                           self.handle_disable_intent)
+
+            name = 'mycroft.skills.settings.update'
+            func = self.settings.run_poll
+            emitter.on(name, func)
+            self.events.append((name, func))
 
     def __register_stop(self):
         self.stop_time = time.time()
@@ -833,7 +833,7 @@ class MycroftSkill(object):
         names = [intent[0] for intent in self.registered_intents]
         intents = [intent[1] for intent in self.registered_intents]
         if intent_name in names:
-            intent = intents[names.index( intent_name)]
+            intent = intents[names.index(intent_name)]
             self.registered_intents.remove((intent_name, intent))
             intent.name = intent_name
             self.register_intent(intent, None)
@@ -1018,10 +1018,20 @@ class MycroftSkill(object):
         process termination. The skill implementation must
         shutdown all processes and operations in execution.
         """
+        pass
+
+    def _shutdown(self):
+        """Parent function called internally to shut down everything"""
+        try:
+            self.shutdown()
+        except Exception as e:
+            LOG.error('Skill specific shutdown function encountered '
+                      'an error: {}'.format(repr(e)))
         # Store settings
         self.settings.store()
-        self.settings.is_alive = False
+        self.settings.stop_polling()
         # removing events
+        self.cancel_all_repeating_events()
         for e, f in self.events:
             self.emitter.remove(e, f)
         self.events = []  # Remove reference to wrappers
@@ -1045,7 +1055,7 @@ class MycroftSkill(object):
             Returns:
                 str: name unique to this skill
         """
-        return str(self.skill_id) + ':' + name
+        return str(self.skill_id) + ':' + (name or '')
 
     def _schedule_event(self, handler, when, data=None, name=None,
                         repeat=None):
@@ -1056,6 +1066,8 @@ class MycroftSkill(object):
         if not name:
             name = self.name + handler.__name__
         name = self._unique_name(name)
+        if repeat:
+            self.scheduled_repeats.append(name)
 
         data = data or {}
         self.add_event(name, handler, once=not repeat)
@@ -1095,10 +1107,15 @@ class MycroftSkill(object):
                 data (dict, optional):  data to send along to the handler
                 name (str, optional):   friendly name parameter
         """
-        data = data or {}
-        if not when:
-            when = datetime.now() + timedelta(seconds=frequency)
-        self._schedule_event(handler, when, data, name, frequency)
+        # Do not schedule if this event is already scheduled by the skill
+        if name not in self.scheduled_repeats:
+            data = data or {}
+            if not when:
+                when = datetime.now() + timedelta(seconds=frequency)
+            self._schedule_event(handler, when, data, name, frequency)
+        else:
+            LOG.debug('The event is already scheduled, cancel previous '
+                      'event if this scheduling should replace the last.')
 
     def update_scheduled_event(self, name, data=None):
         """
@@ -1125,6 +1142,8 @@ class MycroftSkill(object):
         """
         unique_name = self._unique_name(name)
         data = {'event': unique_name}
+        if name in self.scheduled_repeats:
+            self.scheduled_repeats.remove(name)
         if self.remove_event(unique_name):
             self.emitter.emit(Message('mycroft.scheduler.remove_event',
                                       data=data, context=self.message_context))
@@ -1165,6 +1184,11 @@ class MycroftSkill(object):
         if time.time() - start_wait > 3.0:
             raise Exception("Event Status Messagebus Timeout")
         return event_status[0]
+
+    def cancel_all_repeating_events(self):
+        """ Cancel any repeating events started by the skill. """
+        for e in self.scheduled_repeats:
+            self.cancel_scheduled_event(e)
 
 
 #######################################################################
@@ -1375,9 +1399,9 @@ class FallbackSkill(MycroftSkill):
             handler = self.instance_fallback_handlers.pop()
             self.remove_fallback(handler)
 
-    def shutdown(self):
+    def _shutdown(self):
         """
             Remove all registered handlers and perform skill shutdown.
         """
         self.remove_instance_handlers()
-        super(FallbackSkill, self).shutdown()
+        super(FallbackSkill, self)._shutdown()
