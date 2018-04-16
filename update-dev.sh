@@ -15,7 +15,7 @@
 # limitations under the License.
 
 SOURCE="${BASH_SOURCE[0]}"
-DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+DIR=$(cd $(dirname $0) && pwd -L)
 DEFAULT_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
 SYSTEM_CONFIG="/etc/mycroft/mycroft.conf"
 USER_CONFIG="$HOME/.mycroft/mycroft.conf"
@@ -41,6 +41,7 @@ function get_config_value() {
   echo "$default"
 }
 
+cd $DIR
 git pull
 
 use_virtualenvwrapper="$(get_config_value '.enclosure.use_virtualenvwrapper' 'true')"
@@ -64,5 +65,8 @@ fi
 
 export PYTHONPATH="${PYTHONPATH}:${DIR}/mycroft"
 
-bash $DIR/jarbas.sh restart
-
+case "$1" in
+  "-r"|"--restart")
+    bash $DIR/jarbas.sh restart
+    ;;
+esac
