@@ -56,28 +56,33 @@ input_lines() {
 }
 
 
+DIR=$(cd $(dirname $0) && pwd -L)
+DEFAULT_CONFIG="$DIR/mycroft/configuration/mycroft.conf"
+SYSTEM_CONFIG="/etc/mycroft/mycroft.conf"
+USER_CONFIG="$HOME/.mycroft/mycroft.conf"
 function get_config_value() {
   key="$1"
   default="$2"
   value="null"
-  for file in ~/.mycroft/mycroft.conf /etc/mycroft/mycroft.conf $SYSTEM_CONFIG;   do
+  for file in $USER_CONFIG $SYSTEM_CONFIG $DEFAULT_CONFIG;   do
     if [[ -r $file ]] ; then
-        # remove comments
+        # remove comments in config for jq to work
         # assume they may be preceded by whitespace, but nothing else
         parsed="$( sed 's:^\s*//.*$::g' $file )"
         echo "$parsed" >> "$DIR/mycroft/configuration/sys.conf"
         value=$( jq -r "$key" "$DIR/mycroft/configuration/sys.conf" )
+        rm -rf "$DIR/mycroft/configuration/sys.conf"
         if [[ "${value}" != "null" ]] ;  then
-            rm -rf $DIR/mycroft/configuration/sys.conf
             echo "$value"
             return
+
         fi
     fi
   done
   echo "$default"
 }
 
-skills_dir="$(get_config_value '.skills.directory' '/opt/mycroft/skills')"
+skills_dir="$(get_config_value '.skills.directory' '/jarbas_skills')"
 
 if [ "$#" -gt "2" ] || [ "$1" = "-h" ]; then
     echo "Usage: $0"
@@ -148,7 +153,7 @@ class $class_name(MycroftSkill):
     def __init__(self):
         MycroftSkill.__init__(self)
 
-    @intent_handler(IntentBuilder().require('$keyword'))
+    @intent_handler(IntentBuilder('{$keyword}Intent').require('$keyword'))
     def handle_${handler_name}(self, message):
         self.speak_dialog('$dialog_name')
 

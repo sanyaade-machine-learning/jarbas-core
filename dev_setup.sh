@@ -266,8 +266,6 @@ else
   echo "Skipping mimic build."
 fi
 
-# install pygtk for desktop_launcher skill
-"${TOP}/scripts/install-pygtk.sh" " ${CORES}"
 
 # install opencv
 #if [[ "$mycroft_platform" == "picroft" || "$mycroft_platform" ==

@@ -54,11 +54,10 @@ if [[ ${use_virtualenvwrapper} == "true" ]] ; then
     fi
 
     source "${VIRTUALENV_ROOT}/bin/activate"
-    easy_install pip==9.0.1
     pip install --upgrade virtualenv
     pip install -r requirements.txt
 else
-    sudo easy_install pip
+    sudo pip install --upgrade pip
     sudo pip install -r requirements.txt
 fi
 

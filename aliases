@@ -1,0 +1,7 @@
+alias jarbas="bash /home/user/jarbas-core/jarbas.sh"
+alias jarbas-cli-client="bash /home/user/jarbas-core/start.sh -c"
+alias jarbas-restart="bash /home/user/jarbas-core/jarbas.sh restart"
+alias jarbas-stop="bash /home/user/jarbas-core/jarbas.sh stop"
+alias jarbas-start="bash /home/user/jarbas-core/jarbas.sh start"
+alias jarbas-update="bash /home/user/jarbas-core/update-dev.sh"
+alias jarbas-skiller="bash /home/user/jarbas-core/skiller.sh"
