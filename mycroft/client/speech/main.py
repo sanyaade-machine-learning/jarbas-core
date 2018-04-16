@@ -85,8 +85,9 @@ def handle_complete_intent_failure(event):
 
 
 def handle_hotword(event):
-    ww = config["listener"].get("wake_word", "hey mycroft")
-    suw = config["listener"].get("stand_up_word", "wake up")
+    config = Configuration.get().get("listener", {})
+    ww = config.get("wake_word", "hey mycroft")
+    suw = config.get("stand_up_word", "wake up")
     if event["hotword"] != ww and event["hotword"] != suw:
         LOG.info("Hotword Detected: " + event['hotword'])
         ws.emit(Message('recognizer_loop:hotword', event))
