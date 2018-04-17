@@ -18,9 +18,8 @@ import subprocess
 import sys
 import time
 from threading import Timer, Thread, Event, Lock
-
+from mycroft.msm.py_msm import JarbasSkillsManager
 import monotonic
-from os.path import exists, join
 
 import mycroft.lock
 from mycroft import MYCROFT_ROOT_PATH, dialog
@@ -67,6 +66,7 @@ def get_skills_dir():
         makedirs(skills_dir)
     return skills_dir
 
+
 def get_blacklisted_skills():
     return Configuration.get().get("skills", {}).get("blacklisted_skills", [])
 
@@ -88,15 +88,6 @@ def direct_update_needed():
         if (not exists(dot_msm) or
                 os.path.getmtime(dot_msm) < time.time() - 60 * MINUTES * hours):
             return True
-        else:  # verify that all default skills are installed
-            with open(dot_msm) as f:
-                default_skills = [line.strip() for line in f if line != '']
-            skills = os.listdir(skills_dir)
-            LOG.info(default_skills)
-            for d in default_skills:
-                if d not in skills:
-                    LOG.info('{} has been removed, direct update needed'.format(d))
-                    return skills_config.get("auto_update", False)
     return False
 
 
@@ -323,24 +314,11 @@ class SkillManager(Thread):
                 speak (bool, optional): Speak the result? Defaults to False
         """
         # Don't invoke msm if already running
-        if exists(MSM_BIN) and self.__msm_lock.acquire():
+        if self.__msm_lock.acquire():
             try:
-                # Invoke the MSM script to do the hard work.
-                LOG.debug("==== Invoking Mycroft Skill Manager: " + MSM_BIN)
-                p = subprocess.Popen(MSM_BIN + " default",
-                                     stderr=subprocess.STDOUT,
-                                     stdout=subprocess.PIPE, shell=True)
-                (output, err) = p.communicate()
-                res = p.returncode
-                # Always set next update to an hour from now if successful
-                if res == 0:
-                    self.next_download = time.time() + 60 * MINUTES
-
-                    if res == 0 and speak:
-                        data = {'utterance': dialog.get("skills updated")}
-                        self.ws.emit(Message("speak", data))
-                    return True
-                elif not connected():
+                msm = JarbasSkillsManager(self.ws)
+                msm.update_skills()
+                if not connected():
                     LOG.error('msm failed, network connection not available')
                     if speak:
                         self.ws.emit(Message("speak", {
@@ -348,20 +326,17 @@ class SkillManager(Thread):
                                 "not connected to the internet")}))
                     self.next_download = time.time() + 5 * MINUTES
                     return False
-                elif res != 0:
-                    LOG.error(
-                        'msm failed with error {}: {}'.format(
-                            res, output))
+                else:
+                    self.next_download = time.time() + 60 * MINUTES
+
                     if speak:
-                        self.ws.emit(Message("speak", {
-                            'utterance': dialog.get(
-                                "sorry I couldn't install default skills")}))
-                    self.next_download = time.time() + 5 * MINUTES
-                    return False
+                        data = {'utterance': dialog.get("skills updated")}
+                        self.ws.emit(Message("speak", data))
+                    return True
             finally:
                 self.__msm_lock.release()
         else:
-            LOG.error("Unable to invoke Mycroft Skill Manager: " + MSM_BIN)
+            LOG.error("Unable to invoke Jarbas Skills Manager")
 
     def _load_or_reload_skill(self, skill_folder):
         """

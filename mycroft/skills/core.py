@@ -857,8 +857,8 @@ class MycroftSkill(object):
             raise ValueError('word should be a string')
         context = to_letters(self.skill_id) + context
         self.emitter.emit(Message('add_context',
-                                  {'context': context, 'word': word}),
-                          context=self.message_context)
+                                  {'context': context, 'word': word},
+                          context=self.message_context))
 
     def remove_context(self, context):
         """
@@ -866,8 +866,8 @@ class MycroftSkill(object):
         """
         if not isinstance(context, basestring):
             raise ValueError('context should be a string')
-        self.emitter.emit(Message('remove_context', {'context': context}),
-                          context=self.message_context)
+        self.emitter.emit(Message('remove_context', {'context': context},
+                          context=self.message_context))
 
     def register_vocabulary(self, entity, entity_type):
         """ Register a word to an keyword

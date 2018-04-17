@@ -246,7 +246,7 @@ class DeviceApi(Api):
         # return self.request({
         #    "path": "/" + self.identity.uuid + "/setting"
         #})
-        return "{}"
+        return {}
 
     def get_location(self):
         """ Retrieve device location information from the web backend
