@@ -332,6 +332,9 @@ class SkillManager(Thread):
                     if speak:
                         data = {'utterance': dialog.get("skills updated")}
                         self.ws.emit(Message("speak", data))
+                    dot_msm = join(get_skills_dir(), '.msm')
+                    with open(dot_msm, "w") as f:
+                        f.writelines(msm.default_skills)
                     return True
             finally:
                 self.__msm_lock.release()

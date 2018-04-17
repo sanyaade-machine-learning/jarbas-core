@@ -7,7 +7,6 @@ from os.path import exists, expanduser, join, isdir
 from os import makedirs, listdir, remove, utime
 import requests
 import subprocess
-import pip
 from git import Repo
 from git.cmd import Git, GitCommandError
 
@@ -410,6 +409,7 @@ class MycroftSkillsManager(object):
         # TODO handle sudo if not in venv
         # TODO check hash before re running
         if exists(join(skill["path"], "requirements.txt")):
+            import pip # must be here or pip throws error code 2 on threads
             pip_code = pip.main(['install', '-r', join(skill["path"], "requirements.txt")])
             # TODO parse pip code
 
