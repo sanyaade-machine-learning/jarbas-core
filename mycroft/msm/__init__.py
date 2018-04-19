@@ -29,13 +29,13 @@ if __name__ == "__main__":
 
     msm = JarbasSkillsManager(emitter=ws)
 
-    if option in ["-d", "--defaults", "defaults"]:
+    if option in ["defaults"]:
         msm.install_defaults()
         exit(0)
-    elif option in ["-l", "--list", "list"]:
+    elif option in ["list"]:
         msm.list_skills()
         exit(0)
-    elif option in ["-i", "install"]:
+    elif option in ["install"]:
         if args.skill:
             if args.skill.startswith("http"):
                 msm.install_by_url(args.skill)

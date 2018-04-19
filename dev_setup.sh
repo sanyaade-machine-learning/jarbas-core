@@ -55,7 +55,7 @@ show_help() {
 	echo "not as root/sudo."
 }
 
-opt_skipmimic=true # do not install mimic by default
+opt_skipmimic=false # do not install mimic by default
 opt_allowroot=true # if you are using this fork you are supposed to know what you are doing
 
 for var in "$@"
@@ -130,7 +130,7 @@ install_deps() {
     fi
 
     if found_exe zypper; then
-	$SUDO zypper install -y git python glibc-devel linux-glibc-devel python-devel python2-virtualenv python2-gobject-devel python-virtualenvwrapper libtool libffi-devel libopenssl-devel autoconf automake bison swig glib2-devel portaudio-devel mpg123 flac curl libicu-devel pkg-config pkg-config libjpeg-devel libfann-devel python-curses
+	$SUDO zypper install -y git python espeak glibc-devel linux-glibc-devel python-devel python2-virtualenv python2-gobject-devel python-virtualenvwrapper libtool libffi-devel libopenssl-devel autoconf automake bison swig glib2-devel portaudio-devel mpg123 flac curl libicu-devel pkg-config pkg-config libjpeg-devel libfann-devel python-curses
 	$SUDO zypper install -y -t pattern devel_C_C++
     elif found_exe apt-get; then
         $SUDO apt-get install -y git python python-dev python-setuptools python-virtualenv python-gobject-2-dev libpulse-dev virtualenvwrapper libtool libffi-dev libssl-dev autoconf automake bison swig libglib2.0-dev s3cmd portaudio19-dev mpg123 screen flac curl libicu-dev pkg-config automake libjpeg-dev libfann-dev build-essential jq vlc mplayer mpv

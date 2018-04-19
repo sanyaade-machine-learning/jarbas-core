@@ -17,7 +17,8 @@
 # exit on any error
 set -Ee
 
-MIMIC_DIR=mimic
+DIR=$(cd $(dirname $0) && pwd -L)
+MIMIC_DIR="..${DIR}/mimic"
 CORES=$1
 MIMIC_VERSION=1.2.0.2
 
