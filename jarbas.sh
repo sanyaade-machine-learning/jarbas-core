@@ -170,16 +170,11 @@ case "$1" in
   $0 stop
   start-mycroft service
   start-mycroft skills
-  start-mycroft audio
   start-mycroft server
 
   case "$2" in
   "")
-    start-mycroft voice
     start-mycroft cli
-    ;;
-  "-v"|"--voice")
-    start-mycroft voice
     ;;
   "-c"|"--cli")
     start-mycroft cli
