@@ -23,7 +23,7 @@ from mycroft.util.log import LOG
 # START_VERSION_BLOCK
 CORE_VERSION_MAJOR = 18
 CORE_VERSION_MINOR = 2
-CORE_VERSION_BUILD = 3
+CORE_VERSION_BUILD = 4
 
 FORK_VERSION_MAJOR = 0
 FORK_VERSION_MINOR = 1
@@ -68,5 +68,17 @@ def check_version(version_string):
         Args:
             version_string (string): version string ('Major.Minor.Build')
     """
-    version_tuple = tuple(map(int, version_string.split('.')))
-    return CORE_VERSION_TUPLE >= version_tuple
+    major, minor, build = version_string.split('.')
+    major = int(major)
+    minor = int(minor)
+    build = int(build)
+
+    if CORE_VERSION_MAJOR > major:
+        return True
+    elif CORE_VERSION_MAJOR == major and CORE_VERSION_MINOR > minor:
+        return True
+    elif major == CORE_VERSION_MAJOR and minor == CORE_VERSION_MINOR and \
+            CORE_VERSION_BUILD >= build:
+        return True
+    else:
+        return False

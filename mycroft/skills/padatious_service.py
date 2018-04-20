@@ -56,7 +56,7 @@ class PadatiousService(FallbackSkill):
         self.emitter.on('padatious:register_intent', self.register_intent)
         self.emitter.on('padatious:register_entity', self.register_entity)
         self.emitter.on('mycroft.skills.initialized', self.train)
-        self.register_fallback(self.handle_fallback, 5)
+        self.register_fallback(self.handle_fallback, 1)
         self.finished_training_event = Event()
         self.finished_initial_train = False
 

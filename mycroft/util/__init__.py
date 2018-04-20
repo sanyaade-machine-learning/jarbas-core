@@ -12,12 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from __future__ import absolute_import
 import socket
 import subprocess
+from threading import Thread
+from time import sleep
 
+import json
 import os.path
 import psutil
 from stat import S_ISREG, ST_MTIME, ST_MODE, ST_SIZE
+import requests
+
+import signal as sig
 
 import mycroft.audio
 import mycroft.configuration
@@ -175,18 +182,41 @@ def read_dict(filename, div='='):
     return d
 
 
-def connected(host="8.8.8.8", port=53, timeout=3):
-    """
-    Thanks to 7h3rAm on
-    Host: 8.8.8.8 (google-public-dns-a.google.com)
-    OpenPort: 53/tcp
-    Service: domain (DNS/TCP)
+def connected():
+    """ Check connection by connecting to 8.8.8.8, if this is
+    blocked/fails, Microsoft NCSI is used as a backup
 
-    NOTE:
-    This is no longer in use by this version
-    New method checks for a connection using ConnectionError only when
-    a question is asked
+    Returns:
+        True if internet connection can be detected
     """
+    return connected_dns() or connected_ncsi()
+
+
+def connected_ncsi():
+    """ Check internet connection by retrieving the Microsoft NCSI endpoint.
+
+    Returns:
+        True if internet connection can be detected
+    """
+    try:
+        r = requests.get('http://www.msftncsi.com/ncsi.txt')
+        if r.text == u'Microsoft NCSI':
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def connected_dns(host="8.8.8.8", port=53, timeout=3):
+    """ Check internet connection by connecting to DNS servers
+
+    Returns:
+        True if internet connection can be detected
+    """
+    # Thanks to 7h3rAm on
+    # Host: 8.8.8.8 (google-public-dns-a.google.com)
+    # OpenPort: 53/tcp
+    # Service: domain (DNS/TCP)
     try:
         socket.setdefaulttimeout(timeout)
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(
@@ -372,3 +402,53 @@ def get_language_dir(base_path, lang="en-us"):
         if len(paths):
             return paths[0]
     return os.path.join(base_path, lang)
+
+
+def reset_sigint_handler():
+    """
+    Reset the sigint handler to the default. This fixes KeyboardInterrupt
+    not getting raised when started via start-mycroft.sh
+    """
+    sig.signal(sig.SIGINT, sig.default_int_handler)
+
+
+def create_daemon(target, args=(), kwargs=None):
+    """Helper to quickly create and start a thread with daemon = True"""
+    t = Thread(target=target, args=args, kwargs=kwargs)
+    t.daemon = True
+    t.start()
+    return t
+
+
+def wait_for_exit_signal():
+    """Blocks until KeyboardInterrupt is received"""
+    try:
+        while True:
+            sleep(100)
+    except KeyboardInterrupt:
+        pass
+
+
+def create_echo_function(name, whitelist=None):
+    from mycroft.configuration import Configuration
+    blacklist = Configuration.get().get("ignore_logs")
+
+    def echo(message):
+        """Listen for messages and echo them for logging"""
+        try:
+            js_msg = json.loads(message)
+
+            if whitelist and js_msg.get("type") not in whitelist:
+                return
+
+            if blacklist and js_msg.get("type") in blacklist:
+                return
+
+            if js_msg.get("type") == "registration":
+                # do not log tokens from registration messages
+                js_msg["data"]["token"] = None
+                message = json.dumps(js_msg)
+        except Exception:
+            pass
+        LOG(name).debug(message)
+    return echo

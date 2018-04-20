@@ -153,11 +153,7 @@ class RemoteConf(LocalConf):
     def __init__(self, cache=None):
         super(RemoteConf, self).__init__(None)
 
-        cache = cache or '/opt/mycroft/web_config_cache.json'
-        from mycroft.api import is_paired
-        if not is_paired():
-            self.load_local(cache)
-            return
+    #    cache = cache or '/opt/mycroft/web_config_cache.json'
 
         try:
             # Here to avoid cyclic import
@@ -174,10 +170,10 @@ class RemoteConf(LocalConf):
                 self.__setitem__(key, config[key])
             self.store(cache)
 
-        except HTTPError as e:
-            LOG.error("RequestException fetching remote configuration: %s" %
-                      e.response.status_code)
-            self.load_local(cache)
+    #    except HTTPError as e:
+    #        LOG.error("RequestException fetching remote configuration: %s" %
+    #                  e.response.status_code)
+    #        self.load_local(cache)
 
         except Exception as e:
             LOG.error("Failed to fetch remote configuration: %s" % repr(e),

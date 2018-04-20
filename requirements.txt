@@ -21,6 +21,8 @@ pillow==4.1.1
 python-dateutil==2.6.0
 google-api-python-client==1.6.4
 monotonic
+pyOpenSSL
+zeroconf<0.20.0
 
 # dev setup tools
 pep8==1.7.0
@@ -31,6 +33,10 @@ padatious==0.3.7
 
 # jarbas utils
 mycroft_jarbas_utils
+py_msm
+
+# audio backends
+py_mplayer
 
 #tools
 pronouncing==0.1.5

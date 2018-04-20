@@ -246,6 +246,7 @@ class Enclosure(object):
 
     def __init__(self):
         self.ws = WebsocketClient()
+        super(Mark1Enclosure, self).__init__(self.ws, "Mark1")
 
         Configuration.init(self.ws)
 
