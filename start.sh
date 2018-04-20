@@ -33,6 +33,8 @@ function get_config_value() {
 case $1 in
 	"service") SCRIPT=${TOP}/mycroft/messagebus/service/main.py ;;
 	"webchat") SCRIPT=${TOP}/mycroft/client/webchat/main.py ;;
+	"hack") SCRIPT=${TOP}/mycroft/server/bridges/hack_chat_bridge.py ;;
+	"fb") SCRIPT=${TOP}/mycroft/server/bridges/facebook_chat_bridge.py ;;
 	"server") SCRIPT=${TOP}/mycroft/client/server/main.py ;;
 	"client") SCRIPT=${TOP}/mycroft/client/client/main.py ;;
 	"skills") SCRIPT=${TOP}/mycroft/skills/main.py ;;

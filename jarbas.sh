@@ -171,6 +171,7 @@ case "$1" in
   start-mycroft service
   start-mycroft skills
   start-mycroft audio
+  start-mycroft server
 
   case "$2" in
   "")
@@ -186,6 +187,12 @@ case "$1" in
   "-d"|"--debug")
     start-mycroft-debug cli
     ;;
+  "-h"|"--hackchat")
+    start-mycroft hack
+    ;;
+  "-fb"|"--facebook")
+    start-mycroft fb
+    ;;
   *)
     echo "Usage"
     usage-exit
@@ -200,6 +207,8 @@ case "$1" in
   stop-mycroft voice
   stop-mycroft cli
   stop-mycroft audio
+  stop-mycroft fb
+  stop-mycroft hack
   ;;
 
 "restart")
