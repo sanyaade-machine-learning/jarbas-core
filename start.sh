@@ -35,7 +35,7 @@ case $1 in
 	"webchat") SCRIPT=${TOP}/mycroft/client/webchat/main.py ;;
 	"hack") SCRIPT=${TOP}/mycroft/server/bridges/hack_chat_bridge.py ;;
 	"fb") SCRIPT=${TOP}/mycroft/server/bridges/facebook_chat_bridge.py ;;
-	"server") SCRIPT=${TOP}/mycroft/client/server/main.py ;;
+	"server") SCRIPT=${TOP}/mycroft/server/main.py ;;
 	"client") SCRIPT=${TOP}/mycroft/client/client/main.py ;;
 	"skills") SCRIPT=${TOP}/mycroft/skills/main.py ;;
 	"audio") SCRIPT=${TOP}/mycroft/audio/main.py ;;
