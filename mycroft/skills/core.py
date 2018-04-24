@@ -920,7 +920,6 @@ class MycroftSkill(object):
                                            together with speech
                        message_context:    message.context field
                """
-        message_context = message_context or self.message_context
         metadata = metadata or {}
         # registers the skill as being active
         self.enclosure.register(self.name)
@@ -931,9 +930,11 @@ class MycroftSkill(object):
                 "metadata": metadata}
         message = dig_for_message()
         if message:
+            message_context = message_context or message.context
             self.emitter.emit(message.reply("speak", data,
                                             self.get_message_context(message_context)))
         else:
+            message_context = message_context or self.message_context
             self.emitter.emit(
                 Message("speak", data, self.get_message_context(message_context)))
 
