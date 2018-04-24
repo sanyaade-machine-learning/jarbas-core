@@ -64,11 +64,14 @@ class PadatiousService(FallbackSkill):
         self.train_time = get_time() + self.train_delay
 
     def train(self, message=None):
-        self.finished_training_event.clear()
-        LOG.info('Training...')
-        self.container.train()
-        LOG.info('Training complete.')
-        self.finished_training_event.set()
+        try:
+            self.finished_training_event.clear()
+            LOG.info('Training...')
+            self.container.train()
+            LOG.info('Training complete.')
+            self.finished_training_event.set()
+        except Exception as e:
+            LOG.error(e)
         self.finished_initial_train = True
 
     def wait_and_train(self):
