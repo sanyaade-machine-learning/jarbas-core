@@ -169,8 +169,9 @@ case "$1" in
 "start")
   $0 stop
   start-mycroft service
-  start-mycroft skills
+  start-mycroft micro
   start-mycroft server
+  start-mycroft skills
 
   case "$2" in
   "")
