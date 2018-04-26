@@ -175,10 +175,7 @@ case "$1" in
 
   case "$2" in
   "")
-    start-mycroft hack
-    start-mycroft fb
     start-mycroft webchat
-    start-mycroft twitch
     ;;
   "-c"|"--cli")
     start-mycroft cli
@@ -191,6 +188,9 @@ case "$1" in
     ;;
   "-h"|"--hackchat")
     start-mycroft hack
+    ;;
+  "-t"|"--twitch")
+    start-mycroft twitch
     ;;
   "-fb"|"--facebook")
     start-mycroft fb
