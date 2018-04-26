@@ -54,9 +54,11 @@ class JarbasClientProtocol(WebSocketClientProtocol):
             msg = json.loads(payload)
             if msg.get("type", "") == "speak":
                 utterance = msg["data"]["utterance"]
-                user = msg["context"]["username"]
+                user = msg.get("context", {}).get("user")
                 logger.info("Output: " + utterance)
-                self.twitch_send(utterance + " " + user)
+                if user:
+                    utterance += " " + user
+                self.twitch_send(utterance)
             if msg.get("type", "") == "server.complete_intent_failure":
                 logger.error("Output: complete_intent_failure")
                 self.twitch_send("does not compute")
