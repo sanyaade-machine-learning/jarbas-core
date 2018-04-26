@@ -95,15 +95,16 @@ class JarbasClientProtocol(WebSocketClientProtocol):
                         # Sets the username variable to the actual username
                         usernamesplit = string.split(parts[1], "!")
                         username = usernamesplit[0]
-
-                        # Only works after twitch is done announcing stuff (MODT = Message of the day)
-                        if MODT:
-                            msg = {"data": {"utterances": [message], "lang": "en-us"},
-                                   "type": "recognizer_loop:utterance",
-                                   "context": {"source": "twitch", "destinatary":
-                                       "https_server", "platform": platform, "user": username}}
-                            msg = json.dumps(msg)
-                            self.sendMessage(msg, False)
+                        print message
+                        if "@" + self.NICK in message:
+                            # Only works after twitch is done announcing stuff (MODT = Message of the day)
+                            if MODT:
+                                msg = {"data": {"utterances": [message], "lang": "en-us"},
+                                       "type": "recognizer_loop:utterance",
+                                       "context": {"source": "twitch", "destinatary":
+                                           "https_server", "platform": platform, "user": username}}
+                                msg = json.dumps(msg)
+                                self.sendMessage(msg, False)
 
                         for l in parts:
                             if "End of /NAMES list" in l:
