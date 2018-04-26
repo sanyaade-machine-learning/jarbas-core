@@ -101,6 +101,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
     def on_close(self):
         global clients
+        self.emitter.remove("speak", self.handle_speak)
         clients.pop(self.peer)
 
 
