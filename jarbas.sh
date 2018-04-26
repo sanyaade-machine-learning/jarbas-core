@@ -175,10 +175,15 @@ case "$1" in
 
   case "$2" in
   "")
-    start-mycroft cli
+    start-mycroft hack
+    start-mycroft fb
+    start-mycroft webchat
     ;;
   "-c"|"--cli")
     start-mycroft cli
+    ;;
+  "-w"|"--webchat")
+    start-mycroft webchat
     ;;
   "-d"|"--debug")
     start-mycroft-debug cli

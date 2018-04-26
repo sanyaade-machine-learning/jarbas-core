@@ -36,7 +36,7 @@ from threading import Thread
 
 import logging
 
-logger = logging.getLogger("Standalone_Jarbas_WebChatClient")
+logger = logging.getLogger("Jarbas_WebChatClient")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel("INFO")
 
