@@ -75,7 +75,7 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
 
 if __name__ == '__main__':
     import base64
-    host = "165.227.224.64"
+    host = "127.0.0.1"
     port = 5678
     name = "standalone cli client"
     api ="test_key"
