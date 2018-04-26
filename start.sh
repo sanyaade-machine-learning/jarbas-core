@@ -34,6 +34,7 @@ case $1 in
 	"service") SCRIPT=${TOP}/mycroft/messagebus/service/main.py ;;
 	"webchat") SCRIPT=${TOP}/mycroft/server/webchat/main.py ;;
 	"micro") SCRIPT=${TOP}/mycroft/server/microservices/main.py ;;
+	"twitch") SCRIPT=${TOP}/mycroft/server/bridges/twitch_bridge.py ;;
 	"hack") SCRIPT=${TOP}/mycroft/server/bridges/hack_chat_bridge.py ;;
 	"fb") SCRIPT=${TOP}/mycroft/server/bridges/facebook_chat_bridge.py ;;
 	"server") SCRIPT=${TOP}/mycroft/server/main.py ;;

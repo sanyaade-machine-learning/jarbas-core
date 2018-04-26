@@ -178,6 +178,7 @@ case "$1" in
     start-mycroft hack
     start-mycroft fb
     start-mycroft webchat
+    start-mycroft twitch
     ;;
   "-c"|"--cli")
     start-mycroft cli
