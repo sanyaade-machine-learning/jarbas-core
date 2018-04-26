@@ -97,6 +97,7 @@ class JarbasClientProtocol(WebSocketClientProtocol):
                         username = usernamesplit[0]
                         print message
                         if "@" + self.NICK in message:
+                            message = message.replace("@" + self.NICK, "")
                             # Only works after twitch is done announcing stuff (MODT = Message of the day)
                             if MODT:
                                 msg = {"data": {"utterances": [message], "lang": "en-us"},

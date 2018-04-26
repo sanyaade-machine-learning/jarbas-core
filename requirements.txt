@@ -34,6 +34,9 @@ padatious==0.3.7
 # jarbas utils
 mycroft_jarbas_utils
 py_msm
+hclib
+remi
+pywebview
 
 # audio backends
 py_mplayer
