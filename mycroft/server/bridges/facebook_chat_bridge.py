@@ -7,7 +7,6 @@ from twisted.internet.protocol import ReconnectingClientFactory
 import json
 from threading import Thread
 import sys
-from mycroft.util.log import LOG as logger
 
 from fbchat.utils import Message
 
@@ -53,10 +52,10 @@ class JarbasClientProtocol(WebSocketClientProtocol):
         self.facebook.listen()
 
     def onConnect(self, response):
-        logger.info("Server connected: {0}".format(response.peer))
+        print("Server connected: {0}".format(response.peer))
 
     def onOpen(self):
-        logger.info("WebSocket connection open. ")
+        print("WebSocket connection open. ")
 
         self.chat_thread = Thread(target=self.start_fb_chat)
         self.chat_thread.setDaemon(True)
@@ -83,7 +82,7 @@ class JarbasClientProtocol(WebSocketClientProtocol):
             pass
 
     def onClose(self, wasClean, code, reason):
-        logger.info("WebSocket connection closed: {0}".format(reason))
+        print("WebSocket connection closed: {0}".format(reason))
 
 
 class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
@@ -95,12 +94,12 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
 
     # websocket handlers
     def clientConnectionFailed(self, connector, reason):
-        logger.info("Client connection failed: " + str(reason) + " .. retrying ..")
+        print("Client connection failed: " + str(reason) + " .. retrying ..")
         self.status = "disconnected"
         self.retry(connector)
 
     def clientConnectionLost(self, connector, reason):
-        logger.info("Client connection lost: " + str(reason) + " .. retrying ..")
+        print("Client connection lost: " + str(reason) + " .. retrying ..")
         self.status = "disconnected"
         self.retry(connector)
 
