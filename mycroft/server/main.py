@@ -188,7 +188,7 @@ class JarbasServerFactory(WebSocketServerFactory):
             message.context["destinatary"] = "skills"
             if "platform" not in message.context:
                 message.context["platform"] = client_data.get("platform",
-                                                          "unknonw")
+                                                          "unknown")
             # send client message to internal mycroft bus
             self.emitter.emit(message)
 
@@ -236,6 +236,7 @@ class JarbasServerFactory(WebSocketServerFactory):
             client_data = self.clients[peer] or {}
             client = client_data.get("object")
             client.sendMessage(message.serialize(), False)
+
 
 if __name__ == '__main__':
 

@@ -184,4 +184,4 @@ def start_standalone():
 
 
 if __name__ == "__main__":
-    start_standalone()
+    start_server()

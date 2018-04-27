@@ -4,9 +4,57 @@ from autobahn.twisted.websocket import WebSocketClientFactory, \
     WebSocketClientProtocol
 from twisted.internet.protocol import ReconnectingClientFactory
 
+from clients.speech.listener import RecognizerLoop
+from threading import Thread
+
+conf = {
+    "listener": {
+        "sample_rate": 16000,
+        "channels": 1,
+        "record_wake_words": False,
+        "record_utterances": False,
+        "phoneme_duration": 120,
+        "multiplier": 1.0,
+        "energy_ratio": 1.5,
+        "wake_word": "hey mycroft",
+        "stand_up_word": "wake up"
+      },
+    "hotwords": {
+        "hey mycroft": {
+            "module": "pocketsphinx",
+            "phonemes": "HH EY . M AY K R AO F T",
+            "threshold": 1e-90,
+            "lang": "en-us"
+        },
+        "thank you": {
+            "module": "pocketsphinx",
+            "phonemes": "TH AE NG K . Y UW .",
+            "threshold": 1e-1,
+            "listen": False,
+            "utterance": "thank you",
+            "active": True,
+            "sound": "",
+            "lang": "en-us"
+        },
+        "wake up": {
+            "module": "pocketsphinx",
+            "phonemes": "W EY K . AH P",
+            "threshold": 1e-20,
+            "lang": "en-us"
+        }
+    },
+    "stt": {
+        "deepspeech_server": {
+           "uri": "http://localhost:8080/stt"
+        },
+        "kaldi": {
+           "uri": "http://localhost:8080/client/dynamic/recognize"
+        }
+        }
+}
+
 import json
 import sys
-import speech_recognition as sr
 import logging
 
 logger = logging.getLogger("Standalone_Mycroft_Client")
@@ -17,13 +65,97 @@ platform = "JarbasVoiceClientv0.1"
 
 
 class JarbasClientProtocol(WebSocketClientProtocol):
+
     def onConnect(self, response):
         logger.info("Server connected: {0}".format(response.peer))
 
     def onOpen(self):
         logger.info("WebSocket connection open. ")
-        self.factory.client = self
-        self.factory.start_listening()
+        self.loop = RecognizerLoop(conf)
+        self.listen = Thread(target=self.start_listening)
+        self.listen.setDaemon(True)
+        self.listen.start()
+
+    def handle_record_begin(self):
+        logger.info("Begin Recording...")
+
+    def handle_record_end(self):
+        logger.info("End Recording...")
+
+    def handle_awoken(self):
+        """ Forward mycroft.awoken to the messagebus. """
+        logger.info("Listener is now Awake: ")
+
+    def handle_wakeword(self, event):
+        logger.info("Wakeword Detected: " + event['utterance'])
+
+    def handle_utterance(self, event):
+        context = {'client_name': platform, "source": self.peer + ":speech",
+                   'destinatary': "https_server"}
+        msg = {"data": {"utterances": event['utterances'], "lang": "en-us"},
+               "type": "recognizer_loop:utterance",
+               "context": context}
+
+        self.send(msg)
+
+    def handle_unknown(self):
+        logger.info('mycroft.speech.recognition.unknown')
+
+    def handle_hotword(self, event):
+        config = conf.get("listener", {})
+        ww = config.get("wake_word", "hey mycroft")
+        suw = config.get("stand_up_word", "wake up")
+        if event["hotword"] != ww and event["hotword"] != suw:
+            logger.info("Hotword Detected: " + event['hotword'])
+
+    def handle_sleep(self):
+        self.loop.sleep()
+
+    def handle_wake_up(self, event):
+        self.loop.awaken()
+
+    def handle_mic_mute(self, event):
+        self.loop.mute()
+
+    def handle_mic_unmute(self, event):
+        self.loop.unmute()
+
+    def handle_audio_start(self, event):
+        """
+            Mute recognizer loop
+        """
+        self.loop.mute()
+
+    def handle_audio_end(self, event):
+        """
+            Request unmute, if more sources has requested the mic to be muted
+            it will remain muted.
+        """
+        self.loop.unmute()  # restore
+
+    def handle_stop(self, event):
+        """
+            Handler for mycroft.stop, i.e. button press
+        """
+        self.loop.force_unmute()
+
+    def start_listening(self):
+        self.loop.on('recognizer_loop:utterance', self.handle_utterance)
+        self.loop.on('recognizer_loop:record_begin', self.handle_record_begin)
+        self.loop.on('recognizer_loop:awoken', self.handle_awoken)
+        self.loop.on('recognizer_loop:wakeword', self.handle_wakeword)
+        self.loop.on('recognizer_loop:hotword', self.handle_hotword)
+        self.loop.on('recognizer_loop:record_end', self.handle_record_end)
+        self.loop.run()
+
+    def stop_listening(self):
+        self.loop.remove_listener('recognizer_loop:utterance', self.handle_utterance)
+        self.loop.remove_listener('recognizer_loop:record_begin', self.handle_record_begin)
+        self.loop.remove_listener('recognizer_loop:awoken', self.handle_awoken)
+        self.loop.remove_listener('recognizer_loop:wakeword', self.handle_wakeword)
+        self.loop.remove_listener('recognizer_loop:hotword', self.handle_hotword)
+        self.loop.remove_listener('recognizer_loop:record_end', self.handle_record_end)
+        self.listen.join(0)
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
@@ -34,9 +166,13 @@ class JarbasClientProtocol(WebSocketClientProtocol):
         else:
             pass
 
+    def send(self, msg):
+        msg = json.dumps(msg)
+        self.sendMessage(msg, False)
+
     def onClose(self, wasClean, code, reason):
         logger.info("WebSocket connection closed: {0}".format(reason))
-        self.factory.stop_listening()
+        self.stop_listening()
 
 
 class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
@@ -45,43 +181,7 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
     def __init__(self, *args, **kwargs):
         super(JarbasClientFactory, self).__init__(*args, **kwargs)
         self.status = "disconnected"
-        self.recognizer = sr.Recognizer()
-        self.microphone = sr.Microphone()
-        self.stop_listening = None
         self.client = None
-
-    def start_listening(self):
-        with self.microphone as source:
-            # we only need to calibrate once, before we start listening
-            self.recognizer.adjust_for_ambient_noise(source)
-        # start listening in the background (note that we don't have to do this inside a `with` statement)
-        self.stop_listening = self.recognizer.listen_in_background(
-            self.microphone, self.process_voice)
-        # `stop_listening` is now a function that, when called, stops background listening
-
-    def process_voice(self, recognizer, audio):
-        # received audio data, now we'll recognize it using Google Speech Recognition
-        try:
-            # for testing purposes, we're just using the default API key
-            # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
-            # instead of `r.recognize_google(audio)`
-            line = recognizer.recognize_google(audio)
-            logger.info(
-                "Google Speech Recognition thinks you said " + line)
-            msg = {"data": {"utterances": [line], "lang": "en-us"},
-                   "type": "recognizer_loop:utterance",
-                   "context": {"source": self.peer, "destinatary":
-                       "https_server", "platform": platform}}
-            msg = json.dumps(msg)
-            self.client.sendMessage(msg, False)
-        except sr.UnknownValueError:
-            logger.info(
-                "Google Speech Recognition could not understand audio")
-        except sr.RequestError as e:
-            logger.info(
-                "Could not request results from Google Speech Recognition service; {0}".format(
-                    e))
-
 
     # websocket handlers
     def clientConnectionFailed(self, connector, reason):
@@ -100,9 +200,9 @@ class JarbasClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
 if __name__ == '__main__':
     import base64
 
-    host = "127.0.0.1"
+    host = "0.0.0.0"
     port = 5678
-    name = "standalone cli client"
+    name = "standalone voice client"
     api = "test_key"
     authorization = name + ":" + api
     usernamePasswordDecoded = authorization

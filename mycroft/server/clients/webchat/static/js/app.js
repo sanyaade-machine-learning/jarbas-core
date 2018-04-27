@@ -44,7 +44,15 @@ $(document).ready(function(){
 	parser.href = document.URL;
 	ip = parser.hostname;
 	port = parser.port;
-	var socket = new WebSocket("wss://webchat:test_key@167.99.238.181:5678");
+    if (parser.href.startsWith("https")){
+    // Define Socket with local computer IP
+	var socket = new WebSocket("wss://"+ip+":"+port+"/ws");
+	console.log("wss://"+ip+":"+port+"/ws")
+    } else {
+    var socket = new WebSocket("ws://"+ip+":"+port+"/ws");
+	console.log("ws://"+ip+":"+port+"/ws")
+    }
+
 
 
 	socket.onopen = function(){  
