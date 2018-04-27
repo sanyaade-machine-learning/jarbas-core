@@ -10,7 +10,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
-class MycroftAPI(object):
+class MycroftMicroServicesAPI(object):
     def __init__(self, api, lang="en-us", url="https://0.0.0.0:6712/"):
         self.api = api
         self.headers = {"Authorization": str(self.api)}
@@ -189,15 +189,16 @@ class MycroftAPI(object):
         except ConnectionError as e:
             raise ConnectionError("Could not connect: " + str(e))
 
+
 if __name__ == "__main__":
     # test if admin privileges are properly blocked
-    ap = MycroftAPI("test_key")
+    ap = MycroftMicroServicesAPI("test_key")
 
     # test connection
     print ap.hello_world()
 
     # test functionality
-    ap = MycroftAPI("test_key")
+    ap = MycroftMicroServicesAPI("test_key")
     print ap.ask_mycroft("hello world")
 
     print ap.get_intent("hello world")
@@ -217,7 +218,7 @@ if __name__ == "__main__":
     except:
         pass
 
-    ap = MycroftAPI("admin_key")
+    ap = MycroftMicroServicesAPI("admin_key")
     print ap.new_user("new_key", "0", "test")
     print ap.new_user("test_key", "0", "test")
     print ap.get_api()
