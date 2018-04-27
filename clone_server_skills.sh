@@ -15,3 +15,13 @@ git clone https://github.com/MycroftAI/skill-weather
 git clone https://github.com/MycroftAI/skill-speak
 git clone https://github.com/MycroftAI/skill-personal
 git clone https://github.com/mycroftai/skill-hello-world
+git clone https://github.com/oliveralonzo/skill-inspirational-quotes
+git clone https://github.com/JarbasAl/skill-nutrients
+git clone https://github.com/JarbasAl/skill-countries
+git clone https://github.com/JarbasAl/skill-quotes
+git clone https://github.com/JarbasAl/skill-numbers
+git clone https://github.com/JarbasAl/skill-metal-archives
+git clone https://github.com/JarbasAl/skill-names
+git clone https://github.com/JarbasAl/cryptocoin_skill
+git clone https://github.com/JarbasAl/skill-how-to
+git clone https://github.com/JarbasAl/fallback-rivescript-universal

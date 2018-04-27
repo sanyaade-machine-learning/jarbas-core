@@ -130,8 +130,8 @@ def listener(message):
         if answers[user] is not None:
             # update data and context
             for k in message.context.keys():
-                if k == "source" and ":https_server" not in message.context[k]:
-                    message.context["source"] += ":https_server"
+                if k == "client_name" and ":https_server" not in message.context[k]:
+                    message.context["client_name"] += ":https_server"
                 answers[user]["context"][k] = message.context[k]
             for k in message.data.keys():
                 # update utterance
@@ -144,7 +144,7 @@ def listener(message):
                     answers[user]["data"][k] = message.data[k]
         else:
             # create answer
-            message.context["source"] += ":https_server"
+            message.context["client_name"] += ":https_server"
             answers[user] = {"data": message.data, "context": message.context}
 
 
@@ -160,8 +160,7 @@ def end_wait(message):
         context = {}
         if message.type == "complete_intent_failure":
 
-            answers[user] = {"data": {"utterance": "i have no idea how to "
-                                                   "answer that"}, "context":
+            answers[user] = {"data": {"utterance": "does not compute"}, "context":
                                  context}
         # no answer but end of handler
         elif answers[user] is None:

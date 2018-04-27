@@ -11,7 +11,7 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class MycroftAPI(object):
-    def __init__(self, api, lang="en-us", url="https://104.236.133.170:6712/"):
+    def __init__(self, api, lang="en-us", url="https://0.0.0.0:6712/"):
         self.api = api
         self.headers = {"Authorization": str(self.api)}
         self.lang = lang
@@ -191,17 +191,14 @@ class MycroftAPI(object):
 
 if __name__ == "__main__":
     # test if admin privileges are properly blocked
-    ap = MycroftAPI("test_key", url="https://104.236.133.170:6712/")
+    ap = MycroftAPI("test_key")
 
     # test connection
     print ap.hello_world()
 
     # test functionality
-    ap = MycroftAPI("new_key")
+    ap = MycroftAPI("test_key")
     print ap.ask_mycroft("hello world")
-    print ap.ask_mycroft("tell me a joke")
-    print ap.ask_mycroft("tell me about quantum decoherence")
-    print ap.ask_mycroft("do you like pizza")
 
     print ap.get_intent("hello world")
     print ap.get_intent_map()
@@ -222,10 +219,11 @@ if __name__ == "__main__":
 
     ap = MycroftAPI("admin_key")
     print ap.new_user("new_key", "0", "test")
+    print ap.new_user("test_key", "0", "test")
     print ap.get_api()
     print ap.revoke_api("new_key")
-    print ap.revoke_api("test_key")
     print ap.revoke_api("invalid_key")
+
 
 
 
