@@ -18,7 +18,7 @@ import re
 import json
 import inflection
 from os.path import exists, isfile, join, dirname, expanduser
-from requests import HTTPError
+from requests import RequestException
 
 from mycroft.util.json_helper import load_commented_json
 from mycroft.util.log import LOG
