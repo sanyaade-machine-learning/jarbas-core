@@ -195,6 +195,12 @@ case "$1" in
   "-fb"|"--facebook")
     start-mycroft fb
     ;;
+  "-a"|"--all")
+    start-mycroft fb
+    start-mycroft twitch
+    start-mycroft hack
+    start-mycroft webchat
+    ;;
   *)
     echo "Usage"
     usage-exit
