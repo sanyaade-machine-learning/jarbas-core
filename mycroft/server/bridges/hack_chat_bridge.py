@@ -87,14 +87,15 @@ class JarbasClientProtocol(WebSocketClientProtocol):
                 self.waiting_messages = []
                 connector.send("ok, stopped")
                 return
-            msg = {"data": {"utterances": [utterance], "lang": "en-us"},
-                   "type": "recognizer_loop:utterance",
-                   "context": {"source": self.peer, "destinatary":
-                       "https_server", "platform": platform,
-                               "hack_chat_nick": user, "user": user,
-                               "target": "hackchat"}}
-            msg = json.dumps(msg)
-            self.sendMessage(msg, False)
+            if "@" + username.lower() in utterance.lower():
+                msg = {"data": {"utterances": [utterance], "lang": "en-us"},
+                       "type": "recognizer_loop:utterance",
+                       "context": {"source": self.peer, "destinatary":
+                           "https_server", "platform": platform,
+                                   "hack_chat_nick": user, "user": user,
+                                   "target": "hackchat"}}
+                msg = json.dumps(msg)
+                self.sendMessage(msg, False)
         else:
             print data
 
