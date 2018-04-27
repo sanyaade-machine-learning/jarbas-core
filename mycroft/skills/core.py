@@ -1282,7 +1282,7 @@ class FallbackSkill(MycroftSkill):
                         except:
                             message_context = cls.context
                         #  indicate completion
-                        ws.emit(Message(
+                        ws.emit(message.reply(
                             'mycroft.skill.handler.complete',
                             data={'handler': "fallback",
                                   "fallback_handler": get_handler_name(
@@ -1299,7 +1299,7 @@ class FallbackSkill(MycroftSkill):
         def handler(message):
             cls.context = message.context
             # indicate fallback handling start
-            ws.emit(Message("mycroft.skill.handler.start",
+            ws.emit(message.reply("mycroft.skill.handler.start",
                             data={'handler': "fallback"},
                             context=cls.context))
 
@@ -1311,10 +1311,10 @@ class FallbackSkill(MycroftSkill):
                 else:
                     success = priority_handler(message)
                 if not success:
-                    ws.emit(Message('complete_intent_failure'))
+                    ws.emit(message.reply('complete_intent_failure'))
                     LOG.warning('No fallback could handle intent.')
                     #  indicate completion with exception
-                    ws.emit(Message('mycroft.skill.handler.complete',
+                    ws.emit(message.reply('mycroft.skill.handler.complete',
                                     data={'handler': "fallback",
                                           'exception':
                                               "No fallback could handle intent."},
