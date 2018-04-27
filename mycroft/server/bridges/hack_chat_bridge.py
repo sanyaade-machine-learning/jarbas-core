@@ -14,7 +14,7 @@ from mycroft.util.log import LOG as logger
 
 
 platform = "JarbasHackChatClientv0.1"
-username = "Jarbas"
+username = "JarbasAI"
 hack_chat_channel = "JarbasAI"
 
 
@@ -82,12 +82,13 @@ class JarbasClientProtocol(WebSocketClientProtocol):
             #
             connector.send("Hello {}".format(user))
         elif data["type"] == "message":
-            utterance = data["text"]
+            utterance = data["text"].lower()
             if utterance == "stop":
                 self.waiting_messages = []
                 connector.send("ok, stopped")
                 return
-            if "@" + username.lower() in utterance.lower():
+            if "@" + username.lower() in utterance:
+                utterance = utterance.replace("@" + username.lower(), "")
                 msg = {"data": {"utterances": [utterance], "lang": "en-us"},
                        "type": "recognizer_loop:utterance",
                        "context": {"source": self.peer, "destinatary":
