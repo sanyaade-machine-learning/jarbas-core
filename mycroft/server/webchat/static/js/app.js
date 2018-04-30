@@ -35,7 +35,6 @@ function set_port(val)
 }
 
 
-
 $(document).ready(function(){
 
 	var received = $('#received');
@@ -54,10 +53,9 @@ $(document).ready(function(){
     }
 
 
-	 
-	socket.onopen = function(){  
+	socket.onopen = function(){
 	  console.log("connected");
-	}; 
+	};
 
 	socket.onmessage = function (message) {
 	  console.log("receiving: " + message.data);
@@ -67,14 +65,13 @@ $(document).ready(function(){
 	};
 
 	socket.onclose = function(){
-	  console.log("disconnected"); 
+	  console.log("disconnected");
 	};
 
 	var sendMessage = function(message) {
 	  console.log("sending:" + message.data);
 	  socket.send(message.data);
 	};
-
 
 
 	$('.chat[data-chat=person2]').addClass('active-chat')
@@ -94,7 +91,7 @@ $(document).ready(function(){
 
 
 	function push_statment(msg) {
-	    $('.chat').append('<div class="bubble me"><i class="fa fa-user-circle" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')  
+	    $('.chat').append('<div class="bubble me"><i class="fa fa-user-circle" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')
 	}
 
 
@@ -124,7 +121,10 @@ $(document).ready(function(){
 	    } else if (msg == 'Web Chat Client from JCASOFT') {
 		$('.chat').append('<div class="bubble you loading"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')
 	    } else {
-		$('.chat').append('<div class="bubble you"><i class="fa fa-commenting" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')
+
+		    $('.chat').append('<div class="bubble you"><i class="fa fa-commenting" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')
+
+		    responsiveVoice.speak(msg);
 	    }
 	}
 
