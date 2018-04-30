@@ -20,7 +20,7 @@
 
 var ip = ""
 var por = ""
-
+var voice = "UK English Male"
 
 function set_ip(val)
 {
@@ -53,9 +53,9 @@ $(document).ready(function(){
     }
 
 
-	socket.onopen = function(){
+	socket.onopen = function(){  
 	  console.log("connected");
-	};
+	}; 
 
 	socket.onmessage = function (message) {
 	  console.log("receiving: " + message.data);
@@ -65,7 +65,7 @@ $(document).ready(function(){
 	};
 
 	socket.onclose = function(){
-	  console.log("disconnected");
+	  console.log("disconnected"); 
 	};
 
 	var sendMessage = function(message) {
@@ -91,7 +91,7 @@ $(document).ready(function(){
 
 
 	function push_statment(msg) {
-	    $('.chat').append('<div class="bubble me"><i class="fa fa-user-circle" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')
+	    $('.chat').append('<div class="bubble me"><i class="fa fa-user-circle" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')  
 	}
 
 
@@ -118,13 +118,10 @@ $(document).ready(function(){
 		$('.chat').append('<div class="bubble you loading"><i class="fa fa-forward" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')
 	    } else if (msg == 'backward') {
 		$('.chat').append('<div class="bubble you loading"><i class="fa fa-backward" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')
-	    } else if (msg == 'Web Chat Client from JCASOFT') {
-		$('.chat').append('<div class="bubble you loading"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')
 	    } else {
 
 		    $('.chat').append('<div class="bubble you"><i class="fa fa-commenting" aria-hidden="true"></i>&nbsp;&nbsp;' + msg + '</div>')
-
-		    responsiveVoice.speak(msg);
+		    responsiveVoice.speak(msg, voice);
 	    }
 	}
 
