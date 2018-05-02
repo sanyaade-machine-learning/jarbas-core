@@ -21,13 +21,27 @@ from mycroft.util.log import LOG
 class ResponsiveVoice(TTS):
     def __init__(self, lang, config):
         super(ResponsiveVoice, self).__init__(
-            lang, config, MimicValidator(self), 'mp3',
+            lang, config, ResponsiveVoiceValidator(self), 'mp3',
             ssml_tags=[]
         )
         self.clear_cache()
+        self.pitch = config.get("pitch", 0.5)
+        self.rate = config.get("rate", 0.5)
+        self.vol = config.get("vol", 1)
+        if "m" in config.get("gender", "male"):
+            self.sv = "g1"
+            self.vn = "rjs"
+        else:
+            self.vn = self.sv = ""
 
     def get_tts(self, sentence, wav_file):
-        params = urllib.urlencode({"t": sentence, "tl": self.lang})
+        params = urllib.urlencode({"t": sentence,
+                                   "tl": self.lang,
+                                   "pitch": self.pitch,
+                                   "rate": self.rate,
+                                   "vol": self.vol,
+                                   "sv": self.sv,
+                                   "vn": self.vn})
         baseUrl = "http://responsivevoice.org/responsivevoice/getvoice.php"
         r = requests.get(baseUrl, params)
         with open(wav_file, "w") as f:
@@ -35,9 +49,9 @@ class ResponsiveVoice(TTS):
         return wav_file, None
 
 
-class MimicValidator(TTSValidator):
+class ResponsiveVoiceValidator(TTSValidator):
     def __init__(self, tts):
-        super(MimicValidator, self).__init__(tts)
+        super(ResponsiveVoiceValidator, self).__init__(tts)
 
     def validate_lang(self):
         # TODO: Verify responsive voice can handle the requested language
