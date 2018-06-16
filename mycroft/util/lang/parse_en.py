@@ -73,14 +73,17 @@ def extractnumber_en(text):
         components = text.split(c)
         # TODO ensure first is not a fraction and second is a fraction
         if len(components) == 2:
-            if extractnumber_en(components[0]) and extractnumber_en(components[1]):
-                return extractnumber_en(components[0]) + extractnumber_en(components[1])
+            if extractnumber_en(components[0]) and \
+                    extractnumber_en(components[1]):
+                return extractnumber_en(components[0]) + \
+                       extractnumber_en(components[1])
 
     # 2 point 5
     for c in decimal_marker:
         components = text.split(c)
         if len(components) == 2:
-            if extractnumber_en(components[0]) is not None and extractnumber_en(components[1]):
+            if extractnumber_en(components[0]) is not None \
+                    and extractnumber_en(components[1]):
                 return extractnumber_en(components[0]) + float(
                     "0." + str(extractnumber_en(components[1])).split(".")[0])
 
