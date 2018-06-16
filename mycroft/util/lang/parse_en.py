@@ -17,6 +17,20 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from mycroft.util.lang.parse_common import is_numeric, look_for_fractions
+from mycroft.util.lang.format_en import NUM_STRING_EN
+
+STRING_NUM_EN = {"first": 1,
+                 "second": 2,
+                 "half": 0.5,
+                 "halves": 0.5,
+                 "thousands": 100,
+                 'millions': 1000000,
+                 "billions": 1000000000,
+                 'trillions': 1000000000000}
+
+for num in NUM_STRING_EN:
+    num_string = NUM_STRING_EN[num]
+    STRING_NUM_EN[num_string] = num
 
 
 def extractnumber_en(text):
@@ -26,103 +40,114 @@ def extractnumber_en(text):
     Args:
         text (str): the string to normalize
     Returns:
-        (int) or (float): The value of extracted number
+        (int) or (float) or None: The value of extracted number or None if number not found
 
     """
+    # negate next number (-2 = 0 - 2)
+    negatives = ["negative", "minus"]
+
+    # sum the next number (twenty two = 20 + 2)
+    sums = ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
+
+    # multiply the previous number (one hundred = 1 * 100)
+    multiplies = ["hundred", "thousand", "million", "billion", "trillion",
+                   "hundreds", "thousands", "millions", "billions", "trillions"]
+
+    # split sentence parse separately and sum ( 2 and a half = 2 + 0.5 )
+    ands = [" and "]
+
+    # keep track of current number, parse remaining words and sum ( six hundred sixty six = 600 + 66 )
+    splits = ["hundred", "thousand", "million", "billion", "trillion",
+                "hundreds", "thousands", "millions", "billions", "trillions"]
+
+    # decimal marker ( 1 point 5 = 1 + 0.5)
+    decimal_marker = [" point ", " dot "]
+
+    # 2 and 3/4
+    for c in ands:
+        components = text.split(c)
+        # TODO ensure first is not a fraction and second is a fraction
+        if len(components) == 2:
+            if extractnumber_en(components[0]) and extractnumber_en(components[1]):
+                return extractnumber_en(components[0]) + extractnumber_en(components[1])
+
+    # 2 point 5
+    for c in decimal_marker:
+        components = text.split(c)
+        if len(components) == 2:
+            if extractnumber_en(components[0]) is not None and extractnumber_en(components[1]):
+                return extractnumber_en(components[0]) + float("0." + str(extractnumber_en(components[1])).split(".")[0])
+
     aWords = text.split()
     aWords = [word for word in aWords if word not in ["the", "a", "an"]]
-    and_pass = False
-    valPreAnd = False
-    val = False
-    count = 0
-    while count < len(aWords):
-        word = aWords[count]
+    val = None
+    prev_val = None
+    to_sum = []
+    for idx, word in enumerate(aWords):
+
+        if not word:
+            continue
+        prev_word = aWords[idx - 1] if idx > 0 else ""
+        next_word = aWords[idx + 1] if idx + 1 < len(aWords) else ""
+
+        # is this word already a number ?
         if is_numeric(word):
             # if word.isdigit():            # doesn't work with decimals
             val = float(word)
-        elif word == "first":
-            val = 1
-        elif word == "second":
-            val = 2
-        elif isFractional_en(word):
+
+        # is this word the name of a number ?
+        if word in STRING_NUM_EN:
+            val = STRING_NUM_EN[word]
+
+        # is the prev word a number and should we sum it?
+        # twenty two, fifty six
+        if prev_word in sums:
+            val = prev_val + val
+
+        # is the prev word a number and should we multiply it?
+        # twenty hundred, six hundred
+        if word in multiplies:
+            if not prev_val:
+                prev_val = 1
+            val = prev_val * val
+
+        # is this a spoken fraction?
+        # half cup
+        if not val:
             val = isFractional_en(word)
-        else:
-            if word == "one":
+
+        # 2 fifths
+        next_value = isFractional_en(next_word)
+        if next_value:
+            if not val:
                 val = 1
-            elif word == "two":
-                val = 2
-            elif word == "three":
-                val = 3
-            elif word == "four":
-                val = 4
-            elif word == "five":
-                val = 5
-            elif word == "six":
-                val = 6
-            elif word == "seven":
-                val = 7
-            elif word == "eight":
-                val = 8
-            elif word == "nine":
-                val = 9
-            elif word == "ten":
-                val = 10
-            if val:
-                if count < (len(aWords) - 1):
-                    wordNext = aWords[count + 1]
-                else:
-                    wordNext = ""
-                valNext = isFractional_en(wordNext)
+            val = val * next_value
 
-                if valNext:
-                    val = val * valNext
-                    aWords[count + 1] = ""
+        # is this a negative number?
+        if val and prev_word and prev_word in negatives:
+            val = 0 - val
 
-        # if val == False:
+        # let's make sure it isn't a fraction
         if not val:
             # look for fractions like "2/3"
             aPieces = word.split('/')
-            # if (len(aPieces) == 2 and is_numeric(aPieces[0])
-            #   and is_numeric(aPieces[1])):
             if look_for_fractions(aPieces):
                 val = float(aPieces[0]) / float(aPieces[1])
-            elif and_pass:
-                # added to value, quit here
-                val = valPreAnd
-                break
-            else:
-                count += 1
-                continue
 
-        aWords[count] = ""
+        else:
+            prev_val = val
 
-        if and_pass:
-            aWords[count - 1] = ''  # remove "and"
-            val += valPreAnd
-        elif count + 1 < len(aWords) and aWords[count + 1] == 'and':
-            and_pass = True
-            valPreAnd = val
-            val = False
-            count += 2
-            continue
-        elif count + 2 < len(aWords) and aWords[count + 2] == 'and':
-            and_pass = True
-            valPreAnd = val
-            val = False
-            count += 3
-            continue
+            # handle long numbers
+            # six hundred sixty six
+            # two million five hundred thousand
+            if word in splits and next_word not in multiplies:
+                to_sum.append(val)
+                val = 0
+                prev_val = 0
 
-        break
-
-    # if val == False:
-    if not val:
-        return False
-
-    # Return the string with the number related words removed
-    # (now empty strings, so strlen == 0)
-    aWords = [word for word in aWords if len(word) > 0]
-    text = ' '.join(aWords)
-
+    if val is not None:
+        for v in to_sum:
+            val = val + v
     return val
 
 

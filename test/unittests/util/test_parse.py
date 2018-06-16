@@ -80,6 +80,18 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extractnumber("one and one half cups"), 1.5)
         self.assertEqual(extractnumber("three quarter cups"), 3.0 / 4.0)
         self.assertEqual(extractnumber("three quarters cups"), 3.0 / 4.0)
+        self.assertEqual(extractnumber("twenty two"), 22)
+        self.assertEqual(extractnumber("two hundred"), 200)
+        self.assertEqual(extractnumber("nine thousand"), 9000)
+        self.assertEqual(extractnumber("six hundred sixty six"), 666)
+        self.assertEqual(extractnumber("two million"), 2000000)
+        self.assertEqual(extractnumber("two million five hundred thousand tons of spinning metal"), 2500000)
+        self.assertEqual(extractnumber("six trillion"), 6000000000000)
+        self.assertEqual(extractnumber("one point five"), 1.5)
+        self.assertEqual(extractnumber("three dot fourteen"), 3.14)
+        self.assertEqual(extractnumber("zero point two"), 0.2)
+        self.assertEqual(extractnumber("billions of years older"), 1000000000)
+        self.assertEqual(extractnumber("one hundred thousand"), 100000)
 
     def test_extractdatetime_en(self):
         def extractWithFormat(text):
