@@ -92,6 +92,8 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extractnumber("zero point two"), 0.2)
         self.assertEqual(extractnumber("billions of years older"), 1000000000)
         self.assertEqual(extractnumber("one hundred thousand"), 100000)
+        self.assertEqual(extractnumber("minus 2"), -2)
+        self.assertEqual(extractnumber("negative seventy"), -70)
 
     def test_extractdatetime_en(self):
         def extractWithFormat(text):
