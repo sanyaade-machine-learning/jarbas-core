@@ -30,7 +30,8 @@ def extractnumber_en(text, short_scale=True):
     Args:
         text (str): the string to normalize
     Returns:
-        (int) or (float) or None: The value of extracted number or None if number not found
+        (int) or (float) or None: The value of extracted number or None
+                                  if number not found
 
     """
     string_num_en = {"first": 1,
