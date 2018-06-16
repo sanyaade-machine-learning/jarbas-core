@@ -85,7 +85,8 @@ class TestNormalize(unittest.TestCase):
         self.assertEqual(extractnumber("nine thousand"), 9000)
         self.assertEqual(extractnumber("six hundred sixty six"), 666)
         self.assertEqual(extractnumber("two million"), 2000000)
-        self.assertEqual(extractnumber("two million five hundred thousand tons of spinning metal"), 2500000)
+        self.assertEqual(extractnumber("two million five hundred thousand "
+                                       "tons of spinning metal"), 2500000)
         self.assertEqual(extractnumber("six trillion"), 6000000000000)
         self.assertEqual(extractnumber("one point five"), 1.5)
         self.assertEqual(extractnumber("three dot fourteen"), 3.14)

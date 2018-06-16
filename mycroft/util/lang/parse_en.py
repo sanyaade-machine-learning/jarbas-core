@@ -42,7 +42,8 @@ def extractnumber_en(text):
     Args:
         text (str): the string to normalize
     Returns:
-        (int) or (float) or None: The value of extracted number or None if number not found
+        (int) or (float) or None: The value of extracted number
+                                  or None if number not found
 
     """
     # negate next number (-2 = 0 - 2)
@@ -59,7 +60,8 @@ def extractnumber_en(text):
     # split sentence parse separately and sum ( 2 and a half = 2 + 0.5 )
     ands = [" and "]
 
-    # keep track of current number, parse remaining words and sum ( six hundred sixty six = 600 + 66 )
+    # keep track of current number, parse remaining words and sum
+    # ( six hundred sixty six = 600 + 66 )
     splits = ["hundred", "thousand", "million", "billion", "trillion",
               "hundreds", "thousands", "millions", "billions", "trillions"]
 
