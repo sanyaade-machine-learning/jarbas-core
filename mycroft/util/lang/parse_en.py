@@ -654,7 +654,8 @@ def extract_datetime_en(string, currentDate=None):
                                         (len(words) >
                                          words.index(wordNextNext) + 1 and
                                          words[words.index(
-                                             wordNextNext) + 1] == "afternoon")):
+                                             wordNextNext) + 1] ==
+                                         "afternoon")):
                                     remainder = "pm"
                                 if (wordNextNext == "evening" or
                                         (len(words) >
@@ -770,8 +771,8 @@ def extract_datetime_en(string, currentDate=None):
     if secOffset != 0:
         extractedDate = extractedDate + relativedelta(seconds=secOffset)
     for idx, word in enumerate(words):
-        if words[idx] == "and" and words[idx - 1] == "" and words[
-            idx + 1] == "":
+        if words[idx] == "and" and \
+                words[idx - 1] == "" and words[idx + 1] == "":
             words[idx] = ""
 
     resultStr = " ".join(words)
