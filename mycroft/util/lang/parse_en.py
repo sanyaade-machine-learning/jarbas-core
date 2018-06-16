@@ -18,56 +18,64 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from mycroft.util.lang.format_en import NUM_STRING_EN
 from mycroft.util.lang.parse_common import is_numeric, look_for_fractions
-
-STRING_NUM_EN = {"first": 1,
-                 "second": 2,
-                 "half": 0.5,
-                 "halves": 0.5,
-                 "hundreds": 100,
-                 "thousands": 1000,
-                 'millions': 1000000,
-                 "billions": 1000000000,
-                 'trillions': 1000000000000}
-
-for num in NUM_STRING_EN:
-    num_string = NUM_STRING_EN[num]
-    STRING_NUM_EN[num_string] = num
+from mycroft.util.lang.format_en import NUM_STRING_EN, LONG_SCALE_EN, \
+    SHORT_SCALE_EN
 
 
-def extractnumber_en(text):
+def extractnumber_en(text, short_scale=True):
     """
     This function prepares the given text for parsing by making
     numbers consistent, getting rid of contractions, etc.
     Args:
         text (str): the string to normalize
     Returns:
-        (int) or (float) or None: The value of extracted number
-                                  or None if number not found
+        (int) or (float) or None: The value of extracted number or None if number not found
 
     """
+    string_num_en = {"first": 1,
+                     "second": 2,
+                     "half": 0.5,
+                     "halves": 0.5,
+                     "hundreds": 100,
+                     "thousands": 1000,
+                     'millions': 1000000}
+
+    for num in NUM_STRING_EN:
+        num_string = NUM_STRING_EN[num]
+        string_num_en[num_string] = num
+
     # negate next number (-2 = 0 - 2)
     negatives = ["negative", "minus"]
 
     # sum the next number (twenty two = 20 + 2)
-    sums = ['twenty', 'thirty', 'forty', 'fifty',
-            'sixty', 'seventy', 'eighty', 'ninety']
+    sums = ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty',
+            'ninety']
 
     # multiply the previous number (one hundred = 1 * 100)
-    multiplies = ["hundred", "thousand", "million", "billion", "trillion",
-                  "hundreds", "thousands", "millions", "billions", "trillions"]
+    multiplies = ["hundred", "thousand", "hundreds", "thousands", "million",
+                  "millions"]
 
     # split sentence parse separately and sum ( 2 and a half = 2 + 0.5 )
     ands = [" and "]
 
-    # keep track of current number, parse remaining words and sum
-    # ( six hundred sixty six = 600 + 66 )
-    splits = ["hundred", "thousand", "million", "billion", "trillion",
-              "hundreds", "thousands", "millions", "billions", "trillions"]
-
     # decimal marker ( 1 point 5 = 1 + 0.5)
     decimal_marker = [" point ", " dot "]
+
+    if short_scale:
+        for num in SHORT_SCALE_EN:
+            num_string = SHORT_SCALE_EN[num]
+            string_num_en[num_string] = num
+            string_num_en[num_string + "s"] = num
+            multiplies.append(num_string)
+            multiplies.append(num_string + "s")
+    else:
+        for num in LONG_SCALE_EN:
+            num_string = LONG_SCALE_EN[num]
+            string_num_en[num_string] = num
+            string_num_en[num_string + "s"] = num
+            multiplies.append(num_string)
+            multiplies.append(num_string + "s")
 
     # 2 and 3/4
     for c in ands:
@@ -107,8 +115,8 @@ def extractnumber_en(text):
             val = float(word)
 
         # is this word the name of a number ?
-        if word in STRING_NUM_EN:
-            val = STRING_NUM_EN[word]
+        if word in string_num_en:
+            val = string_num_en[word]
 
         # is the prev word a number and should we sum it?
         # twenty two, fifty six
@@ -151,7 +159,7 @@ def extractnumber_en(text):
             # handle long numbers
             # six hundred sixty six
             # two million five hundred thousand
-            if word in splits and next_word not in multiplies:
+            if word in multiplies and next_word not in multiplies:
                 to_sum.append(val)
                 val = 0
                 prev_val = 0
