@@ -183,12 +183,14 @@ def extractnumber_en(text, short_scale=True):
     # 2 and 3/4
     for c in ands:
         components = text.split(c)
-        # TODO ensure first is not a fraction and second is a fraction
+
         if len(components) == 2:
-            if extractnumber_en(components[0]) and \
-                    extractnumber_en(components[1]):
-                return extractnumber_en(components[0]) + \
-                       extractnumber_en(components[1])
+            # ensure first is not a fraction and second is a fraction
+            num1 = extractnumber_en(components[0])
+            num2 = extractnumber_en(components[1])
+            if num1 is not None and num2 is not None \
+                    and num1 >= 1 and 0 < num2 < 1:
+                return num1 + num2
 
     # 2 point 5
     for c in decimal_marker:
