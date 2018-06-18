@@ -160,7 +160,7 @@ def extractnumber_en(text, short_scale=True):
                   "millions"]
 
     # split sentence parse separately and sum ( 2 and a half = 2 + 0.5 )
-    ands = [" and "]
+    fraction_marker = [" and "]
 
     # decimal marker ( 1 point 5 = 1 + 0.5)
     decimal_marker = [" point ", " dot "]
@@ -181,7 +181,7 @@ def extractnumber_en(text, short_scale=True):
             multiplies.append(num_string + "s")
 
     # 2 and 3/4
-    for c in ands:
+    for c in fraction_marker:
         components = text.split(c)
 
         if len(components) == 2:
